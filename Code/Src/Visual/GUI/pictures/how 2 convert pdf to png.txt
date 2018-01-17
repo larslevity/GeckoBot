@@ -1,0 +1,1 @@
+mogrify -verbose -density 500 -resize 800 -format png ./*.pdf

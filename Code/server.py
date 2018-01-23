@@ -51,6 +51,22 @@ PATTERN = [[0.0, 0.79, 0.99, 0.0, 0.25, 0.78, False, True, True, False, 5.0],
            [0.64, 0.0, 0.0, 0.99, 0.75, 0.3, True, True, True, True, 2.0],
            [0.64, 0.0, 0.0, 0.99, 0.75, 0.3, False, True, True, False, 1.0]]
 
+# v2.5
+PATTERN = [[0.0, 0.68, 0.93, 0.0, 0.30, 0.74, False, True, True, False, 5.0],
+           [0.0, 0.68, 0.93, 0.0, 0.30, 0.74, True, True, True, True, 2.0],
+           [0.0, 0.68, 0.93, 0.0, 0.30, 0.74, True, False, False, True, 1.0],
+           [0.92, 0.0, 0.0, 0.92, 0.90, 0.25, True, False, False, True, 5.0],
+           [0.92, 0.0, 0.0, 0.92, 0.90, 0.25, True, True, True, True, 2.0],
+           [0.92, 0.0, 0.0, 0.92, 0.90, 0.25, False, True, True, False, 1.0]]
+
+## v2.6
+#PATTERN = [[0.0, 0.79, 0.99, 0.0, 0.25, 0.78, False, True, True, False, 5.0],
+#           [0.0, 0.79, 0.99, 0.0, 0.25, 0.78, True, True, True, True, 2.0],
+#           [0.0, 0.79, 0.99, 0.0, 0.25, 0.78, True, False, False, True, 1.0],
+#           [0.64, 0.0, 0.0, 0.99, 0.75, 0.3, True, False, False, True, 5.0],
+#           [0.64, 0.0, 0.0, 0.99, 0.75, 0.3, True, True, True, True, 2.0],
+#           [0.64, 0.0, 0.0, 0.99, 0.75, 0.3, False, True, True, False, 1.0]]
+
 
 def init_hardware():
     """

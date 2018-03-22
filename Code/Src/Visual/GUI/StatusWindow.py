@@ -16,7 +16,7 @@ AVAILABLE_STATES = [('Pause', 'PAUSE'),
                     ('Direct Actuator Input', 'USER_CONTROL')]
 
 # For Gecko Representation
-parts = [1, 2, 3, 4, 5, 6]
+parts = [0, 1, 2, 3, 4, 5]
 
 # pylint: disable= too-many-public-methods, unused-argument
 class StatusObject(Gtk.Bin):

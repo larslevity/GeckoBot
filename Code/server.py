@@ -219,7 +219,7 @@ def pause_state(cargo):
     cargo.actual_state = 'PAUSE'
 
     for valve in cargo.valve:
-        valve.set_pwm(0.)
+        valve.set_pwm(1.)
         cargo.rec_u['u{}'.format(valve.name)] = 0.
         cargo.rec_r['r{}'.format(valve.name)] = None
 
@@ -364,6 +364,15 @@ def reference_tracking(cargo):
         cargo.errmsg = sys.exc_info()
     else:
         new_state = cargo.state
+    finally:
+        # write
+        for valve, controller in zip(cargo.valve, cargo.controller):
+            valve.set_pwm(1.)
+            cargo.rec_r['r{}'.format(valve.name)] = None
+            cargo.rec_u['u{}'.format(valve.name)] = 1.
+
+        for dvalve in cargo.dvalve:
+            dvalve.set_state(False)
     return (new_state, cargo)
 
 
@@ -385,7 +394,7 @@ def exit_cleaner(cargo):
     cargo.actual_state = 'EXIT'
 
     for idx, valve in enumerate(cargo.valve):
-        valve.set_pwm(0.)
+        valve.set_pwm(1.)
         if idx == 0:
             valve.cleanup()
     for dvalve in cargo.dvalve:
@@ -419,7 +428,7 @@ class Cargo(object):
         for sensor in sens:
             self.rec[sensor.name] = sensor.get_value()
         for valve in self.valve:
-            self.rec_u['u{}'.format(valve.name)] = 0.
+            self.rec_u['u{}'.format(valve.name)] = 1.
             self.rec_r['r{}'.format(valve.name)] = None
 
         self.wcomm = WCommCargo()

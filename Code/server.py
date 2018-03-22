@@ -24,8 +24,8 @@ TSAMPLING = 0.001     # [sec]
 PID = [1.05, 0.03, 0.01]    # [1]
 
 
-INITIAL_PATTERN = [[0.77, 0.00, 0.00, 0.80, 0.77, 0.22, False, False, False, False, 3.0],
-                   [0.77, 0.00, 0.00, 0.80, 0.77, 0.22, False, True, True, False, 1.0]]
+INITIAL_PATTERN = [[0.74, 0.00, 0.00, 0.99, 0.77, 0.22, False, False, False, False, 3.0],
+                   [0.74, 0.00, 0.00, 0.99, 0.77, 0.22, False, True, True, False, 1.0]]
 
 ## v2.2
 #PATTERN = [[0.0, 0.8, 0.9, 0.0, 0.25, 0.8, False, True, True, False, 5.0],
@@ -59,13 +59,22 @@ INITIAL_PATTERN = [[0.77, 0.00, 0.00, 0.80, 0.77, 0.22, False, False, False, Fal
 #           [0.92, 0.0, 0.0, 0.92, 0.90, 0.25, True, True, True, True, 2.0],
 #           [0.92, 0.0, 0.0, 0.92, 0.90, 0.25, False, True, True, False, 1.0]]
 
-# v2.6
-PATTERN = [[0.0, 0.99, 0.97, 0.0, 0.25, 0.71, False, True, True, False, 5.0],
-           [0.0, 0.99, 0.97, 0.0, 0.25, 0.71, True, True, True, True, 2.0],
-           [0.0, 0.99, 0.97, 0.0, 0.25, 0.71, True, False, False, True, 1.0],
-           [0.77, 0.0, 0.0, 0.93, 0.70, 0.25, True, False, False, True, 5.0],
-           [0.77, 0.0, 0.0, 0.93, 0.70, 0.25, True, True, True, True, 2.0],
-           [0.77, 0.0, 0.0, 0.93, 0.70, 0.25, False, True, True, False, 1.0]]
+## v2.6
+#PATTERN = [[0.0, 0.99, 0.97, 0.0, 0.25, 0.71, False, True, True, False, 5.0],
+#           [0.0, 0.99, 0.97, 0.0, 0.25, 0.71, True, True, True, True, 2.0],
+#           [0.0, 0.99, 0.97, 0.0, 0.25, 0.71, True, False, False, True, 1.0],
+#           [0.77, 0.0, 0.0, 0.93, 0.70, 0.25, True, False, False, True, 5.0],
+#           [0.77, 0.0, 0.0, 0.93, 0.70, 0.25, True, True, True, True, 2.0],
+#           [0.77, 0.0, 0.0, 0.93, 0.70, 0.25, False, True, True, False, 1.0]]
+
+
+# v3.0
+PATTERN = [[0.0, 0.66, 0.99, 0.0, 0.25, 0.86, False, True, True, False, 3.0],
+           [0.0, 0.66, 0.99, 0.0, 0.25, 0.86, True, True, True, True, 1.0],
+           [0.0, 0.66, 0.99, 0.0, 0.25, 0.86, True, False, False, True, 0.5],
+           [0.74, 0.0, 0.0, 0.99, 0.78, 0.25, True, False, False, True, 3.0],
+           [0.74, 0.0, 0.0, 0.99, 0.78, 0.25, True, True, True, True, 1.0],
+           [0.74, 0.0, 0.0, 0.99, 0.78, 0.25, False, True, True, False, 0.5]]
 
 
 def init_hardware():

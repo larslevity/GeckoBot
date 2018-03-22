@@ -85,32 +85,32 @@ def init_hardware():
     """
     print("Initialize Sensors ...")
     sens = []
-    sets = [{'name': '1', 'id': 0},
-            {'name': '2', 'id': 1},
-            {'name': '3', 'id': 2},
-            {'name': '4', 'id': 3},
-            {'name': '5', 'id': 4},
-            {'name': '6', 'id': 5}]
+    sets = [{'name': '0', 'id': 0},
+            {'name': '1', 'id': 1},
+            {'name': '2', 'id': 2},
+            {'name': '3', 'id': 3},
+            {'name': '4', 'id': 4},
+            {'name': '5', 'id': 5}]
     for s in sets:
         sens.append(sensors.DPressureSens(name=s['name'], mplx_id=s['id'],
                                           maxpressure=MAX_PRESSURE))
 
     print('Initialize Valves ...')
     valve = []
-    sets = [{'name': '1', 'pin': 'P8_19'},      # Upper Left Leg
-            {'name': '2', 'pin': 'P8_13'},     # Upper Right Leg
-            {'name': '3', 'pin': 'P9_22'},     # Left Belly
-            {'name': '4', 'pin': 'P9_21'},     # Right Belly
-            {'name': '5', 'pin': 'P9_16'},     # Lower Left Leg
-            {'name': '6', 'pin': 'P9_14'}]     # Lower Right Leg
+    sets = [{'name': '0', 'pin': 'P8_19'},      # Upper Left Leg
+            {'name': '1', 'pin': 'P8_13'},     # Upper Right Leg
+            {'name': '2', 'pin': 'P9_22'},     # Left Belly
+            {'name': '3', 'pin': 'P9_21'},     # Right Belly
+            {'name': '4', 'pin': 'P9_16'},     # Lower Left Leg
+            {'name': '5', 'pin': 'P9_14'}]     # Lower Right Leg
     for elem in sets:
         valve.append(actuators.Valve(name=elem['name'], pwm_pin=elem['pin']))
 
     dvalve = []
-    dsets = [{'name': '1', 'pin': 'P8_7'},      # Upper Left Leg
-             {'name': '2', 'pin': 'P8_8'},     # Upper Right Leg
-             {'name': '3', 'pin': 'P8_9'},     # Lower Left Leg
-             {'name': '4', 'pin': 'P8_10'}]     # Lower Right Leg]
+    dsets = [{'name': '0', 'pin': 'P8_7'},      # Upper Left Leg
+             {'name': '1', 'pin': 'P8_8'},     # Upper Right Leg
+             {'name': '2', 'pin': 'P8_9'},     # Lower Left Leg
+             {'name': '3', 'pin': 'P8_10'}]     # Lower Right Leg]
     for elem in dsets:
         dvalve.append(actuators.DiscreteValve(
             name=elem['name'], pin=elem['pin']))
@@ -137,12 +137,12 @@ def init_controller():
     tsamplingPID = TSAMPLING
     maxoutPID = MAX_CTROUT
     controller = []
-    sets = [{'name': '1', 'P': PID[0], 'I': PID[1], 'D': PID[2]},
+    sets = [{'name': '0', 'P': PID[0], 'I': PID[1], 'D': PID[2]},
+            {'name': '1', 'P': PID[0], 'I': PID[1], 'D': PID[2]},
             {'name': '2', 'P': PID[0], 'I': PID[1], 'D': PID[2]},
             {'name': '3', 'P': PID[0], 'I': PID[1], 'D': PID[2]},
             {'name': '4', 'P': PID[0], 'I': PID[1], 'D': PID[2]},
-            {'name': '5', 'P': PID[0], 'I': PID[1], 'D': PID[2]},
-            {'name': '6', 'P': PID[0], 'I': PID[1], 'D': PID[2]}]
+            {'name': '5', 'P': PID[0], 'I': PID[1], 'D': PID[2]}]
     for elem in sets:
         controller.append(
             ctrlib.PidController([elem['P'], elem['I'], elem['D']],
@@ -311,21 +311,50 @@ def reference_tracking(cargo):
     print("Arriving in REFERENCE_TRACKING State: ")
     cargo.actual_state = 'REFERENCE_TRACKING'
 
+#    for valve in cargo.valve:
+#        cargo.ref_task[valve.name] = 0.0
+#    wcomm = walk_commander.Walking_Commander(cargo)
+#
+#    try:
+#        wcomm.run_threads()
+#        while cargo.state == 'REFERENCE_TRACKING':
+#            # CONFIRM pattern
+#            # initial step
+#            idx = 0
+#            while cargo.wcomm.confirm and cargo.state == 'REFERENCE_TRACKING':
+#                if idx == 0:
+#                    wcomm.process_pattern(INITIAL_PATTERN)
+#                pattern = cargo.wcomm.pattern
+#                wcomm.process_pattern(pattern)
+#                print('wcomm goes to round', idx)
+#                idx += 1
+#            #
+#            time.sleep(cargo.sampling_time)
+#    except:
+#        new_state = 'ERROR'
+#        cargo.errmsg = sys.exc_info()
+#    else:
+#        new_state = cargo.state
+#    finally:
+#        wcomm.clean()
+#        del wcomm
+#    return (new_state, cargo)
+
+    # TEST
+
     for valve in cargo.valve:
         cargo.ref_task[valve.name] = 0.0
-    wcomm = walk_commander.Walking_Commander(cargo)
 
     try:
-        wcomm.run_threads()
         while cargo.state == 'REFERENCE_TRACKING':
             # CONFIRM pattern
             # initial step
             idx = 0
             while cargo.wcomm.confirm and cargo.state == 'REFERENCE_TRACKING':
                 if idx == 0:
-                    wcomm.process_pattern(INITIAL_PATTERN)
+                    cargo.simpleWalkingCommander.process_pattern(INITIAL_PATTERN)
                 pattern = cargo.wcomm.pattern
-                wcomm.process_pattern(pattern)
+                cargo.simpleWalkingCommander.process_pattern(pattern)
                 print('wcomm goes to round', idx)
                 idx += 1
             #
@@ -335,9 +364,6 @@ def reference_tracking(cargo):
         cargo.errmsg = sys.exc_info()
     else:
         new_state = cargo.state
-    finally:
-        wcomm.clean()
-        del wcomm
     return (new_state, cargo)
 
 
@@ -397,7 +423,9 @@ class Cargo(object):
             self.rec_r['r{}'.format(valve.name)] = None
 
         self.wcomm = WCommCargo()
-
+        
+        ###### test
+        self.simpleWalkingCommander = walk_commander.SimpleWalkingCommander(self)
 
 class WCommCargo(object):
     def __init__(self):

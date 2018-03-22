@@ -19,6 +19,64 @@ from Src.Controller import controller as ctrlib
 TOL = 0.05
 
 
+
+
+class SimpleWalkingCommander(object):
+    def __init__(self, cargo):
+        """ Minimal Walking Commander """
+        self.cargo = cargo
+
+
+    def process_pattern(self, pattern):
+        """ Play the given pattern only once.
+
+            Args:
+                pattern(list): A list of lists of references
+
+            Example:
+                WCommander.process_pattern([[ref11, ref12, ..., ref1N, tmin1],
+                                            [ref21, ref22, ..., ref2N, tmin2],
+                                            ...
+                                            [refM1, refM2, ..., refMN, tminM]])
+        """
+        n_valves = len(self.cargo.valve)
+        n_dvalves = len(pattern[0]) - 1 - n_valves
+
+        for pos in pattern:
+            # read the refs
+            local_min_process_time = pos[-1]
+            ppos = pos[:n_valves]
+            dpos = pos[-n_dvalves-1:-1]
+
+            # set d valves
+            for dvalve in self.cargo.dvalve:
+                state = dpos[int(dvalve.name)]
+                dvalve.set_state(state)
+            
+            # hold the thing for local_min_process_time
+            tstart = time.time()
+            while time.time() - tstart < local_min_process_time:
+                # read
+                for sensor in self.cargo.sens:
+                    self.cargo.rec[sensor.name] = sensor.get_value()
+    
+                # write
+                for valve, controller in zip(self.cargo.valve, self.cargo.controller):
+                    ref = ppos[int(valve.name)]
+                    sys_out = self.cargo.rec[valve.name]
+                    ctr_out = controller.output(ref, sys_out)
+                    valve.set_pwm(ctrlib.sys_input(ctr_out))
+                    self.cargo.rec_r['r{}'.format(valve.name)] = ref
+                    self.cargo.rec_u['u{}'.format(valve.name)] = ctr_out
+                # meta
+                time.sleep(self.cargo.sampling_time)
+
+
+
+
+
+
+
 class Walking_Commander(object):
     def __init__(self, cargo):
         """ This class controls all extremities. It starts as many threads

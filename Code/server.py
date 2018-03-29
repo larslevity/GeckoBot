@@ -69,12 +69,12 @@ INITIAL_PATTERN = [[0.74, 0.00, 0.00, 0.99, 0.77, 0.22, False, False, False, Fal
 
 
 # v3.0
-PATTERN = [[0.0, 0.66, 0.99, 0.0, 0.25, 0.86, False, True, True, False, 3.0],
+PATTERN = [[0.25, 0.66, 0.99, 0.0, 0.25, 0.86, False, True, True, False, 3.0],
            [0.0, 0.66, 0.99, 0.0, 0.25, 0.86, True, True, True, True, 1.0],
            [0.0, 0.66, 0.99, 0.0, 0.25, 0.86, True, False, False, True, 0.5],
-           [0.74, 0.0, 0.0, 0.99, 0.78, 0.25, True, False, False, True, 3.0],
-           [0.74, 0.0, 0.0, 0.99, 0.78, 0.25, True, True, True, True, 1.0],
-           [0.74, 0.0, 0.0, 0.99, 0.78, 0.25, False, True, True, False, 0.5]]
+           [0.74, 0.25, 0.0, 0.99, 0.65, 0.25, True, False, False, True, 3.0],
+           [0.74, 0.0, 0.0, 0.99, 0.65, 0.25, True, True, True, True, 1.0],
+           [0.74, 0.0, 0.0, 0.99, 0.65, 0.25, False, True, True, False, 0.5]]
 
 
 def init_hardware():

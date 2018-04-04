@@ -25,7 +25,7 @@ PID = [1.05, 0.03, 0.01]    # [1]
 
 
 INITIAL_PATTERN = [[0.74, 0.00, 0.00, 0.99, 0.77, 0.1, False, False, False, False, 7.0],
-                   [0.74, 0.00, 0.00, 0.99, 0.77, 0.1, False, True, True, False, 1.0]]
+                   [0.74, 0.00, 0.00, 0.99, 0.77, 0.1, False, True, True, False, 5.0]]
 
 ## v2.2
 #PATTERN = [[0.0, 0.8, 0.9, 0.0, 0.25, 0.8, False, True, True, False, 5.0],

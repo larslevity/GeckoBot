@@ -24,10 +24,10 @@ TSAMPLING = 0.001     # [sec]
 PID = [1.05, 0.03, 0.01]    # [1]
 
 
-INITIAL_PATTERN = [[0.74, 0.00, 0.00, 0.9, 0.52, 0.1, False, False, False, False, 10.0],
-                   [0.74, 0.00, 0.00, 0.9, 0.52, 0.1, False, True, True, False, 5.0]]
+INITIAL_PATTERN = [[0.74, 0.00, 0.00, 0.9, 0.57, 0.1, False, False, False, False, 10.0],
+                   [0.74, 0.00, 0.00, 0.9, 0.57, 0.1, False, True, True, False, 5.0]]
 
-FINAL_PATTERN = [[0.74, 0.0, 0.0, 0.99, 0.65, 0.25, False, True, True, False, 5.0],
+FINAL_PATTERN = [[0.74, 0.0, 0.0, 0.9, 0.57, 0.25, False, True, True, False, 5.0],
                    [0.00, 0.00, 0.00, 0.00, 0.0, 0.0, False, False, False, False, 1]]
 
 

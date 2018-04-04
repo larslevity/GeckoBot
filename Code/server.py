@@ -373,7 +373,8 @@ def reference_tracking(cargo):
                 print('wcomm goes to round', idx)
                 idx += 1
             cargo.wcomm.confirm = False
-            cargo.simpleWalkingCommander.process_pattern(FINAL_PATTERN)
+            if idx == 2:
+                cargo.simpleWalkingCommander.process_pattern(FINAL_PATTERN)
             #
             time.sleep(cargo.sampling_time)
     except:

@@ -24,8 +24,8 @@ TSAMPLING = 0.001     # [sec]
 PID = [1.05, 0.03, 0.01]    # [1]
 
 
-INITIAL_PATTERN = [[0.74, 0.00, 0.00, 0.99, 0.77, 0.1, False, False, False, False, 10.0],
-                   [0.74, 0.00, 0.00, 0.99, 0.77, 0.1, False, True, True, False, 5.0]]
+INITIAL_PATTERN = [[0.74, 0.00, 0.00, 0.9, 0.52, 0.1, False, False, False, False, 10.0],
+                   [0.74, 0.00, 0.00, 0.9, 0.52, 0.1, False, True, True, False, 5.0]]
 
 FINAL_PATTERN = [[0.74, 0.0, 0.0, 0.99, 0.65, 0.25, False, True, True, False, 5.0],
                    [0.00, 0.00, 0.00, 0.00, 0.0, 0.0, False, False, False, False, 1]]
@@ -73,13 +73,44 @@ FINAL_PATTERN = [[0.74, 0.0, 0.0, 0.99, 0.65, 0.25, False, True, True, False, 5.
 #           [0.77, 0.0, 0.0, 0.93, 0.70, 0.25, False, True, True, False, 1.0]]
 
 
+
+PATTERN30_00 = [[0.25, 0.66, 0.99, 0.0, 0.25, 0.86, False, True, True, False, 3.0],
+                [0.0, 0.66, 0.99, 0.0, 0.25, 0.86, True, True, True, True, 1.0],
+                [0.0, 0.66, 0.99, 0.0, 0.25, 0.86, True, False, False, True, 0.5],
+                [0.74, 0.25, 0.0, 0.85, 0.65, 0.25, True, False, False, True, 3.0],
+                [0.74, 0.0, 0.0, 0.85, 0.65, 0.25, True, True, True, True, 1.0],
+                [0.74, 0.0, 0.0, 0.85, 0.65, 0.25, False, True, True, False, 0.5]]
+
+
+PATTERN30_20 = [[0.25, 0.66, 0.99, 0.0, 0.25, 0.80, False, True, True, False, 3.0],
+                [0.0, 0.66, 0.99, 0.0, 0.25, 0.80, True, True, True, True, 1.0],
+                [0.0, 0.66, 0.99, 0.0, 0.25, 0.80, True, False, False, True, 0.5],
+                [0.74, 0.25, 0.0, 0.85, 0.65, 0.25, True, False, False, True, 3.0],
+                [0.74, 0.0, 0.0, 0.85, 0.65, 0.25, True, True, True, True, 1.0],
+                [0.74, 0.0, 0.0, 0.85, 0.65, 0.25, False, True, True, False, 0.5]]
+
 # v3.0
-PATTERN = [[0.25, 0.66, 0.99, 0.0, 0.25, 0.86, False, True, True, False, 3.0],
-           [0.0, 0.66, 0.99, 0.0, 0.25, 0.86, True, True, True, True, 1.0],
-           [0.0, 0.66, 0.99, 0.0, 0.25, 0.86, True, False, False, True, 0.5],
-           [0.74, 0.25, 0.0, 0.99, 0.65, 0.25, True, False, False, True, 3.0],
-           [0.74, 0.0, 0.0, 0.99, 0.65, 0.25, True, True, True, True, 1.0],
-           [0.74, 0.0, 0.0, 0.99, 0.65, 0.25, False, True, True, False, 0.5]]
+PATTERN30_50 = [[0.2, 0.62, 0.99, 0.0, 0.2, 0.71, False, True, True, False, 3.0],
+                [0.0, 0.62, 0.99, 0.0, 0.2, 0.71, True, True, True, True, 1.0],
+                [0.0, 0.62, 0.99, 0.0, 0.2, 0.71, True, False, False, True, 0.5],
+                [0.63, 0.25, 0.0, 0.9, 0.52, 0.2, True, False, False, True, 3.0],
+                [0.63, 0.0, 0.0, 0.9, 0.52, 0.2, True, True, True, True, 1.0],
+                [0.63, 0.0, 0.0, 0.9, 0.52, 0.2, False, True, True, False, 0.5]]
+MAX_PRESSURE50_50 = 0.95    # [bar] v2.4
+
+
+
+
+
+# v3.0
+PATTERN =      [[0.25, 0.66, 0.99, 0.0, 0.25, 0.86, False, True, True, False, 3.0],
+                [0.0, 0.66, 0.99, 0.0, 0.25, 0.86, True, True, True, True, 1.0],
+                [0.0, 0.66, 0.99, 0.0, 0.25, 0.86, True, False, False, True, 0.5],
+                [0.74, 0.25, 0.0, 0.85, 0.65, 0.25, True, False, False, True, 3.0],
+                [0.74, 0.0, 0.0, 0.85, 0.65, 0.25, True, True, True, True, 1.0],
+                [0.74, 0.0, 0.0, 0.85, 0.65, 0.25, False, True, True, False, 0.5]]
+
+
 
 
 def init_hardware():

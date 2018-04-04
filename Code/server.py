@@ -103,13 +103,8 @@ MAX_PRESSURE50_50 = 0.95    # [bar] v2.4
 
 
 # v3.0
-PATTERN =      [[0.25, 0.66, 0.99, 0.0, 0.25, 0.86, False, True, True, False, 3.0],
-                [0.0, 0.66, 0.99, 0.0, 0.25, 0.86, True, True, True, True, 1.0],
-                [0.0, 0.66, 0.99, 0.0, 0.25, 0.86, True, False, False, True, 0.5],
-                [0.74, 0.25, 0.0, 0.85, 0.65, 0.25, True, False, False, True, 3.0],
-                [0.74, 0.0, 0.0, 0.85, 0.65, 0.25, True, True, True, True, 1.0],
-                [0.74, 0.0, 0.0, 0.85, 0.65, 0.25, False, True, True, False, 0.5]]
-
+PATTERN = PATTERN30_50
+MAX_PRESSURE = MAX_PRESSURE50_50
 
 
 

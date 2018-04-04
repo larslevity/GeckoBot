@@ -24,8 +24,8 @@ TSAMPLING = 0.001     # [sec]
 PID = [1.05, 0.03, 0.01]    # [1]
 
 
-INITIAL_PATTERN = [[0.74, 0.00, 0.00, 0.99, 0.77, 0.22, False, False, False, False, 3.0],
-                   [0.74, 0.00, 0.00, 0.99, 0.77, 0.22, False, True, True, False, 1.0]]
+INITIAL_PATTERN = [[0.74, 0.00, 0.00, 0.99, 0.77, 0.1, False, False, False, False, 7.0],
+                   [0.74, 0.00, 0.00, 0.99, 0.77, 0.1, False, True, True, False, 1.0]]
 
 ## v2.2
 #PATTERN = [[0.0, 0.8, 0.9, 0.0, 0.25, 0.8, False, True, True, False, 5.0],
@@ -359,13 +359,15 @@ def reference_tracking(cargo):
             # CONFIRM pattern
             # initial step
             idx = 0
-            while cargo.wcomm.confirm and cargo.state == 'REFERENCE_TRACKING':
+            while (cargo.wcomm.confirm and cargo.state == 'REFERENCE_TRACKING'
+                and idx < 3):
                 if idx == 0:
                     cargo.simpleWalkingCommander.process_pattern(INITIAL_PATTERN)
                 pattern = cargo.wcomm.pattern
                 cargo.simpleWalkingCommander.process_pattern(pattern)
                 print('wcomm goes to round', idx)
                 idx += 1
+            cargo.wcomm.confirm = False
             #
             time.sleep(cargo.sampling_time)
     except:

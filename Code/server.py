@@ -12,9 +12,13 @@ from Src.Hardware import sensors as sensors
 from Src.Hardware import actuators as actuators
 from Src.Management import state_machine
 from Src.Communication import communication_thread as comm_t
+from Src.Communication import webserver
+
 from Src.Controller import walk_commander
 from Src.Controller import controller as ctrlib
 
+
+WEBSERVER = True
 
 # MAX_PRESSURE = 0.85    # [bar] v2.2
 # MAX_PRESSURE = 0.93    # [bar] v2.3
@@ -23,12 +27,6 @@ MAX_CTROUT = 0.50     # [10V]
 TSAMPLING = 0.001     # [sec]
 PID = [1.05, 0.03, 0.01]    # [1]
 
-
-INITIAL_PATTERN = [[0.74, 0.00, 0.00, 0.9, 0.57, 0.1, False, False, False, False, 10.0],
-                   [0.74, 0.00, 0.00, 0.9, 0.57, 0.1, False, True, True, False, 5.0]]
-
-FINAL_PATTERN = [[0.74, 0.0, 0.0, 0.9, 0.57, 0.25, False, True, True, False, 5.0],
-                   [0.00, 0.00, 0.00, 0.00, 0.0, 0.0, False, False, False, False, 1]]
 
 
 
@@ -99,13 +97,15 @@ PATTERN30_50 = [[0.2, 0.62, 0.99, 0.0, 0.2, 0.71, False, True, True, False, 3.0]
 MAX_PRESSURE50_50 = 0.95    # [bar] v2.4
 
 
+PATTERN = PATTERN30_00
+MAX_PRESSURE = MAX_PRESSURE
 
 
+INITIAL_PATTERN = [PATTERN[-1][:6] + [False, False, False, False, 10.0],
+                   PATTERN[-1][:6] + [False, True, True, False, 5.0]]
 
-# v3.0
-PATTERN = PATTERN30_50
-MAX_PRESSURE = MAX_PRESSURE50_50
-
+FINAL_PATTERN = [PATTERN[-1][:6] + [False, True, True, False, 5.0],
+                 [0.]*6 + [False]*4 + [.5]]
 
 
 def init_hardware():
@@ -231,9 +231,14 @@ def main():
     automat.add_state('QUIT', None, end_state=True)
     automat.set_start(start_state)
 
-    print('Starting Communication Thread ...')
-    communication_thread = comm_t.CommunicationThread(cargo)
-    communication_thread.start()
+    if WEBSERVER:
+        print('Starting WebserverThread ...')
+        wserve = webserver.WebserverThread(cargo)
+        wserve.start()
+    else:
+        print('Starting Communication Thread ...')
+        communication_thread = comm_t.CommunicationThread(cargo)
+        communication_thread.start()
 
     try:
         print('Run the StateMachine ...')
@@ -294,7 +299,7 @@ def user_control(cargo):
                 pwm = cargo.pwm_task[valve.name]
                 valve.set_pwm(pwm)
                 cargo.rec_r['r{}'.format(valve.name)] = None
-                cargo.rec_u['u{}'.format(valve.name)] = pwm/100.
+                cargo.rec_u['u{}'.format(valve.name)] = pwm
 
             for dvalve in cargo.dvalve:
                 state = cargo.dvalve_task[dvalve.name]

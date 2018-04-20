@@ -351,58 +351,26 @@ def reference_tracking(cargo):
     print("Arriving in REFERENCE_TRACKING State: ")
     cargo.actual_state = 'REFERENCE_TRACKING'
 
-#    for valve in cargo.valve:
-#        cargo.ref_task[valve.name] = 0.0
-#    wcomm = walk_commander.Walking_Commander(cargo)
-#
-#    try:
-#        wcomm.run_threads()
-#        while cargo.state == 'REFERENCE_TRACKING':
-#            # CONFIRM pattern
-#            # initial step
-#            idx = 0
-#            while cargo.wcomm.confirm and cargo.state == 'REFERENCE_TRACKING':
-#                if idx == 0:
-#                    wcomm.process_pattern(INITIAL_PATTERN)
-#                pattern = cargo.wcomm.pattern
-#                wcomm.process_pattern(pattern)
-#                print('wcomm goes to round', idx)
-#                idx += 1
-#            #
-#            time.sleep(cargo.sampling_time)
-#    except:
-#        new_state = 'ERROR'
-#        cargo.errmsg = sys.exc_info()
-#    else:
-#        new_state = cargo.state
-#    finally:
-#        wcomm.clean()
-#        del wcomm
-#    return (new_state, cargo)
-
-    # TEST
-
     for valve in cargo.valve:
         cargo.ref_task[valve.name] = 0.0
 
     try:
-        while cargo.state == 'REFERENCE_TRACKING':
-            # CONFIRM pattern
-            # initial step
-            idx = 0
-            while (cargo.wcomm.confirm and cargo.state == 'REFERENCE_TRACKING'
-                and idx < 3):
-                if idx == 0:
-                    cargo.simpleWalkingCommander.process_pattern(INITIAL_PATTERN)
-                pattern = cargo.wcomm.pattern
-                cargo.simpleWalkingCommander.process_pattern(pattern)
-                print('wcomm goes to round', idx)
-                idx += 1
-            cargo.wcomm.confirm = False
-            if idx == 3:
-                cargo.simpleWalkingCommander.process_pattern(FINAL_PATTERN)
-            #
-            time.sleep(cargo.sampling_time)
+        idx = 0
+        while (cargo.wcomm.confirm and
+               cargo.state == 'REFERENCE_TRACKING' and
+               idx < cargo.wcomm.idx_threshold):
+            cargo.wcomm.active = True
+            if idx == 0:
+                cargo.simpleWalkingCommander.process_pattern(INITIAL_PATTERN)
+            cargo.simpleWalkingCommander.process_pattern(cargo.wcomm.pattern)
+            print('wcomm goes to round', idx)
+            idx += 1
+        cargo.wcomm.confirm = False
+        if cargo.wcomm.active:
+            cargo.simpleWalkingCommander.process_pattern(FINAL_PATTERN)
+        cargo.wcomm.active = False
+        #
+        time.sleep(cargo.sampling_time)
     except:
         new_state = 'ERROR'
         cargo.errmsg = sys.exc_info()
@@ -476,14 +444,16 @@ class Cargo(object):
             self.rec_r['r{}'.format(valve.name)] = None
 
         self.wcomm = WCommCargo()
-        
-        ###### test
-        self.simpleWalkingCommander = walk_commander.SimpleWalkingCommander(self)
+        self.simpleWalkingCommander = \
+            walk_commander.SimpleWalkingCommander(self)
+
 
 class WCommCargo(object):
     def __init__(self):
         self.pattern = PATTERN
         self.confirm = False
+        self.active = False
+        self.idx_threshold = 3
 
 
 if __name__ == '__main__':

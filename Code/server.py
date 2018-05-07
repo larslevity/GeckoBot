@@ -359,16 +359,16 @@ def reference_tracking(cargo):
         while (cargo.wcomm.confirm and
                cargo.state == 'REFERENCE_TRACKING' and
                idx < cargo.wcomm.idx_threshold):
-            cargo.wcomm.active = True
+            cargo.wcomm.is_active = True
             if idx == 0:
                 cargo.simpleWalkingCommander.process_pattern(INITIAL_PATTERN)
             cargo.simpleWalkingCommander.process_pattern(cargo.wcomm.pattern)
             print('wcomm goes to round', idx)
             idx += 1
         cargo.wcomm.confirm = False
-        if cargo.wcomm.active:
+        if cargo.wcomm.is_active:
             cargo.simpleWalkingCommander.process_pattern(FINAL_PATTERN)
-        cargo.wcomm.active = False
+        cargo.wcomm.is_active = False
         #
         time.sleep(cargo.sampling_time)
     except:
@@ -452,8 +452,9 @@ class WCommCargo(object):
     def __init__(self):
         self.pattern = PATTERN
         self.confirm = False
-        self.active = False
+        self.is_active = False
         self.idx_threshold = 3
+        self.infmode = False
 
 
 if __name__ == '__main__':

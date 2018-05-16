@@ -17,21 +17,24 @@ import Adafruit_BBIO.ADC as ADC
 
 from termcolor import colored
 
-PWMREFMODE = "P9_10"
-PRESSUREREFMODE = "P9_11"
-PATTERNREFMODE = "P9_12"
-WALKINGCONFIRM = "P9_13"
-INFINITYMODE = "P9_14"
+PWMREFMODE = "P9_23"
+PRESSUREREFMODE = "P9_25"
+PATTERNREFMODE = "P9_27"
 
-PWMLED = ""
-PRESSURELED = ""
-PATTERNLED = ""
-WALKINGCONFIRMLED = ""
-INFINITYLED = ""
+WALKINGCONFIRM = "P9_24"
+INFINITYMODE = "P9_26"
 
-DISCRETEPRESSUREREF = ["P9_15", "P9_16", "P9_17", "P9_18"]
-CONTINUOUSPRESSUREREF = ["P9_15", "P9_16", "P9_17", "P9_18",
-                         "P9_15", "P9_16", "P9_17", "P9_18"]
+PWMLED = "P8_14"
+PRESSURELED = "P8_16"
+PATTERNLED = "P8_18"
+
+WALKINGCONFIRMLED = "P8_15"
+INFINITYLED = "P8_17"
+
+DISCRETEPRESSUREREF = ["P9_11", "P9_13", "P9_15", "P9_17"]
+
+CONTINUOUSPRESSUREREF = ["P9_33", "P9_35", "P9_36", "P9_37",
+                         "P9_38", "P9_39", "P9_40"]
 
 
 def print(*args, **kwargs):
@@ -61,8 +64,8 @@ class HUIThread(threading.Thread):
 
         for pin in DISCRETEPRESSUREREF:
             GPIO.setup(pin, GPIO.IN)
-        for pin in CONTINUOUSPRESSUREREF:
-            GPIO.setup(pin, GPIO.IN)
+#        for pin in CONTINUOUSPRESSUREREF:
+#            GPIO.setup(pin, GPIO.IN)
 
         GPIO.add_event_detect(PWMREFMODE, GPIO.RISING)
         GPIO.add_event_detect(PRESSUREREFMODE, GPIO.RISING)

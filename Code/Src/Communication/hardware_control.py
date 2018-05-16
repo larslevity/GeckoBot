@@ -91,6 +91,31 @@ class HUIThread(threading.Thread):
 
         print('HUI Thread is done ...')
 
+    def get_tasks(self):
+        state = self.check_state()
+        if state == 'USER_CONTROL':
+            self.process_pwm_ref()
+        elif state == 'USER_REFERENCE':
+            self.process_pressure_ref()
+        elif state == 'REFERENCE_TRACKING':
+            self.process_pattern_ref()
+        time.sleep(self.cargo.sampling_time)
+
+    def process_pressure_ref(self):
+        self.change_state('USER_REFERENCE')
+        self.set_ref()
+        self.set_dvalve()
+
+    def process_pwm_ref(self):
+        self.change_state('USER_CONTROL')
+        self.set_valve()
+        self.set_dvalve()
+
+    def process_pattern_ref(self):
+        self.change_state('REFERENCE_TRACKING')
+        self.set_walking()
+        self.set_infmode()
+
     def check_state(self):
         new_state = None
         if GPIO.event_detected(PWMREFMODE):
@@ -110,9 +135,6 @@ class HUIThread(threading.Thread):
         for pin, state in [(WALKINGCONFIRMLED, self.cargo.wcomm.is_active),
                            (INFINITYLED, self.cargo.wcomm.infmode)]:
             GPIO.output(pin, GPIO.HIGH if state else GPIO.LOW)
-
-    def get_tasks(self):
-        pass
 
     def change_state(self, state):
         self.cargo.state = state

@@ -24,11 +24,11 @@ PATTERNREFMODE = "P9_27"
 WALKINGCONFIRM = "P9_24"
 INFINITYMODE = "P9_26"
 
-PWMLED = "P8_16"
-PRESSURELED = "P8_15"
+PWMLED = "P8_18"  #"P8_16"
+PRESSURELED = "P8_16"  # "P8_15"
 PATTERNLED = "P8_17"
-WALKINGCONFIRMLED = "P8_18"
-INFINITYLED = "P8_14"
+WALKINGCONFIRMLED = "P8_14"  # "P8_18"
+INFINITYLED = "P8_15"
 
 DISCRETEPRESSUREREF = ["P9_11", "P9_13", "P9_15", "P9_17"]
 
@@ -78,9 +78,9 @@ class HUIThread(threading.Thread):
         for i in range(5):    
             for led in leds:
                 GPIO.output(led, GPIO.HIGH)
-                time.sleep(.3)
+                time.sleep(.1)
                 GPIO.output(led, GPIO.LOW)
-        time.sleep(.3)
+            time.sleep(.1)
 
     def run(self):
         """ run HUI """

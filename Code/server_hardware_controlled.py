@@ -242,6 +242,9 @@ def main():
         print('Run the StateMachine ...')
         automat.run(cargo)
     # pylint: disable = bare-except
+    except KeyboardInterrupt:
+        print('keyboard interrupt detected...   killing UI')
+        communication_thread.kill()
     except:
         print('\n----------caught exception! in Main Thread----------------\n')
         print("Unexpected error:\n", sys.exc_info()[0])
@@ -267,15 +270,10 @@ def pause_state(cargo):
         cargo.rec_r['r{}'.format(valve.name)] = None
 
     while cargo.state == 'PAUSE':
-        try:
-            for sensor in cargo.sens:
-                cargo.rec[sensor.name] = sensor.get_value()
-            time.sleep(cargo.sampling_time)
-        except:
-            new_state = 'ERROR'
-            cargo.errmsg = sys.exc_info()
-        else:
-            new_state = cargo.state
+        for sensor in cargo.sens:
+            cargo.rec[sensor.name] = sensor.get_value()
+        time.sleep(cargo.sampling_time)
+        new_state = cargo.state
     return (new_state, cargo)
 
 

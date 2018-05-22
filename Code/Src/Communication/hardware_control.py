@@ -168,3 +168,6 @@ class HUIThread(threading.Thread):
         if GPIO.event_detected(INFINITYMODE):
             state = self.cargo.wcomm.infmode
             self.cargo.wcomm.infmode = not state
+
+    def kill(self):
+        self.cargo.state = 'EXIT'

@@ -18,8 +18,8 @@ import Adafruit_BBIO.ADC as ADC
 from termcolor import colored
 
 PWMREFMODE = "P9_23"
-PRESSUREREFMODE = "P9_25"
-PATTERNREFMODE = "P9_27"
+PRESSUREREFMODE = "P9_27"
+PATTERNREFMODE = 'P9_30'  # "P9_25"  # 25 doesnt work.
 
 WALKINGCONFIRM = "P9_24"
 INFINITYMODE = "P9_26"

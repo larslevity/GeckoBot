@@ -27,7 +27,6 @@ INFINITYMODE = "P9_26"
 PWMLED = "P8_14"
 PRESSURELED = "P8_16"
 PATTERNLED = "P8_18"
-
 WALKINGCONFIRMLED = "P8_15"
 INFINITYLED = "P8_17"
 
@@ -73,6 +72,15 @@ class HUIThread(threading.Thread):
         GPIO.add_event_detect(WALKINGCONFIRM, GPIO.RISING)
         GPIO.add_event_detect(INFINITYMODE, GPIO.RISING)
 
+        leds = [PWMLED, PRESSURELED, PATTERNLED,
+                WALKINGCONFIRMLED, INFINITYLED]
+        
+        for i in range(5):    
+            for led in leds:
+                GPIO.output(led, GPIO.HIGH)
+                time.sleep(.3)
+                GPIO.output(led, GPIO.LOW)
+
     def run(self):
         """ run HUI """
         print('Running HUI Thread ...')
@@ -81,6 +89,7 @@ class HUIThread(threading.Thread):
             while self.cargo.state != 'EXIT':
                 try:
                     self.get_tasks()
+                    time.sleep(self.cargo.sampling_time)
                 except:
                     print('\n--caught exception! in HUI Thread--\n')
                     print("Unexpected error:\n", sys.exc_info()[0])
@@ -102,7 +111,6 @@ class HUIThread(threading.Thread):
             self.process_pressure_ref()
         elif state == 'REFERENCE_TRACKING':
             self.process_pattern_ref()
-        time.sleep(self.cargo.sampling_time)
 
     def process_pressure_ref(self):
         self.change_state('USER_REFERENCE')

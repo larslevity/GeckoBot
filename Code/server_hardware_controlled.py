@@ -235,6 +235,7 @@ def main():
 
     print('Starting Communication Thread ...')
     communication_thread = HUI.HUIThread(cargo)
+    communication_thread.daemon = True
     communication_thread.start()
 
     try:

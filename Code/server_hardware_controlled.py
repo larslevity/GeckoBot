@@ -285,29 +285,25 @@ def user_control(cargo):
     cargo.actual_state = 'USER_CONTROL'
 
     while cargo.state == 'USER_CONTROL':
-        try:
-            # read
-            for sensor in cargo.sens:
-                cargo.rec[sensor.name] = sensor.get_value()
+        # read
+        for sensor in cargo.sens:
+            cargo.rec[sensor.name] = sensor.get_value()
 
-            # write
-            for valve in cargo.valve:
-                pwm = cargo.pwm_task[valve.name]
-                valve.set_pwm(pwm)
-                cargo.rec_r['r{}'.format(valve.name)] = None
-                cargo.rec_u['u{}'.format(valve.name)] = pwm/100.
+        # write
+        for valve in cargo.valve:
+            pwm = cargo.pwm_task[valve.name]
+            valve.set_pwm(pwm)
+            cargo.rec_r['r{}'.format(valve.name)] = None
+            cargo.rec_u['u{}'.format(valve.name)] = pwm/100.
 
-            for dvalve in cargo.dvalve:
-                state = cargo.dvalve_task[dvalve.name]
-                dvalve.set_state(state)
+        for dvalve in cargo.dvalve:
+            state = cargo.dvalve_task[dvalve.name]
+            dvalve.set_state(state)
 
-            # meta
-            time.sleep(cargo.sampling_time)
-        except:
-            new_state = 'ERROR'
-            cargo.errmsg = sys.exc_info()
-        else:
-            new_state = cargo.state
+        # meta
+        time.sleep(cargo.sampling_time)
+
+        new_state = cargo.state
     return (new_state, cargo)
 
 
@@ -319,31 +315,26 @@ def user_reference(cargo):
     cargo.actual_state = 'USER_REFERENCE'
 
     while cargo.state == 'USER_REFERENCE':
-        try:
-            # read
-            for sensor in cargo.sens:
-                cargo.rec[sensor.name] = sensor.get_value()
+        # read
+        for sensor in cargo.sens:
+            cargo.rec[sensor.name] = sensor.get_value()
 
-            # write
-            for valve, controller in zip(cargo.valve, cargo.controller):
-                ref = cargo.ref_task[valve.name]
-                sys_out = cargo.rec[valve.name]
-                ctr_out = controller.output(ref, sys_out)
-                valve.set_pwm(ctrlib.sys_input(ctr_out))
-                cargo.rec_r['r{}'.format(valve.name)] = ref
-                cargo.rec_u['u{}'.format(valve.name)] = ctr_out
+        # write
+        for valve, controller in zip(cargo.valve, cargo.controller):
+            ref = cargo.ref_task[valve.name]
+            sys_out = cargo.rec[valve.name]
+            ctr_out = controller.output(ref, sys_out)
+            valve.set_pwm(ctrlib.sys_input(ctr_out))
+            cargo.rec_r['r{}'.format(valve.name)] = ref
+            cargo.rec_u['u{}'.format(valve.name)] = ctr_out
 
-            for dvalve in cargo.dvalve:
-                state = cargo.dvalve_task[dvalve.name]
-                dvalve.set_state(state)
+        for dvalve in cargo.dvalve:
+            state = cargo.dvalve_task[dvalve.name]
+            dvalve.set_state(state)
 
-            # meta
-            time.sleep(cargo.sampling_time)
-        except:
-            new_state = 'ERROR'
-            cargo.errmsg = sys.exc_info()
-        else:
-            new_state = cargo.state
+        # meta
+        time.sleep(cargo.sampling_time)
+        new_state = cargo.state
     return (new_state, cargo)
 
 
@@ -355,37 +346,34 @@ def reference_tracking(cargo):
     for valve in cargo.valve:
         cargo.ref_task[valve.name] = 0.0
 
-    try:
-        idx = 0
-        while (cargo.wcomm.confirm and
-               cargo.state == 'REFERENCE_TRACKING' and
-               idx < cargo.wcomm.idx_threshold):
-            cargo.wcomm.is_active = True
-            if idx == 0:
-                cargo.simpleWalkingCommander.process_pattern(INITIAL_PATTERN)
-            cargo.simpleWalkingCommander.process_pattern(cargo.wcomm.pattern)
-            print('wcomm goes to round', idx)
-            idx += 1
-        cargo.wcomm.confirm = False
-        if cargo.wcomm.is_active:
-            cargo.simpleWalkingCommander.process_pattern(FINAL_PATTERN)
-        cargo.wcomm.is_active = False
-        #
-        time.sleep(cargo.sampling_time)
-    except:
-        new_state = 'ERROR'
-        cargo.errmsg = sys.exc_info()
-    else:
-        new_state = cargo.state
-    finally:
-        # write
-        for valve, controller in zip(cargo.valve, cargo.controller):
-            valve.set_pwm(1.)
-            cargo.rec_r['r{}'.format(valve.name)] = None
-            cargo.rec_u['u{}'.format(valve.name)] = 1.
 
-        for dvalve in cargo.dvalve:
-            dvalve.set_state(False)
+    idx = 0
+    while (cargo.wcomm.confirm and
+           cargo.state == 'REFERENCE_TRACKING' and
+           idx < cargo.wcomm.idx_threshold):
+        cargo.wcomm.is_active = True
+        if idx == 0:
+            cargo.simpleWalkingCommander.process_pattern(INITIAL_PATTERN)
+        cargo.simpleWalkingCommander.process_pattern(cargo.wcomm.pattern)
+        print('wcomm goes to round', idx)
+        idx += 1
+    cargo.wcomm.confirm = False
+    if cargo.wcomm.is_active:
+        cargo.simpleWalkingCommander.process_pattern(FINAL_PATTERN)
+    cargo.wcomm.is_active = False
+    #
+    time.sleep(cargo.sampling_time)
+
+    new_state = cargo.state
+
+    # write
+    for valve, controller in zip(cargo.valve, cargo.controller):
+        valve.set_pwm(1.)
+        cargo.rec_r['r{}'.format(valve.name)] = None
+        cargo.rec_u['u{}'.format(valve.name)] = 1.
+
+    for dvalve in cargo.dvalve:
+        dvalve.set_state(False)
     return (new_state, cargo)
 
 

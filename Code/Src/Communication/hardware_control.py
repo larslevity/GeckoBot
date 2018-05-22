@@ -92,7 +92,8 @@ class HUIThread(threading.Thread):
         try:
             while self.cargo.state != 'EXIT':
                 try:
-                    self.get_tasks()
+                    # self.get_tasks()
+                    self.test_the_thing()
                     time.sleep(self.cargo.sampling_time)
                 except:
                     print('\n--caught exception! in HUI Thread--\n')
@@ -107,8 +108,13 @@ class HUIThread(threading.Thread):
 
         print('HUI Thread is done ...')
 
+    def test_the_thing(self):
+        state, change = self.check_state()
+        if change:
+            print(state)
+
     def get_tasks(self):
-        state = self.check_state()
+        state, _ = self.check_state()
         if state == 'USER_CONTROL':
             self.process_pwm_ref()
         elif state == 'USER_REFERENCE':
@@ -139,7 +145,8 @@ class HUIThread(threading.Thread):
             new_state = 'USER_REFERENCE'
         if GPIO.event_detected(PATTERNREFMODE):
             new_state = 'REFERENCE_TRACKING'
-        return new_state if new_state else self.cargo.state
+        change = True if new_state else False
+        return (new_state if new_state else self.cargo.state, change)
 
     def set_leds(self):
         actual_state = self.cargo.actual_state

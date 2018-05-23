@@ -113,6 +113,12 @@ class HUIThread(threading.Thread):
         if change:
             print(state)
 
+        for idx, pin in enumerate(DISCRETEPRESSUREREF):
+            print('DValve Ref', idx, ': ', True if GPIO.input(pin) else False)
+        print('\n')
+        time.sleep(1)
+        
+
     def get_tasks(self):
         state, _ = self.check_state()
         if state == 'USER_CONTROL':

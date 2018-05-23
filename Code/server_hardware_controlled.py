@@ -251,6 +251,9 @@ def main():
         print(sys.exc_info()[1])
         traceback.print_tb(sys.exc_info()[2])
 
+        print('\n ----------------------- killing UI --')
+        communication_thread.kill()
+
     communication_thread.join()
     print('All is done ...')
     sys.exit(0)

@@ -98,8 +98,8 @@ class HUIThread(threading.Thread):
         try:
             while self.cargo.state != 'EXIT':
                 try:
-                    # self.get_tasks()
-                    self.test_the_thing()
+                    self.get_tasks()
+#                    self.test_the_thing()
                     time.sleep(self.cargo.sampling_time)
                 except:
                     print('\n--caught exception! in HUI Thread--\n')

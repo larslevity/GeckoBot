@@ -132,27 +132,39 @@ def init_hardware():
             {'name': '2', 'id': 2},
             {'name': '3', 'id': 3},
             {'name': '4', 'id': 4},
-            {'name': '5', 'id': 5}]
+            {'name': '5', 'id': 5},
+            {'name': '6', 'id': 6},
+            {'name': '7', 'id': 7}]
     for s in sets:
         sens.append(sensors.DPressureSens(name=s['name'], mplx_id=s['id'],
                                           maxpressure=MAX_PRESSURE))
 
     print('Initialize Valves ...')
     valve = []
-    sets = [{'name': '0', 'pin': 'P8_19'},      # Upper Left Leg
-            {'name': '1', 'pin': 'P8_13'},     # Upper Right Leg
-            {'name': '2', 'pin': 'P9_22'},     # Left Belly
+#    sets = [{'name': '0', 'pin': 'P8_19'}, --     # Upper Left Leg
+#            {'name': '1', 'pin': 'P8_13'}, --    # Upper Right Leg
+#            {'name': '2', 'pin': 'P9_22'}, --    # Left Belly
+#            {'name': '3', 'pin': 'P9_21'}, --    # Right Belly
+#            {'name': '4', 'pin': 'P9_16'}, --     # Lower Left Leg
+#            {'name': '5', 'pin': 'P9_14'}, --
+#            {'name': '6', 'pin': 'P9_28'},
+#            {'name': '7', 'pin': 'P9_42'}]     # Lower Right Leg
+    sets = [{'name': '0', 'pin': 'P9_16'},     # Upper Left Leg
+            {'name': '1', 'pin': 'P9_22'},     # Upper Right Leg
+            {'name': '2', 'pin': 'P9_14'},     # Left Belly
             {'name': '3', 'pin': 'P9_21'},     # Right Belly
-            {'name': '4', 'pin': 'P9_16'},     # Lower Left Leg
-            {'name': '5', 'pin': 'P9_14'}]     # Lower Right Leg
+            {'name': '4', 'pin': 'P8_19'},     # Lower Left Leg
+            {'name': '5', 'pin': 'P8_13'},
+            {'name': '6', 'pin': 'P9_28'},
+            {'name': '7', 'pin': 'P9_42'}]     # Lower Right Leg
     for elem in sets:
         valve.append(actuators.Valve(name=elem['name'], pwm_pin=elem['pin']))
 
     dvalve = []
-    dsets = [{'name': '0', 'pin': 'P8_7'},      # Upper Left Leg
-             {'name': '1', 'pin': 'P8_8'},     # Upper Right Leg
-             {'name': '2', 'pin': 'P8_9'},     # Lower Left Leg
-             {'name': '3', 'pin': 'P8_10'}]     # Lower Right Leg]
+    dsets = [{'name': '0', 'pin': 'P8_10'},      # Upper Left Leg
+             {'name': '1', 'pin': 'P8_7'},     # Upper Right Leg
+             {'name': '2', 'pin': 'P8_8'},     # Lower Left Leg
+             {'name': '3', 'pin': 'P8_9'}]     # Lower Right Leg]
     for elem in dsets:
         dvalve.append(actuators.DiscreteValve(
             name=elem['name'], pin=elem['pin']))
@@ -423,7 +435,12 @@ class Cargo(object):
         self.sampling_time = TSAMPLING
         self.pwm_task = {}
         self.dvalve_task = {}
+        for dv in dvalve:
+            self.dvalve_task[dv.name] = 0.
         self.ref_task = {}
+        for v in valve:
+            self.ref_task[v.name] = 0.
+            self.pwm_task[v.name] = 0.
         self.rec_u = {}
         self.rec_r = {}
         self.rec = {}

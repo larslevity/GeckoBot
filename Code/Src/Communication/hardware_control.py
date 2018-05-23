@@ -78,18 +78,15 @@ class HUIThread(threading.Thread):
         GPIO.add_event_detect(WALKINGCONFIRM, GPIO.RISING)
         GPIO.add_event_detect(INFINITYMODE, GPIO.RISING)
 
-        leds = [PWMLED, PRESSURELED, PATTERNLED,
+        self.leds = [PWMLED, PRESSURELED, PATTERNLED,
                 WALKINGCONFIRMLED, INFINITYLED]
         
         for i in range(5):    
-            for led in leds:
+            for led in self.leds:
                 GPIO.output(led, GPIO.HIGH)
-                time.sleep(.1)
+                time.sleep(.05)
                 GPIO.output(led, GPIO.LOW)
-            time.sleep(.1)
-        GPIO.output(PWMLED, GPIO.HIGH)
-        time.sleep(1)
-        GPIO.output(PWMLED, GPIO.LOW)
+            time.sleep(.05)
 
     def run(self):
         """ run HUI """
@@ -100,7 +97,8 @@ class HUIThread(threading.Thread):
                 try:
                     self.get_tasks()
 #                    self.test_the_thing()
-                    time.sleep(self.cargo.sampling_time)
+#                    time.sleep(self.cargo.sampling_time)
+                    time.sleep(.5)
                 except:
                     print('\n--caught exception! in HUI Thread--\n')
                     print("Unexpected error:\n", sys.exc_info()[0])
@@ -141,6 +139,7 @@ class HUIThread(threading.Thread):
 
     def get_tasks(self):
         state, _ = self.check_state()
+        self.set_leds()
         if state == 'USER_CONTROL':
             self.process_pwm_ref()
         elif state == 'USER_REFERENCE':
@@ -167,12 +166,29 @@ class HUIThread(threading.Thread):
         new_state = None
         if GPIO.event_detected(PWMREFMODE):
             new_state = 'USER_CONTROL'
-        if GPIO.event_detected(PRESSUREREFMODE):
+        elif GPIO.event_detected(PRESSUREREFMODE):
             new_state = 'USER_REFERENCE'
-        if GPIO.event_detected(PATTERNREFMODE):
+        elif GPIO.event_detected(PATTERNREFMODE):
             new_state = 'REFERENCE_TRACKING'
-        change = True if new_state else False
-        return (new_state if new_state else self.cargo.state, change)
+
+        change = False
+        if new_state:
+            potis = []
+            for idx, pin in enumerate(CONTINUOUSPRESSUREREF):
+                val = ADC.read(pin)
+                val = ADC.read(pin)
+                potis.append(round(val*100))
+            if sum(potis) == 0:
+                change = True
+            else:
+                for i in range(3):    
+                    for led in self.leds:
+                        GPIO.output(led, GPIO.HIGH)
+                    time.sleep(.05)
+                    for led in self.leds:
+                        GPIO.output(led, GPIO.LOW)
+                    time.sleep(.05)
+        return (new_state if change else self.cargo.state, change)
 
     def set_leds(self):
         actual_state = self.cargo.actual_state
@@ -192,12 +208,12 @@ class HUIThread(threading.Thread):
     def set_valve(self):
         for idx, pin in enumerate(CONTINUOUSPRESSUREREF):
             self.cargo.pwm_task[str(idx)] = ADC.read(pin)
-            self.cargo.pwm_task[str(idx)] = ADC.read(pin)  # bug-> read twice
+            self.cargo.pwm_task[str(idx)] = round(ADC.read(pin)*100)  # bug-> read twice
 
     def set_ref(self):
         for idx, pin in enumerate(CONTINUOUSPRESSUREREF):
             self.cargo.ref_task[str(idx)] = ADC.read(pin)
-            self.cargo.ref_task[str(idx)] = ADC.read(pin)
+            self.cargo.ref_task[str(idx)] = round(ADC.read(pin)*100)
 
     def set_dvalve(self):
         for idx, pin in enumerate(DISCRETEPRESSUREREF):

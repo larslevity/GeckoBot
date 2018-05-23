@@ -118,6 +118,10 @@ class HUIThread(threading.Thread):
         for idx, pin in enumerate(DISCRETEPRESSUREREF):
             print('DValve Ref', idx, ': ', True if GPIO.input(pin) else False)
         print('\n')
+        if GPIO.event_detected(INFINITYMODE):
+            print('Infmode btn pushed')
+        if GPIO.event_detected(WALKINGCONFIRM):
+            print('WALKING START btn pushed')
         time.sleep(1)
         
 

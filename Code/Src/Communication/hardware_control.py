@@ -33,9 +33,13 @@ INFINITYLED = "P8_18"
 # DISCRETEPRESSUREREF = ["P9_11", "P9_13", "P9_15", "P9_17"]
 DISCRETEPRESSUREREF = ["P9_11", "P9_17", "P9_15", "P9_13"]
 
+#
+#CONTINUOUSPRESSUREREF = ["P9_40", "P9_33", "P9_39", "P9_36",
+#                         "P9_35", "P9_37", "P9_38"]
 
-CONTINUOUSPRESSUREREF = ["P9_33", "P9_35", "P9_36", "P9_37",
-                         "P9_38", "P9_39", "P9_40"]
+CONTINUOUSPRESSUREREF = ["P9_40", "P9_38", "P9_33", "P9_39", "P9_36",
+                         "P9_35", "P9_37"]
+
 
 
 def print(*args, **kwargs):
@@ -117,12 +121,22 @@ class HUIThread(threading.Thread):
 
         for idx, pin in enumerate(DISCRETEPRESSUREREF):
             print('DValve Ref', idx, ': ', True if GPIO.input(pin) else False)
-        print('\n')
+        
+        # check pattern btns
         if GPIO.event_detected(INFINITYMODE):
             print('Infmode btn pushed')
         if GPIO.event_detected(WALKINGCONFIRM):
             print('WALKING START btn pushed')
+        
+        # check adc potis
+        for idx, pin in enumerate(CONTINUOUSPRESSUREREF):
+            val = ADC.read(pin)
+            val = ADC.read(pin)
+            print('POTI Ref', idx, ': ', val)
         time.sleep(1)
+
+        print('\n')
+
         
 
     def get_tasks(self):

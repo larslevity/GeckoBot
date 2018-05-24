@@ -141,14 +141,26 @@ def init_hardware():
 
     print('Initialize Valves ...')
     valve = []
+
+#    sets = [{'name': '0', 'pin': 'P9_16'},     # Upper Left Leg
+#            {'name': '1', 'pin': 'P9_22'},     # Upper Right Leg
+#            {'name': '2', 'pin': 'P9_14'},     # Left Belly
+#            {'name': '3', 'pin': 'P9_21'},     # Right Belly
+#            {'name': '4', 'pin': 'P8_19'},     # Lower Left Leg
+#            {'name': '5', 'pin': 'P8_13'},     # Lower Right Leg
+#            {'name': '6', 'pin': 'P9_28'},
+#            {'name': '7', 'pin': 'P9_42'}]     
+
     sets = [{'name': '0', 'pin': 'P9_16'},     # Upper Left Leg
-            {'name': '1', 'pin': 'P8_13'},     # Upper Right Leg
-            {'name': '2', 'pin': 'P9_22'},     # Left Belly
+            {'name': '1', 'pin': 'P9_14'},     # Upper Right Leg
+            {'name': '2', 'pin': 'P8_13'},     # Left Belly
             {'name': '3', 'pin': 'P9_21'},     # Right Belly
             {'name': '4', 'pin': 'P8_19'},     # Lower Left Leg
-            {'name': '5', 'pin': 'P9_14'},     # Lower Right Leg
+            {'name': '5', 'pin': 'P9_22'},     # Lower Right Leg
             {'name': '6', 'pin': 'P9_28'},
             {'name': '7', 'pin': 'P9_42'}]     
+
+
     for elem in sets:
         valve.append(actuators.Valve(name=elem['name'], pwm_pin=elem['pin']))
 

@@ -118,7 +118,7 @@ class DPressureSens(object):
 
     def get_value(self):
         self.plexer.select(self.mplx_id)
-        sens_bytes = self.i2c.readList(reg=0, length=2)
+        sens_bytes = self.i2c.readList(register=0, length=2)
         msb = sens_bytes[0]
         lsb = sens_bytes[1]
         pressure = self.calc_pressure(msb, lsb)

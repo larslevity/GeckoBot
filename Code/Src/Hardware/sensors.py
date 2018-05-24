@@ -7,7 +7,7 @@ except ImportError:
     print "Can't import Adafruit_BBIO.ADC"
 
 try:
-    from Adafruit_I2C import Adafruit_I2C
+    import Adafruit_GPIO.I2C as Adafruit_I2C
 except ImportError:
     print "Can't import Adafruit_I2C"
 
@@ -89,7 +89,7 @@ def i2cdetect():
 
 class MultiPlexer(object):
     def __init__(self, address=0x70):
-        self.i2c = Adafruit_I2C(address, busnum=2)
+        self.i2c = Adafruit_I2C.get_i2c_device(address, busnum=2)
 
     def select(self, port_id):
         self.i2c.write8(0, 1 << port_id)
@@ -100,7 +100,7 @@ class DPressureSens(object):
 
     def __init__(self, name, mplx_id, address=0x28, maxpressure=1):
         self.mplx_id = mplx_id
-        self.i2c = Adafruit_I2C(address, busnum=2)
+        self.i2c = Adafruit_I2C.get_i2c_device(address, busnum=2)
         self.name = name
         self.maxpressure = maxpressure
 

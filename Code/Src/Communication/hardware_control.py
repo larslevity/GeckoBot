@@ -17,6 +17,8 @@ import Adafruit_BBIO.ADC as ADC
 
 from termcolor import colored
 
+TSamplingUI = 1
+
 PWMREFMODE = "P9_23"
 PRESSUREREFMODE = "P9_27"
 PATTERNREFMODE = 'P9_30'  # "P9_25"  # 25 doesnt work.
@@ -96,9 +98,7 @@ class HUIThread(threading.Thread):
             while self.cargo.state != 'EXIT':
                 try:
                     self.get_tasks()
-#                    self.test_the_thing()
-#                    time.sleep(self.cargo.sampling_time)
-                    time.sleep(.5)
+                    time.sleep(TSamplingUI)
                 except:
                     print('\n--caught exception! in HUI Thread--\n')
                     print("Unexpected error:\n", sys.exc_info()[0])
@@ -146,6 +146,7 @@ class HUIThread(threading.Thread):
             self.process_pressure_ref()
         elif state == 'REFERENCE_TRACKING':
             self.process_pattern_ref()
+        self.print_state()
 
     def process_pressure_ref(self):
         self.change_state('USER_REFERENCE')
@@ -162,8 +163,8 @@ class HUIThread(threading.Thread):
         self.change_state('USER_CONTROL')
         self.set_valve()
         self.set_dvalve()
-        # DEBUG
-        self.check_p28()
+#        # DEBUG
+#        self.check_p28()
 
     def process_pattern_ref(self):
         self.change_state('REFERENCE_TRACKING')
@@ -240,3 +241,27 @@ class HUIThread(threading.Thread):
 
     def kill(self):
         self.cargo.state = 'EXIT'
+
+    def print_state(self):
+        state_str = ('Current State: \n\n' +
+            'F1 Ref/state: \t\t{}\t{}\n'.format(True 
+                               if GPIO.input(DISCRETEPRESSUREREF[0]) 
+                               else False, self.cargo.dvalve_task['0']) +
+            'F2 Ref/state: \t\t{}\t{}\n'.format(True 
+                               if GPIO.input(DISCRETEPRESSUREREF[1]) 
+                               else False, self.cargo.dvalve_task['1']) +
+            'F3 Ref/state: \t\t{}\t{}\n'.format(True 
+                               if GPIO.input(DISCRETEPRESSUREREF[2]) 
+                               else False, self.cargo.dvalve_task['2']) +
+            'F4 Ref/state: \t\t{}\t{}\n'.format(True 
+                               if GPIO.input(DISCRETEPRESSUREREF[3]) 
+                               else False, self.cargo.dvalve_task['3'])
+            )
+        for i in range(8):
+            s = 'PWM Ref {}: \t\t{}\n'.format(i, self.cargo.pwm_task[str(i)])
+            state_str = state_str + s
+        for i in range(8):
+            s = 'Pressure {} Ref/state \t{}\t{}\n'.format(i,
+                          self.cargo.ref_task[str(i)], self.cargo.rec[str(i)])
+            state_str = state_str + s
+        print(state_str)

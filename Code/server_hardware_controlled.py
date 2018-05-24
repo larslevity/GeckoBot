@@ -1,6 +1,17 @@
 # pylint: disable = invalid-name, no-member, fixme
 """ Main function running on BBB
 According to: https://pymotw.com/2/socket/tcp.html
+
+
+In order to enable 'P9_28' as pwm pin, you have to load 'cape-universala' in
+/boot/uEnv.txt by adding following line:
+
+nano /boot/uEnv.txt: 
+cape_enable=bone_capemgr.enable_partno=cape-universala
+
+and then configure it with:
+
+root@beaglebone: # config-pin P9_28 pwm
 """
 from __future__ import print_function
 
@@ -157,8 +168,8 @@ def init_hardware():
             {'name': '3', 'pin': 'P9_21'},     # Right Belly
             {'name': '4', 'pin': 'P8_19'},     # Lower Left Leg
             {'name': '5', 'pin': 'P9_22'},     # Lower Right Leg
-            {'name': '6', 'pin': 'P9_28'},
-            {'name': '7', 'pin': 'P9_42'}]     
+            {'name': '6', 'pin': 'P9_42'},
+            {'name': '7', 'pin': 'P9_28'}]     
 
 
     for elem in sets:
@@ -303,6 +314,10 @@ def user_control(cargo):
     print("Arriving in USER_CONTROL State: ")
     cargo.actual_state = 'USER_CONTROL'
 
+    # DEBUG
+    print(cargo.pwm_task)
+    # DEBUG
+    
     while cargo.state == 'USER_CONTROL':
         # read
         for sensor in cargo.sens:

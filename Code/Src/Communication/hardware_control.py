@@ -152,10 +152,18 @@ class HUIThread(threading.Thread):
         self.set_ref()
         self.set_dvalve()
 
+    def check_p28(self):
+        if GPIO.event_detected(INFINITYMODE):
+            self.cargo.pwm_task['7'] = 80.
+            time.sleep(1)
+            self.cargo.pwm_task['7'] = 0.
+
     def process_pwm_ref(self):
         self.change_state('USER_CONTROL')
         self.set_valve()
         self.set_dvalve()
+        # DEBUG
+        self.check_p28()
 
     def process_pattern_ref(self):
         self.change_state('REFERENCE_TRACKING')
@@ -213,7 +221,7 @@ class HUIThread(threading.Thread):
     def set_ref(self):
         for idx, pin in enumerate(CONTINUOUSPRESSUREREF):
             self.cargo.ref_task[str(idx)] = ADC.read(pin)
-            self.cargo.ref_task[str(idx)] = round(ADC.read(pin)*100)
+            self.cargo.ref_task[str(idx)] = round(ADC.read(pin)*100)/100.
 
     def set_dvalve(self):
         for idx, pin in enumerate(DISCRETEPRESSUREREF):

@@ -10,22 +10,28 @@ import numpy as np
 from scipy.optimize import minimize
 
 
-f_len = 1.     # factor on length constraint
-f_ori = .0003     # factor on orientation constraint
+f_len = 1000.     # factor on length objective
+f_ori = .0003     # factor on orientation objective
+f_ang = 1000     # factor on angle objective
 
 blow = .9       # lower stretching bound
 bup = 1.1       # upper stretching bound
-arc_res = 30    # resolution of arcs
+
+dev_angle = 100  # allowed deviation of angles
+
+arc_res = 40    # resolution of arcs
 
 
 class RobotRepr(object):
     def __init__(self):
         self.len_leg = 1
         self.len_tor = 1.1
+        self.ref = {'alp1': 0.1, 'alp2': .1,
+                    'gam': .1, 'bet1': .1, 'bet2': .1}
         self.state = {'alp1': 0.1, 'alp2': .1,
-                      'gam': 90, 'bet1': 90, 'bet2': 90,
+                      'gam': 0.1, 'bet1': .1, 'bet2': .1,
                       'F1': True, 'F2': False, 'F3': False, 'F4': False}
-        self.meta = {'C1': 45, 'C2': -90, 'C3': 90, 'C4': -90,
+        self.meta = {'C1': 90, 'C2': -90, 'C3': 90, 'C4': -90,
                      'l1': self.len_leg, 'l2': self.len_leg,
                      'lg': self.len_tor, 'l3': self.len_leg,
                      'l4': self.len_leg}
@@ -41,11 +47,11 @@ class RobotRepr(object):
     def set_pose(self, pose):
         """ pose = (alp1, bet1, gam, alp2, bet2, F1, F2, F3, F4) """
         alp1, bet1, gam, alp2, bet2, F1, F2, F3, F4 = pose
-        self.state['alp1'] = alp1
-        self.state['alp2'] = alp2
-        self.state['gam'] = gam
-        self.state['bet1'] = bet1
-        self.state['bet2'] = bet2
+        self.ref['alp1'] = alp1
+        self.ref['alp2'] = alp2
+        self.ref['gam'] = gam
+        self.ref['bet1'] = bet1
+        self.ref['bet2'] = bet2
         self.state['F1'] = F1
         self.state['F2'] = F2
         self.state['F3'] = F3
@@ -135,29 +141,37 @@ class RobotRepr(object):
         lg0 = len_tor
         l30 = len_leg
         l40 = len_leg
+        alp10 = self.ref['alp1']
+        bet10 = self.ref['bet1']
+        gam0 = self.ref['gam']
+        alp20 = self.ref['alp2']
+        bet20 = self.ref['bet2']
 
         # Initial guess
-        X0 = np.array([c0[0], c0[1], l10, l20, lg0, l30, l40])
+        X0 = np.array([c0[0], c0[1], l10, l20, lg0, l30, l40,
+                       alp10, bet10, gam0, alp20, bet20])
 
         def objective(X):
-            c1, c2, l1, l2, lg, l3, l4 = X
+            c1, c2, l1, l2, lg, l3, l4, alp1, bet1, gam, alp2, bet2 = X
             c1 = np.mod(c1, 360)
             c2 = np.mod(c2, 360)
             # calc orientation of foot 3 and 4
-            c3 = np.mod(180 + self.state['gam'] - self.state['bet1'] +
-                        self.state['alp2'] + c2, 360)
-            c4 = np.mod(180 + self.state['gam'] + self.state['alp1'] -
-                        self.state['bet2'] + c1, 360)
+            c3 = np.mod(180 + gam - bet1 + alp2 + c2, 360)
+            c4 = np.mod(180 + gam + alp1 - bet2 + c1, 360)
             C = [c1, c2, c3, c4]
             feet = ['F1', 'F2', 'F3', 'F4']
             obj_ori = 0
             for idx, foot in enumerate(feet):
                 if self.state[foot]:
-                    obj_ori = obj_ori + (C[idx]-c0[idx])
-            objective = (f_ori*(obj_ori) +
-                         f_len*((l1-len_leg)**2 + (l2-len_leg)**2 +
-                                (lg-len_tor)**2 +
-                                (l3-len_leg)**2 + (l4-len_leg)**2))
+                    obj_ori = obj_ori + (C[idx]-c0[idx])**2
+            obj_ang = 0
+            for key in self.ref:
+                obj_ang = obj_ang + (self.ref[key]-self.state[key])**2
+            objective = (f_ori*np.sqrt(obj_ori) +
+                         f_ang*np.sqrt(obj_ang) +
+                         f_len*np.sqrt((l1-len_leg)**2 + (l2-len_leg)**2 +
+                                       (lg-len_tor)**2 +
+                                       (l3-len_leg)**2 + (l4-len_leg)**2))
             return objective
 
         def constraint1(X):
@@ -179,24 +193,33 @@ class RobotRepr(object):
                     constraint = constraint + \
                         np.sqrt((self.coords[foot][0] - xf[idx])**2 +
                                 (self.coords[foot][1] - yf[idx])**2)
+#                    print foot, 'is constraint'
             return constraint
 
         bleg = (blow*len_leg, bup*len_leg)
         btor = (blow*len_tor, bup*len_tor)
-        bnds = ((0, 360), (0, 360), bleg, bleg, btor, bleg, bleg)
+        bang = [(self.ref[ang]-dev_angle, self.ref[ang]+dev_angle)
+                for ang in ['alp1', 'bet1', 'gam', 'alp2', 'bet2']]
+        bnds = ((0, 360), (0, 360), bleg, bleg, btor, bleg, bleg,
+                bang[0], bang[1], bang[2], bang[3], bang[4])
         con1 = {'type': 'eq', 'fun': constraint1}
         cons = ([con1])
         solution = minimize(objective, X0, method='SLSQP',
                             bounds=bnds, constraints=cons)
         X = solution.x
-        c1, c2, l1, l2, lg, l3, l4 = X
-        c4 = np.mod(180 + self.state['gam'] + self.state['alp1'] -
-                    self.state['bet2'] + X[0], 360)
-        c3 = np.mod(180 + self.state['gam'] - self.state['bet1'] +
-                    self.state['alp2'] + c2, 360)
-        (xom, yom), (xum, yum), (xf1, yf1), (xf2, yf2), \
-            (xf3, yf3), (xf4, yf4) = \
-            self.calc_coords_F1(X)
+        c1, c2, l1, l2, lg, l3, l4, alp1, bet1, gam, alp2, bet2 = X
+        c3 = np.mod(180 + gam - bet1 + alp2 + c2, 360)
+        c4 = np.mod(180 + gam + alp1 - bet2 + c1, 360)
+        if self.state['F1']:
+            (xom, yom), (xum, yum), (xf1, yf1), (xf2, yf2), \
+                (xf3, yf3), (xf4, yf4) = \
+                self.calc_coords_F1(X)
+            c2 = c1 + alp1 + bet1
+        elif self.state['F2']:
+            (xom, yom), (xum, yum), (xf1, yf1), (xf2, yf2), \
+                (xf3, yf3), (xf4, yf4) = \
+                self.calc_coords_F2(X)
+            c1 = c2 - alp1 - bet1
         # save opt meta data
 #        print 'coords: ', self.coords['F3'], 'actual: ', (xf3, yf3)
         print 'constraint function: ', constraint1(X)
@@ -212,6 +235,11 @@ class RobotRepr(object):
         self.meta['l3'] = l3
         self.meta['l4'] = l4
         self.meta['lg'] = lg
+        self.state['alp1'] = alp1
+        self.state['alp2'] = alp2
+        self.state['gam'] = gam
+        self.state['bet1'] = bet1
+        self.state['bet2'] = bet2
         self.coords['OM'] = (xom, yom)
         self.coords['UM'] = (xum, yum)
         self.coords['F1'] = (xf1, yf1)
@@ -219,20 +247,22 @@ class RobotRepr(object):
         self.coords['F3'] = (xf3, yf3)
         self.coords['F4'] = (xf4, yf4)
 
+        return X
+
     def calc_coords_F1(self, X):
         """ X = [c1, l1, lg, l4]"""
         xf1, yf1 = self.coords['F1']
-        c1, c2, l1, l2, lg, l3, l4 = X
-        r1 = calc_rad(l1, self.state['alp1'])
-        rg = calc_rad(lg, self.state['gam'])
-        r4 = calc_rad(l4, self.state['bet2'])
-        r3 = calc_rad(l3, self.state['alp2'])
-        r2 = calc_rad(l2, self.state['bet1'])
-        alp1 = self.state['alp1']
-        alp2 = self.state['alp2']
-        gam = self.state['gam']
-        bet1 = self.state['bet1']
-        bet2 = self.state['bet2']
+        c1, c2, l1, l2, lg, l3, l4, alp1, bet1, gam, alp2, bet2 = X
+        r1 = calc_rad(l1, alp1)
+        rg = calc_rad(lg, gam)
+        r4 = calc_rad(l4, bet2)
+        r3 = calc_rad(l3, alp2)
+        r2 = calc_rad(l2, bet1)
+#        alp1 = self.state['alp1']
+#        alp2 = self.state['alp2']
+#        gam = self.state['gam']
+#        bet1 = self.state['bet1']
+#        bet2 = self.state['bet2']
 
         # coords cp upper left leg
         xr1 = xf1 + np.cos(np.deg2rad(c1))*r1
@@ -271,17 +301,17 @@ class RobotRepr(object):
     def calc_coords_F2(self, X):
         """ X = [c1, l1, lg, l4]"""
         xf2, yf2 = self.coords['F2']
-        c1, c2, l1, l2, lg, l3, l4 = X
-        r1 = calc_rad(l1, self.state['alp1'])
-        rg = calc_rad(lg, self.state['gam'])
-        r4 = calc_rad(l4, self.state['bet2'])
-        r3 = calc_rad(l3, self.state['alp2'])
-        r2 = calc_rad(l2, self.state['bet1'])
-        alp1 = self.state['alp1']
-        alp2 = self.state['alp2']
-        gam = self.state['gam']
-        bet1 = self.state['bet1']
-        bet2 = self.state['bet2']
+        c1, c2, l1, l2, lg, l3, l4, alp1, bet1, gam, alp2, bet2 = X
+        r1 = calc_rad(l1, alp1)
+        rg = calc_rad(lg, gam)
+        r4 = calc_rad(l4, bet2)
+        r3 = calc_rad(l3, alp2)
+        r2 = calc_rad(l2, bet1)
+#        alp1 = self.state['alp1']
+#        alp2 = self.state['alp2']
+#        gam = self.state['gam']
+#        bet1 = self.state['bet1']
+#        bet2 = self.state['bet2']
 
         # coords cp upper right leg
         xr2 = xf2 - np.sin(np.deg2rad(c2-90))*r2
@@ -308,11 +338,11 @@ class RobotRepr(object):
         xf3 = xr3 - np.cos(np.deg2rad(-alp2 - gam + 180-c2+bet1))*r3
         yf3 = yr3 + np.sin(np.deg2rad(-alp2 - gam + 180-c2+bet1))*r3
         # coords cp R1
-        xr1 = xom + np.cos(np.deg2rad(c2-bet1))*r1
-        yr1 = yom + np.sin(np.deg2rad(c2-bet1))*r1
+        xr1 = xom + np.sin(np.deg2rad(90-c2+bet1))*r1
+        yr1 = yom + np.cos(np.deg2rad(90-c2+bet1))*r1
         # coords F1
-        xf1 = xr1 + np.sin(np.deg2rad(bet1 - (90-c2+alp1)))*r1
-        yf1 = yr1 - np.cos(np.deg2rad(bet1 - (90-c2+alp1)))*r1
+        xf1 = xr1 - np.sin(np.deg2rad(90-c2+bet1+alp1))*r1
+        yf1 = yr1 - np.cos(np.deg2rad(90-c2+bet1+alp1))*r1
 
         return ((xom, yom), (xum, yum), (xf1, yf1),
                 (xf2, yf2), (xf3, yf3), (xf4, yf4))
@@ -354,17 +384,26 @@ if __name__ == "__main__":
     plt.plot(nfpx, nfpy, 'kx', markersize=10)
 
     poses = []
+#    poses.append((90, .1, -90, 90, .1, True, False, False, True))
+#    poses.append((90, 20, -20, 90, .1, True, False, False, True))
+#    poses.append((90, 20, -20, 90, .1, True, False, False, False))
+
     poses.append((90, .1, -90, 90, .1, True, False, False, True))
-    poses.append((.1, 90, 90, 0.1, 90, False, True, True, False))
+#    poses.append((90, .1, -90, 90, .1, False, True, True, False))
+
+    for i in range(5):
+        poses.append((.1, 90, 90, .1, 90, False, True, True, False))
+        poses.append((10, 0.1, -10, 10, .1, True, False, False, True))
 
     for idx, pose in enumerate(poses):
+        print '\n\nPOSE ', idx, '\n'
         col = (.1, .5, float(idx)/len(poses))
         robrepr.set_pose(pose)
         (x, y), fp, nfp = robrepr.get_repr()
         fpx, fpy = fp
         nfpx, nfpy = nfp
         plt.plot(x, y, '.', color=col)
-        plt.plot(fpx, fpy, 'o', markersize=10, color=col)
+        plt.plot(fpx, fpy, 'o', markersize=15, color=col)
         plt.plot(nfpx, nfpy, 'x', markersize=10, color=col)
         robrepr.get_coords()
 

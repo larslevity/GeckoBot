@@ -5,15 +5,22 @@ Created on Tue Nov 14 14:11:47 2017
 @author: ls
 """
 
+#Version Check
+import sys
+if sys.version_info > (3, 0):
+    print("Warning! Must be using Python 2")
+
 import control
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib2tikz import save as tikz_save
 
+
+from matplotlib2tikz import save as tikz_save
 from Src.Controller import controller as ctrlib
 from Src.Management import save
 
-plt.close('all')
+
+
 """
 Signals #################################################
 """

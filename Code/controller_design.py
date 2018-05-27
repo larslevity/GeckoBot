@@ -18,7 +18,8 @@ import numpy as np
 from matplotlib2tikz import save as tikz_save
 from Src.Controller import controller as ctrlib
 from Src.Management import save
-
+ 
+plt.close('all')
 
 
 """

@@ -13,8 +13,6 @@ if sys.version_info > (3, 0):
 import control
 import matplotlib.pyplot as plt
 import numpy as np
-
-
 from matplotlib2tikz import save as tikz_save
 from Src.Controller import controller as ctrlib
 from Src.Management import save

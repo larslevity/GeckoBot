@@ -371,6 +371,8 @@ def calc_arc_coords(xy, alp1, alp2, rad):
 
 
 if __name__ == "__main__":
+    import matplotlib.animation as animation
+
 
     robrepr = RobotRepr()
 #    (x, y), fp, nfp = robrepr.get_repr()
@@ -391,10 +393,15 @@ if __name__ == "__main__":
     poses.append((90, .1, -90, 90, .1, True, False, False, True))
 #    poses.append((90, .1, -90, 90, .1, False, True, True, False))
 
-    for i in range(5):
+    for i in range(4):
         poses.append((.1, 90, 90, .1, 90, False, True, True, False))
+        poses.append((.1, 90, 90, .1, 90, True, False, False, True))
+        poses.append((.1, 45, 45, .1, 45, True, False, False, True))
         poses.append((10, 0.1, -10, 10, .1, True, False, False, True))
+        poses.append((10, .1, -10, 10, .1, False, True, True, False))
+        poses.append((.1, 45, 45, .1, 45, False, True, True, False))
 
+    data, data_fp, data_nfp = [], [], []
     for idx, pose in enumerate(poses):
         print '\n\nPOSE ', idx, '\n'
         col = (.1, .5, float(idx)/len(poses))
@@ -406,5 +413,34 @@ if __name__ == "__main__":
         plt.plot(fpx, fpy, 'o', markersize=15, color=col)
         plt.plot(nfpx, nfpy, 'x', markersize=10, color=col)
         robrepr.get_coords()
+        data.append((x, y))
+        data_fp.append((fpx, fpy))
+        data_nfp.append((nfpx, nfpy))
 
     plt.axis('equal')
+
+    # Animation
+    def update_line(num, data, line, data_fp, line_fp, data_nfp, line_nfp):
+        x, y = data[num]
+        fpx, fpy = data_fp[num]
+        nfpx, nfpy = data_nfp[num]
+        line.set_data(np.array([[x], [y]]))
+        line_fp.set_data(np.array([[fpx], [fpy]]))
+        line_nfp.set_data(np.array([[nfpx], [nfpy]]))
+        return line, line_fp, line_nfp
+
+    fig1 = plt.figure()
+
+    n = len(poses)
+    l, = plt.plot([], [], '.')
+    lfp, = plt.plot([], [], 'o', markersize=15)
+    lnfp, = plt.plot([], [], 'x', markersize=10)
+    plt.xlim(-2, 5)
+    plt.ylim(-2, 5)
+#    plt.axis('equal')
+    plt.title('test')
+    line_ani = animation.FuncAnimation(fig1, update_line, n,
+                                       fargs=(data, l, data_fp, lfp,
+                                              data_nfp, lnfp),
+                                       interval=500, blit=True)
+    plt.show()

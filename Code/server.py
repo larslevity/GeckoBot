@@ -24,8 +24,13 @@ TSAMPLING = 0.001     # [sec]
 PID = [1.05, 0.03, 0.01]    # [1]
 
 
-INITIAL_PATTERN = [[0.0, 0.79, 0.99, 0.0, 0.25, 0.78, False, False, False, False, 10.0],
-                   [0.0, 0.79, 0.99, 0.0, 0.25, 0.78, True, True, True, True, 5.0]]
+INITIAL_PATTERN = [[0.74, 0.00, 0.00, 0.9, 0.57, 0.1, False, False, False, False, 10.0],
+                   [0.74, 0.00, 0.00, 0.9, 0.57, 0.1, False, True, True, False, 5.0]]
+
+FINAL_PATTERN = [[0.74, 0.0, 0.0, 0.9, 0.57, 0.25, False, True, True, False, 5.0],
+                   [0.00, 0.00, 0.00, 0.00, 0.0, 0.0, False, False, False, False, 1]]
+
+
 
 ## v2.2
 #PATTERN = [[0.0, 0.8, 0.9, 0.0, 0.25, 0.8, False, True, True, False, 5.0],
@@ -59,13 +64,48 @@ INITIAL_PATTERN = [[0.0, 0.79, 0.99, 0.0, 0.25, 0.78, False, False, False, False
 #           [0.92, 0.0, 0.0, 0.92, 0.90, 0.25, True, True, True, True, 2.0],
 #           [0.92, 0.0, 0.0, 0.92, 0.90, 0.25, False, True, True, False, 1.0]]
 
-# v2.6
-PATTERN = [[0.0, 0.99, 0.97, 0.0, 0.25, 0.71, False, True, True, False, 5.0],
-           [0.0, 0.99, 0.97, 0.0, 0.25, 0.71, True, True, True, True, 2.0],
-           [0.0, 0.99, 0.97, 0.0, 0.25, 0.71, True, False, False, True, 1.0],
-           [0.77, 0.0, 0.0, 0.93, 0.70, 0.25, True, False, False, True, 5.0],
-           [0.77, 0.0, 0.0, 0.93, 0.70, 0.25, True, True, True, True, 2.0],
-           [0.77, 0.0, 0.0, 0.93, 0.70, 0.25, False, True, True, False, 1.0]]
+## v2.6
+#PATTERN = [[0.0, 0.99, 0.97, 0.0, 0.25, 0.71, False, True, True, False, 5.0],
+#           [0.0, 0.99, 0.97, 0.0, 0.25, 0.71, True, True, True, True, 2.0],
+#           [0.0, 0.99, 0.97, 0.0, 0.25, 0.71, True, False, False, True, 1.0],
+#           [0.77, 0.0, 0.0, 0.93, 0.70, 0.25, True, False, False, True, 5.0],
+#           [0.77, 0.0, 0.0, 0.93, 0.70, 0.25, True, True, True, True, 2.0],
+#           [0.77, 0.0, 0.0, 0.93, 0.70, 0.25, False, True, True, False, 1.0]]
+
+
+
+PATTERN30_00 = [[0.25, 0.66, 0.99, 0.0, 0.25, 0.86, False, True, True, False, 3.0],
+                [0.0, 0.66, 0.99, 0.0, 0.25, 0.86, True, True, True, True, 1.0],
+                [0.0, 0.66, 0.99, 0.0, 0.25, 0.86, True, False, False, True, 0.5],
+                [0.74, 0.25, 0.0, 0.85, 0.65, 0.25, True, False, False, True, 3.0],
+                [0.74, 0.0, 0.0, 0.85, 0.65, 0.25, True, True, True, True, 1.0],
+                [0.74, 0.0, 0.0, 0.85, 0.65, 0.25, False, True, True, False, 0.5]]
+
+
+PATTERN30_20 = [[0.25, 0.66, 0.99, 0.0, 0.25, 0.80, False, True, True, False, 3.0],
+                [0.0, 0.66, 0.99, 0.0, 0.25, 0.80, True, True, True, True, 1.0],
+                [0.0, 0.66, 0.99, 0.0, 0.25, 0.80, True, False, False, True, 0.5],
+                [0.74, 0.25, 0.0, 0.85, 0.65, 0.25, True, False, False, True, 3.0],
+                [0.74, 0.0, 0.0, 0.85, 0.65, 0.25, True, True, True, True, 1.0],
+                [0.74, 0.0, 0.0, 0.85, 0.65, 0.25, False, True, True, False, 0.5]]
+
+# v3.0
+PATTERN30_50 = [[0.2, 0.62, 0.99, 0.0, 0.2, 0.71, False, True, True, False, 3.0],
+                [0.0, 0.62, 0.99, 0.0, 0.2, 0.71, True, True, True, True, 1.0],
+                [0.0, 0.62, 0.99, 0.0, 0.2, 0.71, True, False, False, True, 0.5],
+                [0.63, 0.25, 0.0, 0.9, 0.52, 0.2, True, False, False, True, 3.0],
+                [0.63, 0.0, 0.0, 0.9, 0.52, 0.2, True, True, True, True, 1.0],
+                [0.63, 0.0, 0.0, 0.9, 0.52, 0.2, False, True, True, False, 0.5]]
+MAX_PRESSURE50_50 = 0.95    # [bar] v2.4
+
+
+
+
+
+# v3.0
+PATTERN = PATTERN30_50
+MAX_PRESSURE = MAX_PRESSURE50_50
+
 
 
 def init_hardware():
@@ -85,32 +125,32 @@ def init_hardware():
     """
     print("Initialize Sensors ...")
     sens = []
-    sets = [{'name': '1', 'id': 0},
-            {'name': '2', 'id': 1},
-            {'name': '3', 'id': 2},
-            {'name': '4', 'id': 3},
-            {'name': '5', 'id': 4},
-            {'name': '6', 'id': 5}]
+    sets = [{'name': '0', 'id': 0},
+            {'name': '1', 'id': 1},
+            {'name': '2', 'id': 2},
+            {'name': '3', 'id': 3},
+            {'name': '4', 'id': 4},
+            {'name': '5', 'id': 5}]
     for s in sets:
         sens.append(sensors.DPressureSens(name=s['name'], mplx_id=s['id'],
                                           maxpressure=MAX_PRESSURE))
 
     print('Initialize Valves ...')
     valve = []
-    sets = [{'name': '1', 'pin': 'P8_19'},      # Upper Left Leg
-            {'name': '2', 'pin': 'P8_13'},     # Upper Right Leg
-            {'name': '3', 'pin': 'P9_22'},     # Left Belly
-            {'name': '4', 'pin': 'P9_21'},     # Right Belly
-            {'name': '5', 'pin': 'P9_16'},     # Lower Left Leg
-            {'name': '6', 'pin': 'P9_14'}]     # Lower Right Leg
+    sets = [{'name': '0', 'pin': 'P8_19'},      # Upper Left Leg
+            {'name': '1', 'pin': 'P8_13'},     # Upper Right Leg
+            {'name': '2', 'pin': 'P9_22'},     # Left Belly
+            {'name': '3', 'pin': 'P9_21'},     # Right Belly
+            {'name': '4', 'pin': 'P9_16'},     # Lower Left Leg
+            {'name': '5', 'pin': 'P9_14'}]     # Lower Right Leg
     for elem in sets:
         valve.append(actuators.Valve(name=elem['name'], pwm_pin=elem['pin']))
 
     dvalve = []
-    dsets = [{'name': '1', 'pin': 'P8_7'},      # Upper Left Leg
-             {'name': '2', 'pin': 'P8_8'},     # Upper Right Leg
-             {'name': '3', 'pin': 'P8_9'},     # Lower Left Leg
-             {'name': '4', 'pin': 'P8_10'}]     # Lower Right Leg]
+    dsets = [{'name': '0', 'pin': 'P8_7'},      # Upper Left Leg
+             {'name': '1', 'pin': 'P8_8'},     # Upper Right Leg
+             {'name': '2', 'pin': 'P8_9'},     # Lower Left Leg
+             {'name': '3', 'pin': 'P8_10'}]     # Lower Right Leg]
     for elem in dsets:
         dvalve.append(actuators.DiscreteValve(
             name=elem['name'], pin=elem['pin']))
@@ -137,12 +177,12 @@ def init_controller():
     tsamplingPID = TSAMPLING
     maxoutPID = MAX_CTROUT
     controller = []
-    sets = [{'name': '1', 'P': PID[0], 'I': PID[1], 'D': PID[2]},
+    sets = [{'name': '0', 'P': PID[0], 'I': PID[1], 'D': PID[2]},
+            {'name': '1', 'P': PID[0], 'I': PID[1], 'D': PID[2]},
             {'name': '2', 'P': PID[0], 'I': PID[1], 'D': PID[2]},
             {'name': '3', 'P': PID[0], 'I': PID[1], 'D': PID[2]},
             {'name': '4', 'P': PID[0], 'I': PID[1], 'D': PID[2]},
-            {'name': '5', 'P': PID[0], 'I': PID[1], 'D': PID[2]},
-            {'name': '6', 'P': PID[0], 'I': PID[1], 'D': PID[2]}]
+            {'name': '5', 'P': PID[0], 'I': PID[1], 'D': PID[2]}]
     for elem in sets:
         controller.append(
             ctrlib.PidController([elem['P'], elem['I'], elem['D']],
@@ -219,7 +259,7 @@ def pause_state(cargo):
     cargo.actual_state = 'PAUSE'
 
     for valve in cargo.valve:
-        valve.set_pwm(0.)
+        valve.set_pwm(1.)
         cargo.rec_u['u{}'.format(valve.name)] = 0.
         cargo.rec_r['r{}'.format(valve.name)] = None
 
@@ -313,31 +353,38 @@ def reference_tracking(cargo):
 
     for valve in cargo.valve:
         cargo.ref_task[valve.name] = 0.0
-    wcomm = walk_commander.Walking_Commander(cargo)
 
     try:
-        wcomm.run_threads()
-        while cargo.state == 'REFERENCE_TRACKING':
-            # CONFIRM pattern
-            # initial step
-            idx = 0
-            while cargo.wcomm.confirm and cargo.state == 'REFERENCE_TRACKING':
-                if idx == 0:
-                    wcomm.process_pattern(INITIAL_PATTERN)
-                pattern = cargo.wcomm.pattern
-                wcomm.process_pattern(pattern)
-                print('wcomm goes to round', idx)
-                idx += 1
-            #
-            time.sleep(cargo.sampling_time)
+        idx = 0
+        while (cargo.wcomm.confirm and
+               cargo.state == 'REFERENCE_TRACKING' and
+               idx < cargo.wcomm.idx_threshold):
+            cargo.wcomm.is_active = True
+            if idx == 0:
+                cargo.simpleWalkingCommander.process_pattern(INITIAL_PATTERN)
+            cargo.simpleWalkingCommander.process_pattern(cargo.wcomm.pattern)
+            print('wcomm goes to round', idx)
+            idx += 1
+        cargo.wcomm.confirm = False
+        if cargo.wcomm.is_active:
+            cargo.simpleWalkingCommander.process_pattern(FINAL_PATTERN)
+        cargo.wcomm.is_active = False
+        #
+        time.sleep(cargo.sampling_time)
     except:
         new_state = 'ERROR'
         cargo.errmsg = sys.exc_info()
     else:
         new_state = cargo.state
     finally:
-        wcomm.clean()
-        del wcomm
+        # write
+        for valve, controller in zip(cargo.valve, cargo.controller):
+            valve.set_pwm(1.)
+            cargo.rec_r['r{}'.format(valve.name)] = None
+            cargo.rec_u['u{}'.format(valve.name)] = 1.
+
+        for dvalve in cargo.dvalve:
+            dvalve.set_state(False)
     return (new_state, cargo)
 
 
@@ -359,7 +406,7 @@ def exit_cleaner(cargo):
     cargo.actual_state = 'EXIT'
 
     for idx, valve in enumerate(cargo.valve):
-        valve.set_pwm(0.)
+        valve.set_pwm(1.)
         if idx == 0:
             valve.cleanup()
     for dvalve in cargo.dvalve:
@@ -393,16 +440,21 @@ class Cargo(object):
         for sensor in sens:
             self.rec[sensor.name] = sensor.get_value()
         for valve in self.valve:
-            self.rec_u['u{}'.format(valve.name)] = 0.
+            self.rec_u['u{}'.format(valve.name)] = 1.
             self.rec_r['r{}'.format(valve.name)] = None
 
         self.wcomm = WCommCargo()
+        self.simpleWalkingCommander = \
+            walk_commander.SimpleWalkingCommander(self)
 
 
 class WCommCargo(object):
     def __init__(self):
         self.pattern = PATTERN
         self.confirm = False
+        self.is_active = False
+        self.idx_threshold = 3
+        self.infmode = False
 
 
 if __name__ == '__main__':

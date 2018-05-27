@@ -105,9 +105,9 @@ class Valve(object):
         self.pwm_pin = pwm_pin
 
         print(
-            'starting PWM with duty cycle 0 at Prportional Valve ', self.name)
+            'starting PWM with duty cycle 1. at Prportional Valve ', self.name)
         PWM.start(self.pwm_pin, 0, 25000)
-        PWM.set_duty_cycle(self.pwm_pin, 0)
+        PWM.set_duty_cycle(self.pwm_pin, 1.0)
 
     def cleanup(self):
         """Stop pwm services."""

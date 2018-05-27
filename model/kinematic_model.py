@@ -5,13 +5,12 @@ Created on Fri May 18 16:11:13 2018
 @author: AmP
 """
 
-import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import minimize
 
 
 f_len = 1000.     # factor on length objective
-f_ori = .0003     # factor on orientation objective
+f_ori = .03     # factor on orientation objective
 f_ang = 1000     # factor on angle objective
 
 blow = .9       # lower stretching bound
@@ -153,11 +152,11 @@ class RobotRepr(object):
 
         def objective(X):
             c1, c2, l1, l2, lg, l3, l4, alp1, bet1, gam, alp2, bet2 = X
-            c1 = np.mod(c1, 360)
-            c2 = np.mod(c2, 360)
+            c1 = np.mod(c1+360, 360)
+            c2 = np.mod(c2+360, 360)
             # calc orientation of foot 3 and 4
-            c3 = np.mod(180 + gam - bet1 + alp2 + c2, 360)
-            c4 = np.mod(180 + gam + alp1 - bet2 + c1, 360)
+            c3 = np.mod(180 + gam - bet1 + alp2 + c2 + 360, 360)
+            c4 = np.mod(180 + gam + alp1 - bet2 + c1 + 360, 360)
             C = [c1, c2, c3, c4]
             feet = ['F1', 'F2', 'F3', 'F4']
             obj_ori = 0
@@ -208,8 +207,6 @@ class RobotRepr(object):
                             bounds=bnds, constraints=cons)
         X = solution.x
         c1, c2, l1, l2, lg, l3, l4, alp1, bet1, gam, alp2, bet2 = X
-        c3 = np.mod(180 + gam - bet1 + alp2 + c2, 360)
-        c4 = np.mod(180 + gam + alp1 - bet2 + c1, 360)
         if self.state['F1']:
             (xom, yom), (xum, yum), (xf1, yf1), (xf2, yf2), \
                 (xf3, yf3), (xf4, yf4) = \
@@ -220,6 +217,10 @@ class RobotRepr(object):
                 (xf3, yf3), (xf4, yf4) = \
                 self.calc_coords_F2(X)
             c1 = c2 - alp1 - bet1
+        c3 = np.mod(180 + gam - bet1 + alp2 + c2 + 360, 360)
+        c4 = np.mod(180 + gam + alp1 - bet2 + c1 + 360, 360)
+        c1 = np.mod(c1+360, 360)
+        c2 = np.mod(c2+360, 360)
         # save opt meta data
 #        print 'coords: ', self.coords['F3'], 'actual: ', (xf3, yf3)
         print 'constraint function: ', constraint1(X)
@@ -371,8 +372,14 @@ def calc_arc_coords(xy, alp1, alp2, rad):
 
 
 if __name__ == "__main__":
+    """
+    To save the animation you need the libav-tool to be installed:
+    sudo apt-get install libav-tools
+    """
+    import matplotlib.pyplot as plt
     import matplotlib.animation as animation
-
+    import matplotlib
+    matplotlib.use("Agg")
 
     robrepr = RobotRepr()
 #    (x, y), fp, nfp = robrepr.get_repr()
@@ -390,16 +397,20 @@ if __name__ == "__main__":
 #    poses.append((90, 20, -20, 90, .1, True, False, False, True))
 #    poses.append((90, 20, -20, 90, .1, True, False, False, False))
 
-    poses.append((90, .1, -90, 90, .1, True, False, False, True))
+#    poses.append((90, .1, -90, 90, .1, True, False, False, True))
 #    poses.append((90, .1, -90, 90, .1, False, True, True, False))
 
-    for i in range(4):
+    for i in range(14):
         poses.append((.1, 90, 90, .1, 90, False, True, True, False))
         poses.append((.1, 90, 90, .1, 90, True, False, False, True))
-        poses.append((.1, 45, 45, .1, 45, True, False, False, True))
+        poses.append((5, 45, 45, .1, 45, True, False, False, True))
         poses.append((10, 0.1, -10, 10, .1, True, False, False, True))
         poses.append((10, .1, -10, 10, .1, False, True, True, False))
-        poses.append((.1, 45, 45, .1, 45, False, True, True, False))
+        poses.append((5, 45, 45, .1, 45, False, True, True, False))
+    poses.append((.1, 90, 90, .1, 90, False, True, True, False))
+    poses.append((.1, 90, 90, .1, 90, True, False, False, True))
+    poses.append((5, 45, 45, .1, 45, True, False, False, True))
+    poses.append((5, 45, 45, .1, 45, False, True, True, False))
 
     data, data_fp, data_nfp = [], [], []
     for idx, pose in enumerate(poses):
@@ -435,12 +446,17 @@ if __name__ == "__main__":
     l, = plt.plot([], [], '.')
     lfp, = plt.plot([], [], 'o', markersize=15)
     lnfp, = plt.plot([], [], 'x', markersize=10)
-    plt.xlim(-2, 5)
-    plt.ylim(-2, 5)
+    plt.xlim(-2, 6)
+    plt.ylim(-4, 3)
 #    plt.axis('equal')
-    plt.title('test')
+    plt.title('Gecko-robot model walking a circle')
     line_ani = animation.FuncAnimation(fig1, update_line, n,
                                        fargs=(data, l, data_fp, lfp,
                                               data_nfp, lnfp),
-                                       interval=500, blit=True)
-    plt.show()
+                                       interval=300, blit=True)
+#    plt.show()
+
+    # Set up formatting for the movie files
+    Writer = animation.writers['avconv']
+    writer = Writer(fps=15, metadata=dict(artist='Lars Schiller'), bitrate=1800)
+    line_ani.save('lines.mp4', writer=writer)

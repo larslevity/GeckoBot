@@ -17,7 +17,7 @@ import Adafruit_BBIO.ADC as ADC
 
 from termcolor import colored
 
-TSamplingUI = 1
+TSamplingUI = .1
 
 PWMREFMODE = "P9_23"
 PRESSUREREFMODE = "P9_27"

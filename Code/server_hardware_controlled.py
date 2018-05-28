@@ -262,6 +262,8 @@ def main():
     except KeyboardInterrupt:
         print('keyboard interrupt detected...   killing UI')
         communication_thread.kill()
+    except IOError:
+        print('cant read i2c device. Continue anyway ...')
     except:
         print('\n----------caught exception! in Main Thread----------------\n')
         print("Unexpected error:\n", sys.exc_info()[0])

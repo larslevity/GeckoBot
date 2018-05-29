@@ -6,7 +6,8 @@ Created on Sun May 27 15:50:36 2018
 """
 
 
-animate = True
+animate = False
+save = False
 
 if __name__ == "__main__":
     """
@@ -47,15 +48,15 @@ if __name__ == "__main__":
 #    poses.append((5, 45, 45, .1, 45, False, True, True, False))
 
     ''' 3 point fixed gait'''
-    for i in range(5):
-        poses.append((5, 10, -25, 10, 5, True, False, True, True))
-        poses.append((10, 20, -50, 20, 10, True, False, True, True))
-        poses.append((10, 10, -70, 10, 5, True, True, False, True))
-        poses.append((10, .1, -90, .1, .1, True, True, False, True))
-        poses.append((50, .1, .1, 0.1, .1, True, True, True, False))
-        poses.append((90, .1, 90, 0.1, .1, True, True, True, False))
-        poses.append((50, 10, 90, 0.1, .1, False, True, True, True))
-        poses.append((10, 20, 90, 0.1, .1, False, True, True, True))
+    for i in range(2):
+        poses.append(( 5, 50, -25, 10,  5, True, False, True, True))
+        poses.append((10, 20, -90, 20, 10, True, False, True, True))
+        poses.append((10, 50, -70, 10,  5, True, True, False, True))
+        poses.append((10, 10, -90, .1, .1, True, True, False, True))
+        poses.append((50,  5,  25,  5, 10, True, True, True, False))
+        poses.append((10, 10,  90, .1, .1, True, True, True, False))
+        poses.append((50, 10,  70,  5, 10, False, True, True, True))
+        poses.append((40, 10,  90, 10, 20, False, True, True, True))
 #        poses.append((1, 90, -40, 90, 90, True, False, True, True))
 #        poses.append((10, 0.1, -10, 10, .1, True, False, False, True))
 #        poses.append((10, .1, -10, 10, .1, False, True, True, False))
@@ -106,8 +107,9 @@ if __name__ == "__main__":
                                            interval=300, blit=True)
         plt.show()
 
-        # Set up formatting for the movie files
-        Writer = animation.writers['avconv']
-        writer = Writer(fps=15, metadata=dict(artist='Lars Schiller'),
-                        bitrate=1800)
-        line_ani.save('gait.mp4', writer=writer)
+        if save:
+            # Set up formatting for the movie files
+            Writer = animation.writers['avconv']
+            writer = Writer(fps=15, metadata=dict(artist='Lars Schiller'),
+                            bitrate=1800)
+            line_ani.save('gait.mp4', writer=writer)

@@ -26,22 +26,15 @@ PATTERNREFMODE = 'P9_30'  # "P9_25"  # 25 doesnt work.
 WALKINGCONFIRM = "P9_24"
 INFINITYMODE = "P9_26"
 
-PWMLED = "P8_15"  #"P8_16"
+PWMLED = "P8_15"  # "P8_16"
 PRESSURELED = "P8_14"  # "P8_15"
 PATTERNLED = "P8_17"
 WALKINGCONFIRMLED = "P8_16"  # "P8_18"
 INFINITYLED = "P8_18"
 
-# DISCRETEPRESSUREREF = ["P9_11", "P9_13", "P9_15", "P9_17"]
 DISCRETEPRESSUREREF = ["P9_11", "P9_17", "P9_15", "P9_13"]
-
-#
-#CONTINUOUSPRESSUREREF = ["P9_40", "P9_33", "P9_39", "P9_36",
-#                         "P9_35", "P9_37", "P9_38"]
-
 CONTINUOUSPRESSUREREF = ["P9_40", "P9_38", "P9_33", "P9_39", "P9_36",
                          "P9_35", "P9_37"]
-
 
 
 def print(*args, **kwargs):
@@ -81,9 +74,9 @@ class HUIThread(threading.Thread):
         GPIO.add_event_detect(INFINITYMODE, GPIO.RISING)
 
         self.leds = [PWMLED, PRESSURELED, PATTERNLED,
-                WALKINGCONFIRMLED, INFINITYLED]
-        
-        for i in range(5):    
+                     WALKINGCONFIRMLED, INFINITYLED]
+
+        for i in range(5):
             for led in self.leds:
                 GPIO.output(led, GPIO.HIGH)
                 time.sleep(.05)
@@ -119,13 +112,13 @@ class HUIThread(threading.Thread):
 
         for idx, pin in enumerate(DISCRETEPRESSUREREF):
             print('DValve Ref', idx, ': ', True if GPIO.input(pin) else False)
-        
+
         # check pattern btns
         if GPIO.event_detected(INFINITYMODE):
             print('Infmode btn pushed')
         if GPIO.event_detected(WALKINGCONFIRM):
             print('WALKING START btn pushed')
-        
+
         # check adc potis
         for idx, pin in enumerate(CONTINUOUSPRESSUREREF):
             val = ADC.read(pin)
@@ -134,8 +127,6 @@ class HUIThread(threading.Thread):
         time.sleep(1)
 
         print('\n')
-
-        
 
     def get_tasks(self):
         state, _ = self.check_state()
@@ -190,7 +181,7 @@ class HUIThread(threading.Thread):
             if sum(potis) == 0:
                 change = True
             else:
-                for i in range(3):    
+                for i in range(3):
                     for led in self.leds:
                         GPIO.output(led, GPIO.HIGH)
                     time.sleep(.05)
@@ -217,7 +208,8 @@ class HUIThread(threading.Thread):
     def set_valve(self):
         for idx, pin in enumerate(CONTINUOUSPRESSUREREF):
             self.cargo.pwm_task[str(idx)] = ADC.read(pin)
-            self.cargo.pwm_task[str(idx)] = round(ADC.read(pin)*100)  # bug-> read twice
+            # bug-> read twice
+            self.cargo.pwm_task[str(idx)] = round(ADC.read(pin)*100)
 
     def set_ref(self):
         for idx, pin in enumerate(CONTINUOUSPRESSUREREF):
@@ -244,24 +236,24 @@ class HUIThread(threading.Thread):
 
     def print_state(self):
         state_str = ('Current State: \n\n' +
-            'F1 Ref/state: \t\t{}\t{}\n'.format(True 
-                               if GPIO.input(DISCRETEPRESSUREREF[0]) 
-                               else False, self.cargo.dvalve_task['0']) +
-            'F2 Ref/state: \t\t{}\t{}\n'.format(True 
-                               if GPIO.input(DISCRETEPRESSUREREF[1]) 
-                               else False, self.cargo.dvalve_task['1']) +
-            'F3 Ref/state: \t\t{}\t{}\n'.format(True 
-                               if GPIO.input(DISCRETEPRESSUREREF[2]) 
-                               else False, self.cargo.dvalve_task['2']) +
-            'F4 Ref/state: \t\t{}\t{}\n'.format(True 
-                               if GPIO.input(DISCRETEPRESSUREREF[3]) 
-                               else False, self.cargo.dvalve_task['3'])
-            )
+                     'F1 Ref/state: \t\t{}\t{}\n'.format(
+                             True if GPIO.input(DISCRETEPRESSUREREF[0])
+                             else False, self.cargo.dvalve_task['0']) +
+                     'F2 Ref/state: \t\t{}\t{}\n'.format(
+                             True if GPIO.input(DISCRETEPRESSUREREF[1])
+                             else False, self.cargo.dvalve_task['1']) +
+                     'F3 Ref/state: \t\t{}\t{}\n'.format(
+                             True if GPIO.input(DISCRETEPRESSUREREF[2])
+                             else False, self.cargo.dvalve_task['2']) +
+                     'F4 Ref/state: \t\t{}\t{}\n'.format(
+                             True if GPIO.input(DISCRETEPRESSUREREF[3])
+                             else False, self.cargo.dvalve_task['3'])
+                     )
         for i in range(8):
             s = 'PWM Ref {}: \t\t{}\n'.format(i, self.cargo.pwm_task[str(i)])
             state_str = state_str + s
         for i in range(8):
-            s = 'Pressure {} Ref/state \t{}\t{}\n'.format(i,
-                          self.cargo.ref_task[str(i)], self.cargo.rec[str(i)])
+            s = 'Pressure {} Ref/state \t{}\t{}\n'.format(
+                    i, self.cargo.ref_task[str(i)], self.cargo.rec[str(i)])
             state_str = state_str + s
         print(state_str)

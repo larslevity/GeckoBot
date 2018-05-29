@@ -22,7 +22,6 @@ import time
 from Src.Hardware import sensors as sensors
 from Src.Hardware import actuators as actuators
 from Src.Management import state_machine
-#from Src.Communication import communication_thread as comm_t
 from Src.Communication import hardware_control as HUI
 
 from Src.Controller import walk_commander
@@ -35,15 +34,6 @@ MAX_PRESSURE = 0.85    # [bar] v2.4
 MAX_CTROUT = 0.50     # [10V]
 TSAMPLING = 0.001     # [sec]
 PID = [1.05, 0.03, 0.01]    # [1]
-
-
-INITIAL_PATTERN = [[0.74, 0.00, 0.00, 0.9, 0.57, 0.1, False, False, False, False, 10.0],
-                   [0.74, 0.00, 0.00, 0.9, 0.57, 0.1, False, True, True, False, 5.0]]
-
-FINAL_PATTERN = [[0.74, 0.0, 0.0, 0.9, 0.57, 0.25, False, True, True, False, 5.0],
-                   [0.00, 0.00, 0.00, 0.00, 0.0, 0.0, False, False, False, False, 1]]
-
-
 
 ## v2.2
 #PATTERN = [[0.0, 0.8, 0.9, 0.0, 0.25, 0.8, False, True, True, False, 5.0],
@@ -112,13 +102,14 @@ PATTERN30_50 = [[0.2, 0.62, 0.99, 0.0, 0.2, 0.71, False, True, True, False, 3.0]
 MAX_PRESSURE50_50 = 0.95    # [bar] v2.4
 
 
-
-
-
 # v3.0
-PATTERN = PATTERN30_50
-MAX_PRESSURE = MAX_PRESSURE50_50
+PATTERN = PATTERN30_00
 
+INITIAL_PATTERN = [PATTERN[-1][:6] + [False, False, False, False, 10.0],
+                   PATTERN[-1][:6] + [False, True, True, False, 5.0]]
+
+FINAL_PATTERN = [PATTERN[-1][:6] + [False, True, True, False, 5.0],
+                 [0.]*6 + [False]*4 + [.5]]
 
 
 def init_hardware():
@@ -151,7 +142,7 @@ def init_hardware():
                                           maxpressure=MAX_PRESSURE))
 
     print('Initialize Valves ...')
-    valve = []     
+    valve = []
     sets = [{'name': '0', 'pin': 'P9_22'},     # Upper Left Leg
             {'name': '1', 'pin': 'P8_19'},     # Upper Right Leg
             {'name': '2', 'pin': 'P9_21'},     # Left Belly
@@ -159,7 +150,7 @@ def init_hardware():
             {'name': '4', 'pin': 'P9_14'},     # Lower Left Leg
             {'name': '5', 'pin': 'P9_16'},     # Lower Right Leg
             {'name': '6', 'pin': 'P9_28'},
-            {'name': '7', 'pin': 'P9_42'}]     
+            {'name': '7', 'pin': 'P9_42'}]
     for elem in sets:
         valve.append(actuators.Valve(name=elem['name'], pwm_pin=elem['pin']))
 
@@ -306,10 +297,6 @@ def user_control(cargo):
     print("Arriving in USER_CONTROL State: ")
     cargo.actual_state = 'USER_CONTROL'
 
-    # DEBUG
-    print(cargo.pwm_task)
-    # DEBUG
-    
     while cargo.state == 'USER_CONTROL':
         # read
         for sensor in cargo.sens:
@@ -368,12 +355,11 @@ def reference_tracking(cargo):
     """ Track the reference from data.buffer """
     print("Arriving in REFERENCE_TRACKING State: ")
     cargo.actual_state = 'REFERENCE_TRACKING'
-    
+
     while cargo.state == 'REFERENCE_TRACKING':
         for valve in cargo.valve:
             cargo.ref_task[valve.name] = 0.0
-    
-    
+
         idx = 0
         while (cargo.wcomm.confirm and
                cargo.state == 'REFERENCE_TRACKING' and
@@ -390,15 +376,14 @@ def reference_tracking(cargo):
         cargo.wcomm.is_active = False
         #
         time.sleep(cargo.sampling_time)
-    
         new_state = cargo.state
-    
+
         # write
         for valve, controller in zip(cargo.valve, cargo.controller):
             valve.set_pwm(1.)
             cargo.rec_r['r{}'.format(valve.name)] = None
             cargo.rec_u['u{}'.format(valve.name)] = 1.
-    
+
         for dvalve in cargo.dvalve:
             dvalve.set_state(False)
     return (new_state, cargo)

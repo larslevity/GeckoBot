@@ -368,14 +368,17 @@ def reference_tracking(cargo):
                (idx < cargo.wcomm.idx_threshold or
                 cargo.wcomm.infmode)):
             cargo.wcomm.is_active = True
-            if idx == 0:
-                cargo.simpleWalkingCommander.process_pattern(INITIAL_PATTERN)
-            cargo.simpleWalkingCommander.process_pattern(cargo.wcomm.pattern)
+            try:
+                if idx == 0:
+                    cargo = process_pattern(cargo, INITIAL_PATTERN)
+                cargo = process_pattern(cargo, cargo.wcomm.pattern)
+            except IOError:
+                print('IO doesnt care ...')
             print('wcomm goes to round', idx)
             idx += 1
         cargo.wcomm.confirm = False
         if cargo.wcomm.is_active:
-            cargo.simpleWalkingCommander.process_pattern(FINAL_PATTERN)
+            cargo = process_pattern(cargo, FINAL_PATTERN)
         cargo.wcomm.is_active = False
         #
         time.sleep(cargo.sampling_time)
@@ -391,6 +394,53 @@ def reference_tracking(cargo):
             dvalve.set_state(False)
     new_state = cargo.state
     return (new_state, cargo)
+
+
+def process_pattern(cargo, pattern):
+    """ Play the given pattern only once.
+
+        Args:
+            pattern(list): A list of lists of references
+
+        Example:
+            WCommander.process_pattern([[ref11, ref12, ..., ref1N, tmin1],
+                                        [ref21, ref22, ..., ref2N, tmin2],
+                                        ...
+                                        [refM1, refM2, ..., refMN, tminM]])
+    """
+    n_valves = len(cargo.valve)
+    n_dvalves = len(pattern[0]) - 1 - n_valves
+
+    for pos in pattern:
+        # read the refs
+        local_min_process_time = pos[-1]
+        ppos = pos[:n_valves]
+        dpos = pos[-n_dvalves-1:-1]
+
+        # set d valves
+        for dvalve in cargo.dvalve:
+            state = dpos[int(dvalve.name)]
+            dvalve.set_state(state)
+        
+        # hold the thing for local_min_process_time
+        tstart = time.time()
+        while time.time() - tstart < local_min_process_time:
+            # read
+            for sensor in cargo.sens:
+                cargo.rec[sensor.name] = sensor.get_value()
+
+            # write
+            for valve, controller in zip(cargo.valve, cargo.controller):
+                ref = ppos[int(valve.name)]
+                sys_out = cargo.rec[valve.name]
+                ctr_out = controller.output(ref, sys_out)
+                valve.set_pwm(ctrlib.sys_input(ctr_out))
+                cargo.rec_r['r{}'.format(valve.name)] = ref
+                cargo.rec_u['u{}'.format(valve.name)] = ctr_out
+            # meta
+            time.sleep(cargo.sampling_time)
+    return cargo
+
 
 
 def error_state(cargo):

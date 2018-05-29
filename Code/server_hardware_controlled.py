@@ -77,29 +77,29 @@ PID = [1.05, 0.03, 0.01]    # [1]
 
 
 
-PATTERN30_00 = [[0.25, 0.66, 0.99, 0.0, 0.25, 0.86, False, True, True, False, 3.0],
-                [0.0, 0.66, 0.99, 0.0, 0.25, 0.86, True, True, True, True, 1.0],
-                [0.0, 0.66, 0.99, 0.0, 0.25, 0.86, True, False, False, True, 0.5],
-                [0.74, 0.25, 0.0, 0.85, 0.65, 0.25, True, False, False, True, 3.0],
-                [0.74, 0.0, 0.0, 0.85, 0.65, 0.25, True, True, True, True, 1.0],
-                [0.74, 0.0, 0.0, 0.85, 0.65, 0.25, False, True, True, False, 0.5]]
+PATTERN30_00 = [[0.25, 0.66, 0.99, 0.0, 0.25, 0.86, 0.5, .4, False, True, True, False, 3.0],
+                [0.0, 0.66, 0.99, 0.0, 0.25, 0.86, 0.1, .1, True, True, True, True, 1.0],
+                [0.0, 0.66, 0.99, 0.0, 0.25, 0.86, 0.1, .1, True, False, False, True, 0.5],
+                [0.74, 0.25, 0.0, 0.85, 0.65, 0.25, 0.5, .4, True, False, False, True, 3.0],
+                [0.74, 0.0, 0.0, 0.85, 0.65, 0.25, 0.1, .1, True, True, True, True, 1.0],
+                [0.74, 0.0, 0.0, 0.85, 0.65, 0.25, 0.1, .1, False, True, True, False, 0.5]]
 
-
-PATTERN30_20 = [[0.25, 0.66, 0.99, 0.0, 0.25, 0.80, False, True, True, False, 3.0],
-                [0.0, 0.66, 0.99, 0.0, 0.25, 0.80, True, True, True, True, 1.0],
-                [0.0, 0.66, 0.99, 0.0, 0.25, 0.80, True, False, False, True, 0.5],
-                [0.74, 0.25, 0.0, 0.85, 0.65, 0.25, True, False, False, True, 3.0],
-                [0.74, 0.0, 0.0, 0.85, 0.65, 0.25, True, True, True, True, 1.0],
-                [0.74, 0.0, 0.0, 0.85, 0.65, 0.25, False, True, True, False, 0.5]]
-
-# v3.0
-PATTERN30_50 = [[0.2, 0.62, 0.99, 0.0, 0.2, 0.71, False, True, True, False, 3.0],
-                [0.0, 0.62, 0.99, 0.0, 0.2, 0.71, True, True, True, True, 1.0],
-                [0.0, 0.62, 0.99, 0.0, 0.2, 0.71, True, False, False, True, 0.5],
-                [0.63, 0.25, 0.0, 0.9, 0.52, 0.2, True, False, False, True, 3.0],
-                [0.63, 0.0, 0.0, 0.9, 0.52, 0.2, True, True, True, True, 1.0],
-                [0.63, 0.0, 0.0, 0.9, 0.52, 0.2, False, True, True, False, 0.5]]
-MAX_PRESSURE50_50 = 0.95    # [bar] v2.4
+#
+#PATTERN30_20 = [[0.25, 0.66, 0.99, 0.0, 0.25, 0.80, False, True, True, False, 3.0],
+#                [0.0, 0.66, 0.99, 0.0, 0.25, 0.80, True, True, True, True, 1.0],
+#                [0.0, 0.66, 0.99, 0.0, 0.25, 0.80, True, False, False, True, 0.5],
+#                [0.74, 0.25, 0.0, 0.85, 0.65, 0.25, True, False, False, True, 3.0],
+#                [0.74, 0.0, 0.0, 0.85, 0.65, 0.25, True, True, True, True, 1.0],
+#                [0.74, 0.0, 0.0, 0.85, 0.65, 0.25, False, True, True, False, 0.5]]
+#
+## v3.0
+#PATTERN30_50 = [[0.2, 0.62, 0.99, 0.0, 0.2, 0.71, False, True, True, False, 3.0],
+#                [0.0, 0.62, 0.99, 0.0, 0.2, 0.71, True, True, True, True, 1.0],
+#                [0.0, 0.62, 0.99, 0.0, 0.2, 0.71, True, False, False, True, 0.5],
+#                [0.63, 0.25, 0.0, 0.9, 0.52, 0.2, True, False, False, True, 3.0],
+#                [0.63, 0.0, 0.0, 0.9, 0.52, 0.2, True, True, True, True, 1.0],
+#                [0.63, 0.0, 0.0, 0.9, 0.52, 0.2, False, True, True, False, 0.5]]
+#MAX_PRESSURE50_50 = 0.95    # [bar] v2.4
 
 
 # v3.0
@@ -243,8 +243,10 @@ def main():
 
     print('Starting Communication Thread ...')
     communication_thread = HUI.HUIThread(cargo)
-    communication_thread.daemon = True
+    communication_thread.setDaemon(True)
     communication_thread.start()
+    print('started UI Thread as daemon?: {}'.format(
+            communication_thread.isDaemon()))
 
     try:
         print('Run the StateMachine ...')
@@ -363,7 +365,8 @@ def reference_tracking(cargo):
         idx = 0
         while (cargo.wcomm.confirm and
                cargo.state == 'REFERENCE_TRACKING' and
-               idx < cargo.wcomm.idx_threshold):
+               (idx < cargo.wcomm.idx_threshold or
+                cargo.wcomm.infmode)):
             cargo.wcomm.is_active = True
             if idx == 0:
                 cargo.simpleWalkingCommander.process_pattern(INITIAL_PATTERN)

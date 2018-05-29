@@ -77,12 +77,12 @@ PID = [1.05, 0.03, 0.01]    # [1]
 
 
 
-PATTERN30_00 = [[0.25, 0.66, 0.99, 0.0, 0.25, 0.86, 0.5, .4, False, True, True, False, 3.0],
-                [0.0, 0.66, 0.99, 0.0, 0.25, 0.86, 0.1, .1, True, True, True, True, 1.0],
-                [0.0, 0.66, 0.99, 0.0, 0.25, 0.86, 0.1, .1, True, False, False, True, 0.5],
-                [0.74, 0.25, 0.0, 0.85, 0.65, 0.25, 0.5, .4, True, False, False, True, 3.0],
-                [0.74, 0.0, 0.0, 0.85, 0.65, 0.25, 0.1, .1, True, True, True, True, 1.0],
-                [0.74, 0.0, 0.0, 0.85, 0.65, 0.25, 0.1, .1, False, True, True, False, 0.5]]
+PATTERN30_00 = [[0.25, 0.66, 0.99, 0.0, 0.25, 0.86, 0.5, .4, False, True, True, False, 2.0],
+                [0.0, 0.66, 0.99, 0.0, 0.25, 0.86, 0.1, .1, True, True, True, True, .66],
+                [0.0, 0.66, 0.99, 0.0, 0.25, 0.86, 0.1, .1, True, False, False, True, 0.25],
+                [0.74, 0.25, 0.0, 0.85, 0.65, 0.25, 0.5, .4, True, False, False, True, 2.0],
+                [0.74, 0.0, 0.0, 0.85, 0.65, 0.25, 0.1, .1, True, True, True, True, .66],
+                [0.74, 0.0, 0.0, 0.85, 0.65, 0.25, 0.1, .1, False, True, True, False, 0.25]]
 
 #
 #PATTERN30_20 = [[0.25, 0.66, 0.99, 0.0, 0.25, 0.80, False, True, True, False, 3.0],
@@ -105,8 +105,8 @@ PATTERN30_00 = [[0.25, 0.66, 0.99, 0.0, 0.25, 0.86, 0.5, .4, False, True, True, 
 # v3.0
 PATTERN = PATTERN30_00
 
-INITIAL_PATTERN = [PATTERN[-1][:8] + [False, False, False, False, 10.0],
-                   PATTERN[-1][:8] + [False, True, True, False, 5.0]]
+INITIAL_PATTERN = [PATTERN[-1][:8] + [False, False, False, False, 3.0],
+                   PATTERN[-1][:8] + [False, True, True, False, 1.0]]
 
 FINAL_PATTERN = [PATTERN[-1][:8] + [False, True, True, False, 5.0],
                  [0.]*8 + [False]*4 + [.5]]
@@ -389,6 +389,7 @@ def reference_tracking(cargo):
 
         for dvalve in cargo.dvalve:
             dvalve.set_state(False)
+    new_state = cargo.state
     return (new_state, cargo)
 
 

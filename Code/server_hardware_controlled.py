@@ -105,11 +105,11 @@ PATTERN30_00 = [[0.25, 0.66, 0.99, 0.0, 0.25, 0.86, 0.5, .4, False, True, True, 
 # v3.0
 PATTERN = PATTERN30_00
 
-INITIAL_PATTERN = [PATTERN[-1][:6] + [False, False, False, False, 10.0],
-                   PATTERN[-1][:6] + [False, True, True, False, 5.0]]
+INITIAL_PATTERN = [PATTERN[-1][:8] + [False, False, False, False, 10.0],
+                   PATTERN[-1][:8] + [False, True, True, False, 5.0]]
 
-FINAL_PATTERN = [PATTERN[-1][:6] + [False, True, True, False, 5.0],
-                 [0.]*6 + [False]*4 + [.5]]
+FINAL_PATTERN = [PATTERN[-1][:8] + [False, True, True, False, 5.0],
+                 [0.]*8 + [False]*4 + [.5]]
 
 
 def init_hardware():

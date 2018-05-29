@@ -22,7 +22,7 @@ arc_res = 40    # resolution of arcs
 
 
 class RobotRepr(object):
-    def __init__(self, f_len=f_len, f_ori=f_ori, f_ang=f_ang):
+    def __init__(self, f_len=f_len, f_ori=f_ori, f_ang=f_ang, debug=False):
         self.cost = {'f_len': f_len, 'f_ori': f_ori, 'f_ang': f_ang}
         self.len_leg = 1
         self.len_tor = 1.1
@@ -32,6 +32,7 @@ class RobotRepr(object):
                       'gam': 0.1, 'bet1': .1, 'bet2': .1,
                       'F1': True, 'F2': False, 'F3': False, 'F4': False}
         self.meta = {'C1': 90, 'C2': -90, 'C3': 90, 'C4': -90,
+                     'C0': {'C1': 90, 'C2': -90, 'C3': 90, 'C4': -90},
                      'l1': self.len_leg, 'l2': self.len_leg,
                      'lg': self.len_tor, 'l3': self.len_leg,
                      'l4': self.len_leg}
@@ -40,6 +41,7 @@ class RobotRepr(object):
                        'F4': (2*self.len_leg, -self.len_tor),
                        'OM': (self.len_leg, 0),
                        'UM': (self.len_leg, -self.len_tor)}
+        self.debug = debug
         self.calc_pose()
         self.state['F4'] = True
         self.calc_pose()
@@ -159,8 +161,14 @@ class RobotRepr(object):
             c1 = np.mod(c1+360, 360)
             c2 = np.mod(c2+360, 360)
             # calc orientation of foot 3 and 4
-            c3 = np.mod(180 + gam - bet1 + alp2 + c2 + 360, 360)
-            c4 = np.mod(180 + gam + alp1 - bet2 + c1 + 360, 360)
+            if self.state['F1']:
+                c2_calc = c1 + alp1 + bet1
+                c3 = np.mod(180 + gam - bet1 + alp2 + c2_calc + 360, 360)
+                c4 = np.mod(180 + gam + alp1 - bet2 + c1 + 360, 360)
+            elif self.state['F2']:
+                c1_calc = c2 - alp1 - bet1
+                c3 = np.mod(180 + gam - bet1 + alp2 + c2 + 360, 360)
+                c4 = np.mod(180 + gam + alp1 - bet2 + c1_calc + 360, 360)
             C = [c1, c2, c3, c4]
             feet = ['F1', 'F2', 'F3', 'F4']
             obj_ori = 0
@@ -196,7 +204,6 @@ class RobotRepr(object):
                     constraint = constraint + \
                         np.sqrt((self.coords[foot][0] - xf[idx])**2 +
                                 (self.coords[foot][1] - yf[idx])**2)
-#                    print foot, 'is constraint'
             return constraint
 
         bleg = (blow*len_leg, bup*len_leg)
@@ -226,10 +233,10 @@ class RobotRepr(object):
         c1 = np.mod(c1+360, 360)
         c2 = np.mod(c2+360, 360)
         # save opt meta data
-#        print 'coords: ', self.coords['F3'], 'actual: ', (xf3, yf3)
-        print 'constraint function: ', constraint1(X)
-        print 'objective function: ', objective(X)
-        print 'solution vector: ', X
+        if self.debug:
+            print 'constraint function: ', constraint1(X)
+            print 'objective function: ', objective(X)
+            print 'solution vector: ', X
 
         self.meta['C1'] = c1
         self.meta['C2'] = c2
@@ -263,11 +270,6 @@ class RobotRepr(object):
         r4 = calc_rad(l4, bet2)
         r3 = calc_rad(l3, alp2)
         r2 = calc_rad(l2, bet1)
-#        alp1 = self.state['alp1']
-#        alp2 = self.state['alp2']
-#        gam = self.state['gam']
-#        bet1 = self.state['bet1']
-#        bet2 = self.state['bet2']
 
         # coords cp upper left leg
         xr1 = xf1 + np.cos(np.deg2rad(c1))*r1
@@ -312,11 +314,6 @@ class RobotRepr(object):
         r4 = calc_rad(l4, bet2)
         r3 = calc_rad(l3, alp2)
         r2 = calc_rad(l2, bet1)
-#        alp1 = self.state['alp1']
-#        alp2 = self.state['alp2']
-#        gam = self.state['gam']
-#        bet1 = self.state['bet1']
-#        bet2 = self.state['bet2']
 
         # coords cp upper right leg
         xr2 = xf2 - np.sin(np.deg2rad(c2-90))*r2
@@ -385,9 +382,9 @@ if __name__ == "__main__":
     import matplotlib
     matplotlib.use("Agg")
 
+    save = False
+
     robrepr = RobotRepr()
-#    (x, y), fp, nfp = robrepr.get_repr()
-#    plt.plot(x, y, 'b.')
 
     (x, y), fp, nfp = robrepr.get_repr()
     fpx, fpy = fp
@@ -397,24 +394,13 @@ if __name__ == "__main__":
     plt.plot(nfpx, nfpy, 'kx', markersize=10)
 
     poses = []
-#    poses.append((90, .1, -90, 90, .1, True, False, False, True))
-#    poses.append((90, 20, -20, 90, .1, True, False, False, True))
-#    poses.append((90, 20, -20, 90, .1, True, False, False, False))
-
-#    poses.append((90, .1, -90, 90, .1, True, False, False, True))
-#    poses.append((90, .1, -90, 90, .1, False, True, True, False))
-
-    for i in range(14):
+    for i in range(15):
         poses.append((.1, 90, 90, .1, 90, False, True, True, False))
         poses.append((.1, 90, 90, .1, 90, True, False, False, True))
         poses.append((5, 45, 45, .1, 45, True, False, False, True))
         poses.append((10, 0.1, -10, 10, .1, True, False, False, True))
         poses.append((10, .1, -10, 10, .1, False, True, True, False))
         poses.append((5, 45, 45, .1, 45, False, True, True, False))
-    poses.append((.1, 90, 90, .1, 90, False, True, True, False))
-    poses.append((.1, 90, 90, .1, 90, True, False, False, True))
-    poses.append((5, 45, 45, .1, 45, True, False, False, True))
-    poses.append((5, 45, 45, .1, 45, False, True, True, False))
 
     data, data_fp, data_nfp = [], [], []
     for idx, pose in enumerate(poses):
@@ -458,9 +444,11 @@ if __name__ == "__main__":
                                        fargs=(data, l, data_fp, lfp,
                                               data_nfp, lnfp),
                                        interval=300, blit=True)
-#    plt.show()
+    plt.show()
 
-    # Set up formatting for the movie files
-    Writer = animation.writers['avconv']
-    writer = Writer(fps=15, metadata=dict(artist='Lars Schiller'), bitrate=1800)
-    line_ani.save('lines.mp4', writer=writer)
+    if save:
+        # Set up formatting for the movie files
+        Writer = animation.writers['avconv']
+        writer = Writer(fps=15, metadata=dict(artist='Lars Schiller'),
+                        bitrate=1800)
+        line_ani.save('lines.mp4', writer=writer)

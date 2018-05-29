@@ -22,7 +22,8 @@ arc_res = 40    # resolution of arcs
 
 
 class RobotRepr(object):
-    def __init__(self):
+    def __init__(self, f_len=f_len, f_ori=f_ori, f_ang=f_ang):
+        self.cost = {'f_len': f_len, 'f_ori': f_ori, 'f_ang': f_ang}
         self.len_leg = 1
         self.len_tor = 1.1
         self.ref = {'alp1': 0.1, 'alp2': .1,
@@ -151,6 +152,9 @@ class RobotRepr(object):
                        alp10, bet10, gam0, alp20, bet20])
 
         def objective(X):
+            f_len = self.cost['f_len']
+            f_ori = self.cost['f_ori']
+            f_ang = self.cost['f_ang']
             c1, c2, l1, l2, lg, l3, l4, alp1, bet1, gam, alp2, bet2 = X
             c1 = np.mod(c1+360, 360)
             c2 = np.mod(c2+360, 360)

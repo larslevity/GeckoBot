@@ -46,6 +46,8 @@ class HUIThread(threading.Thread):
         """ """
         threading.Thread.__init__(self)
         self.cargo = cargo
+        self.lastconfirm = time.time()
+        self.lastinfmode = time.time()
 
         print('Initialize HUI Thread ...')
         ADC.setup()
@@ -223,13 +225,17 @@ class HUIThread(threading.Thread):
 
     def set_walking(self):
         if GPIO.event_detected(WALKINGCONFIRM):
-            confirm = self.cargo.wcomm.confirm
-            self.cargo.wcomm.confirm = not confirm
+            if time.time()-self.lastconfirm > 1:
+                confirm = self.cargo.wcomm.confirm
+                self.cargo.wcomm.confirm = not confirm
+                self.lastconfirm = time.time()
 
     def set_infmode(self):
         if GPIO.event_detected(INFINITYMODE):
-            state = self.cargo.wcomm.infmode
-            self.cargo.wcomm.infmode = not state
+            if time.time()-self.lastinfmode > 1:
+                state = self.cargo.wcomm.infmode
+                self.cargo.wcomm.infmode = not state
+                self.lastinfmode = time.time()
 
     def kill(self):
         self.cargo.state = 'EXIT'

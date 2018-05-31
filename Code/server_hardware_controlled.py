@@ -2,7 +2,7 @@
 """ Main function running on BBB
 According to: https://pymotw.com/2/socket/tcp.html
 
-
+---------------------------
 In order to enable 'P9_28' as pwm pin, you have to load 'cape-universala' in
 /boot/uEnv.txt by adding following line:
 
@@ -11,7 +11,40 @@ cape_enable=bone_capemgr.enable_partno=cape-universala
 
 and then configure it with:
 
-root@beaglebone: # config-pin P9_28 pwm
+root@beaglebone:# config-pin P9_28 pwm
+---------------------------
+In order to autorun this script after booting the BBB use crontab like this:
+root@beaglebone:# crontab -e
+
+adding the following lines to the cron boot jobs:
+
+@reboot config-pin P9_28 pwm
+@reboot python /home/debian/Git/GeckoBot/Code/server_hardware_controlled.py &
+
+NOTE: Dont forget the '&' at the end. Otherwise it will block the console.
+And you wont be able to ssh into it.
+But with the '&' it will run as background process and will be able to ssh into
+the BBB.
+
+Ending Background Processes
+
+Since the python script will run in the background, we need to find it and
+end it manually. Enter this to find the processing running off the file we
+wrote earlier.
+
+ps aux | grep home/debian/GeckoBot/Code/server_hardware_controlled.py
+
+You will get something like this:
+    root    873     0.1     0.6     7260    3264    ?   S   22:19   0:01 python home/debian/GeckoBot/Code/server_hardware_controlled.py
+
+The number 873 is the process ID. Then, just use the process ID and kill
+the process.
+
+root@beaglebone:# kill 873
+
+
+Ref: https://billwaa.wordpress.com/2014/10/03/beaglebone-black-launch-python-script-at-boot-like-arduino-sketch/
+---------------------------
 """
 from __future__ import print_function
 

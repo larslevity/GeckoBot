@@ -14,7 +14,7 @@ and then configure it with:
 root@beaglebone:# config-pin P9_28 pwm
 ---------------------------
 In order to autorun this script after booting the BBB use crontab like this:
-root@beaglebone:# crontab -e
+root@beaglebone:# crontab -e -u root
 
 adding the following lines to the cron boot jobs:
 
@@ -43,14 +43,24 @@ the process.
 root@beaglebone:# kill 873
 
 
-Ref: https://billwaa.wordpress.com/2014/10/03/beaglebone-black-launch-python-script-at-boot-like-arduino-sketch/
+Ref:
+https://billwaa.wordpress.com/2014/10/03/beaglebone-black-launch-python-script-at-boot-like-arduino-sketch/
 ---------------------------
+
+Okay, cron gives error:
+try with daemontools - Ref:
+http://samliu.github.io/2017/01/10/daemontools-cheatsheet.html
+
+---------------------------
+
+
 """
 from __future__ import print_function
 
 import sys
-import traceback
+#import traceback
 import time
+import logging
 
 from Src.Hardware import sensors as sensors
 from Src.Hardware import actuators as actuators
@@ -59,6 +69,23 @@ from Src.Communication import hardware_control as HUI
 
 from Src.Controller import walk_commander
 from Src.Controller import controller as ctrlib
+
+
+logPath = "log/"
+fileName = 'testlog'
+
+logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
+rootLogger = logging.getLogger()
+rootLogger.setLevel(logging.INFO)
+
+
+fileHandler = logging.FileHandler("{0}/{1}.log".format(logPath, fileName))
+fileHandler.setFormatter(logFormatter)
+rootLogger.addHandler(fileHandler)
+
+consoleHandler = logging.StreamHandler()
+consoleHandler.setFormatter(logFormatter)
+rootLogger.addHandler(consoleHandler)
 
 
 # MAX_PRESSURE = 0.85    # [bar] v2.2
@@ -160,7 +187,7 @@ def init_hardware():
         (list of actuators.DValve): list of software repr of initialized
             discrete valves
     """
-    print("Initialize Sensors ...")
+    rootLogger.info("Initialize Sensors ...")
     sens = []
     sets = [{'name': '0', 'id': 4},
             {'name': '1', 'id': 5},
@@ -174,7 +201,7 @@ def init_hardware():
         sens.append(sensors.DPressureSens(name=s['name'], mplx_id=s['id'],
                                           maxpressure=MAX_PRESSURE))
 
-    print('Initialize Valves ...')
+    rootLogger.info('Initialize Valves ...')
     valve = []
     sets = [{'name': '0', 'pin': 'P9_22'},     # Upper Left Leg
             {'name': '1', 'pin': 'P8_19'},     # Upper Right Leg
@@ -254,16 +281,16 @@ def main():
     - wait for communication thread to join
     - fin
     """
-    print('Initialize Hardware ...')
+    rootLogger.info('Initialize Hardware ...')
     sens, valve, dvalve = init_hardware()
     controller = init_controller()
 
-    print('Initialize the shared variables, i.e. cargo ...')
+    rootLogger.info('Initialize the shared variables, i.e. cargo ...')
     start_state = 'PAUSE'
     cargo = Cargo(start_state, sens=sens,
                   valve=valve, dvalve=dvalve, controller=controller)
 
-    print('Setting up the StateMachine ...')
+    rootLogger.info('Setting up the StateMachine ...')
     automat = state_machine.StateMachine()
     automat.add_state('PAUSE', pause_state)
     automat.add_state('ERROR', error_state)
@@ -274,33 +301,34 @@ def main():
     automat.add_state('QUIT', None, end_state=True)
     automat.set_start(start_state)
 
-    print('Starting Communication Thread ...')
-    communication_thread = HUI.HUIThread(cargo)
+    rootLogger.info('Starting Communication Thread ...')
+    communication_thread = HUI.HUIThread(cargo, rootLogger)
     communication_thread.setDaemon(True)
     communication_thread.start()
-    print('started UI Thread as daemon?: {}'.format(
+    rootLogger.info('started UI Thread as daemon?: {}'.format(
             communication_thread.isDaemon()))
 
     try:
-        print('Run the StateMachine ...')
+        rootLogger.info('Run the StateMachine ...')
         automat.run(cargo)
     # pylint: disable = bare-except
     except KeyboardInterrupt:
-        print('keyboard interrupt detected...   killing UI')
+        rootLogger.exception('keyboard interrupt detected...   killing UI')
         communication_thread.kill()
     except IOError:
-        print('cant read i2c device. Continue anyway ...')
-    except:
-        print('\n----------caught exception! in Main Thread----------------\n')
-        print("Unexpected error:\n", sys.exc_info()[0])
-        print(sys.exc_info()[1])
-        traceback.print_tb(sys.exc_info()[2])
+        rootLogger.exception('cant read i2c device. Continue anyway ...')
+    except Exception as err:
+        rootLogger.exception('\n----------caught exception! in Main Thread----------------\n')
+        rootLogger.exception("Unexpected error:\n", sys.exc_info()[0])
+        rootLogger.exception(sys.exc_info()[1])
+        rootLogger.error(err, exc_info=True)
+#        traceback.print_tb(sys.exc_info()[2])
 
-        print('\n ----------------------- killing UI --')
+        rootLogger.info('\n ----------------------- killing UI --')
         communication_thread.kill()
 
     communication_thread.join()
-    print('All is done ...')
+    rootLogger.info('All is done ...')
     sys.exit(0)
 
 
@@ -309,7 +337,7 @@ def pause_state(cargo):
     """
     do nothing. waiting for tasks
     """
-    print("Arriving in PAUSE State: ")
+    rootLogger.info("Arriving in PAUSE State: ")
     cargo.actual_state = 'PAUSE'
 
     for valve in cargo.valve:
@@ -329,7 +357,7 @@ def user_control(cargo):
     """
     Set the valves to the data recieved by the comm_tread
     """
-    print("Arriving in USER_CONTROL State: ")
+    rootLogger.info("Arriving in USER_CONTROL State: ")
     cargo.actual_state = 'USER_CONTROL'
 
     while cargo.state == 'USER_CONTROL':
@@ -359,7 +387,7 @@ def user_reference(cargo):
     """
     Set the references for each valves to the data recieved by the comm_tread
     """
-    print("Arriving in USER_REFERENCE State: ")
+    rootLogger.info("Arriving in USER_REFERENCE State: ")
     cargo.actual_state = 'USER_REFERENCE'
 
     while cargo.state == 'USER_REFERENCE':
@@ -388,7 +416,7 @@ def user_reference(cargo):
 
 def reference_tracking(cargo):
     """ Track the reference from data.buffer """
-    print("Arriving in REFERENCE_TRACKING State: ")
+    rootLogger.info("Arriving in REFERENCE_TRACKING State: ")
     cargo.actual_state = 'REFERENCE_TRACKING'
 
     while cargo.state == 'REFERENCE_TRACKING':
@@ -401,17 +429,22 @@ def reference_tracking(cargo):
                (idx < cargo.wcomm.idx_threshold or
                 cargo.wcomm.infmode)):
             cargo.wcomm.is_active = True
+            rootLogger.info('walking is active')
             try:
                 if idx == 0:
+                    rootLogger.info('Do Initial Pattern')
                     cargo = process_pattern(cargo, INITIAL_PATTERN)
+                rootLogger.info('Do Pattern of round {}'.format(idx))
                 cargo = process_pattern(cargo, cargo.wcomm.pattern)
             except IOError:
-                print('IO doesnt care ...')
-            print('wcomm goes to round', idx)
+                rootLogger.exception('IO doesnt care ...')
+            rootLogger.info('wcomm finished round {}'.format(idx))
             idx += 1
         cargo.wcomm.confirm = False
         if cargo.wcomm.is_active:
+            rootLogger.info('Do Final Pattern')
             cargo = process_pattern(cargo, FINAL_PATTERN)
+            rootLogger.info('walking is not active')
         cargo.wcomm.is_active = False
         #
         time.sleep(cargo.sampling_time)
@@ -478,19 +511,19 @@ def process_pattern(cargo, pattern):
 
 def error_state(cargo):
     """ Catching unexpected Errors and decide what to do """
-    print("Arriving in ERROR State: ")
+    rootLogger.info("Arriving in ERROR State: ")
     cargo.actual_state = 'ERROR'
 
-    print("Unexpected error:\n", cargo.errmsg[0])
-    print(cargo.errmsg[1])
-    traceback.print_tb(cargo.errmsg[2])
+    rootLogger.exception("Unexpected error:\n", cargo.errmsg[0])
+    rootLogger.exception(cargo.errmsg[1])
+#    traceback.print_tb(cargo.errmsg[2])
 
     return ('PAUSE', cargo)
 
 
 def exit_cleaner(cargo):
     """ Clean everything up """
-    print("cleaning ...")
+    rootLogger.info("cleaning ...")
     cargo.actual_state = 'EXIT'
 
     for idx, valve in enumerate(cargo.valve):

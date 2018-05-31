@@ -42,14 +42,15 @@ def print(*args, **kwargs):
 
 
 class HUIThread(threading.Thread):
-    def __init__(self, cargo):
+    def __init__(self, cargo, rootLogger=None):
         """ """
         threading.Thread.__init__(self)
         self.cargo = cargo
         self.lastconfirm = time.time()
         self.lastinfmode = time.time()
+        self.rootLogger = rootLogger
 
-        print('Initialize HUI Thread ...')
+        self.rootLogger.info('Initialize HUI Thread ...')
         ADC.setup()
 
         GPIO.setup(PWMREFMODE, GPIO.IN)
@@ -87,25 +88,25 @@ class HUIThread(threading.Thread):
 
     def run(self):
         """ run HUI """
-        print('Running HUI Thread ...')
+        self.rootLogger.info('Running HUI Thread ...')
 
         try:
             while self.cargo.state != 'EXIT':
                 try:
                     self.get_tasks()
                     time.sleep(TSamplingUI)
-                except:
-                    print('\n--caught exception! in HUI Thread--\n')
-                    print("Unexpected error:\n", sys.exc_info()[0])
-                    print(sys.exc_info()[1])
-                    traceback.print_tb(sys.exc_info()[2])
-                    print('\nBreaking the HUI loop ...')
+                except Exception as err:
+                    self.rootLogger.exception('\n----------caught exception! in HUI Thread----------------\n')
+                    self.rootLogger.exception("Unexpected error:\n", sys.exc_info()[0])
+                    self.rootLogger.exception(sys.exc_info()[1])
+                    self.rootLogger.error(err, exc_info=True)
+                    self.rootLogger.info('\nBreaking the HUI loop ...')
                     break
         finally:
-            print('Exit the HUI Thread ...')
+            self.rootLogger.info('Exit the HUI Thread ...')
             self.cargo.state = 'EXIT'
 
-        print('HUI Thread is done ...')
+        self.rootLogger.info('HUI Thread is done ...')
 
     def test_the_thing(self):
         state, change = self.check_state()
@@ -228,6 +229,7 @@ class HUIThread(threading.Thread):
             if time.time()-self.lastconfirm > 1:
                 confirm = self.cargo.wcomm.confirm
                 self.cargo.wcomm.confirm = not confirm
+                self.rootLogger.info('Walking was turned {}'.format(not confirm))
                 self.lastconfirm = time.time()
 
     def set_infmode(self):
@@ -235,6 +237,7 @@ class HUIThread(threading.Thread):
             if time.time()-self.lastinfmode > 1:
                 state = self.cargo.wcomm.infmode
                 self.cargo.wcomm.infmode = not state
+                self.rootLogger.info('Infmode was turned {}'.format(not state))
                 self.lastinfmode = time.time()
 
     def kill(self):

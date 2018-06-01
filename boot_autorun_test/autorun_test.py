@@ -11,7 +11,7 @@ import time
 import logging
 
 logPath = "/home/debian/Git/GeckoBot/boot_autorun_test/log/"
-fileName = 'testlog.log'
+fileName = 'testlog'
 
 logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
 rootLogger = logging.getLogger()

@@ -50,6 +50,8 @@ https://billwaa.wordpress.com/2014/10/03/beaglebone-black-launch-python-script-a
 Okay, cron gives error:
 try with daemontools - Ref:
 http://samliu.github.io/2017/01/10/daemontools-cheatsheet.html
+-- This is super weird! starting the script every time a error occurs again.
+
 
 ---------------------------
 
@@ -315,8 +317,6 @@ def main():
     except KeyboardInterrupt:
         rootLogger.exception('keyboard interrupt detected...   killing UI')
         communication_thread.kill()
-    except IOError:
-        rootLogger.exception('cant read i2c device. Continue anyway ...')
     except Exception as err:
         rootLogger.exception('\n----------caught exception! in Main Thread----------------\n')
         rootLogger.exception("Unexpected error:\n", sys.exc_info()[0])
@@ -363,7 +363,11 @@ def user_control(cargo):
     while cargo.state == 'USER_CONTROL':
         # read
         for sensor in cargo.sens:
-            cargo.rec[sensor.name] = sensor.get_value()
+            try:
+                cargo.rec[sensor.name] = sensor.get_value()
+            except IOError:
+                rootLogger.exception('cant read i2c device in user_control.' +
+                                         'Continue anyway ...')
 
         # write
         for valve in cargo.valve:
@@ -393,7 +397,11 @@ def user_reference(cargo):
     while cargo.state == 'USER_REFERENCE':
         # read
         for sensor in cargo.sens:
-            cargo.rec[sensor.name] = sensor.get_value()
+            try:
+                cargo.rec[sensor.name] = sensor.get_value()
+            except IOError:
+                rootLogger.exception('cant read i2c device in user_reference.'+
+                                         'Continue anyway ...')
 
         # write
         for valve, controller in zip(cargo.valve, cargo.controller):
@@ -430,14 +438,11 @@ def reference_tracking(cargo):
                 cargo.wcomm.infmode)):
             cargo.wcomm.is_active = True
             rootLogger.info('walking is active')
-            try:
-                if idx == 0:
-                    rootLogger.info('Do Initial Pattern')
-                    cargo = process_pattern(cargo, INITIAL_PATTERN)
-                rootLogger.info('Do Pattern of round {}'.format(idx))
-                cargo = process_pattern(cargo, cargo.wcomm.pattern)
-            except IOError:
-                rootLogger.exception('IO doesnt care ...')
+            if idx == 0:
+                rootLogger.info('Do Initial Pattern')
+                cargo = process_pattern(cargo, INITIAL_PATTERN)
+            rootLogger.info('Do Pattern of round {}'.format(idx))
+            cargo = process_pattern(cargo, cargo.wcomm.pattern)
             rootLogger.info('wcomm finished round {}'.format(idx))
             idx += 1
         cargo.wcomm.confirm = False
@@ -493,7 +498,11 @@ def process_pattern(cargo, pattern):
         while time.time() - tstart < local_min_process_time:
             # read
             for sensor in cargo.sens:
-                cargo.rec[sensor.name] = sensor.get_value()
+                try:
+                    cargo.rec[sensor.name] = sensor.get_value()
+                except IOError:
+                    rootLogger.exception('cant read i2c device in' +
+                                         'ptrn_proc. Continue anyway ...')
 
             # write
             for valve, controller in zip(cargo.valve, cargo.controller):

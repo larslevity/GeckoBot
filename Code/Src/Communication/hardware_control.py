@@ -140,7 +140,7 @@ class HUIThread(threading.Thread):
             self.process_pressure_ref()
         elif state == 'REFERENCE_TRACKING':
             self.process_pattern_ref()
-        # self.print_state()
+#        self.print_state()
 
     def process_pressure_ref(self):
         self.change_state('USER_REFERENCE')

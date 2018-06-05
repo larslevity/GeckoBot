@@ -45,6 +45,7 @@ root@beaglebone:# kill 873
 
 Ref:
 https://billwaa.wordpress.com/2014/10/03/beaglebone-black-launch-python-script-at-boot-like-arduino-sketch/
+
 ---------------------------
 
 Okay, cron gives error:
@@ -54,6 +55,67 @@ http://samliu.github.io/2017/01/10/daemontools-cheatsheet.html
 
 
 ---------------------------
+
+To see what happens in crontab, create a Crontab Logger:
+    
+crontab -e:
+    @reboot /home/debian/Git/GeckoBot/boot_autorun_test/ssh_hack.sh 2>&1 | 
+        /home/debian/Git/GeckoBot/boot_autorun_test/timestamp.sh  >>
+        /home/debian/Git/GeckoBot/boot_autorun_test/log/cronlog.log
+
+---------------------------
+
+ssh Hack:
+For some reason the BBIO.PWM module needs a terminal (tty) to initialize.
+A Job, started by crontab does not have a tty. There is simply no tty.
+Therefore we ssh into the device from the device itself. So we create a virtual
+tty.
+To do so run the "ssh_hack.sh" script. it will automatically run the start
+script.
+But you must enable a ssh-login as root without password. 2 Steps:
+#    1. disable root pw:
+#        passwd -d root 
+#            (to clear the password)
+#            editing 
+#        nano /etc/pam.d/common-auth
+#            Find the "pam_unix.so" line and add "nullok" to the end if its
+#            not there or change "nullok_secure" to be just "nullok" if
+#            yours says nullok_secure.
+    2. allow ssh to root login without password:
+        Ref: https://askubuntu.com/questions/115151/how-to-set-up-passwordless-ssh-access-for-root-user
+        Basically, we have to create a public key for root and copy it
+        to the BBB itself. Just follow the
+        instructions on Ref above.
+        But dont set "PasswordAuthentication" to 'no'! Since than nobody can
+        login with a password anymore, only with a public key. Which is not
+        yet created anywhere else except on the BBB itself.
+        
+        nano /etc/ssh/sshd_config
+            PermitRootLogin without-password
+    3. restart ssh service:
+        service ssh restart
+    4. disable requiretty for root:
+        visudo
+        and add 'Defaults: root !requiretty'
+
+    5. spawn a shell:
+        Ref: https://netsec.ws/?p=337
+
+#### stdin is no tty:
+    https://michaelseiler.net/2013/04/25/cron-jobs-and-ssh-errors-tty-and-sudo/
+
+
+https://sachinpradeeplinux.wordpress.com/2012/09/28/stdin-is-not-a-tty-error/
+On the destination server, edit /root/.bashrc file and comment out the "mesg y" line.
+
+If it is no there, please add the following line to .bashrc file .
+
+if `tty -s`; then
+ mesg n
+fi
+
+
+
 
 
 """
@@ -140,10 +202,10 @@ PID = [1.05, 0.03, 0.01]    # [1]
 
 
 PATTERN30_00 = [[0.25, 0.66, 0.99, 0.0, 0.25, 0.86, 0.0, .0, False, True, True, False, 2.0],
-                [0.0, 0.66, 0.99, 0.0, 0.25, 0.86, 0.0, .0, True, True, True, True, .66],
+                [0.0, 0.66, 0.99, 0.0, 0.25, 0.86, 0.5, .5, True, True, True, True, .66],
                 [0.0, 0.66, 0.99, 0.0, 0.25, 0.86, 0.0, .0, True, False, False, True, 0.25],
                 [0.74, 0.25, 0.0, 0.85, 0.65, 0.25, 0.0, .0, True, False, False, True, 2.0],
-                [0.74, 0.0, 0.0, 0.85, 0.65, 0.25, 0.0, .0, True, True, True, True, .66],
+                [0.74, 0.0, 0.0, 0.85, 0.65, 0.25, 0.5, .5, True, True, True, True, .66],
                 [0.74, 0.0, 0.0, 0.85, 0.65, 0.25, 0.0, .0, False, True, True, False, 0.25]]
 
 #

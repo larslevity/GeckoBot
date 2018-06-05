@@ -122,7 +122,6 @@ fi
 from __future__ import print_function
 
 import sys
-#import traceback
 import time
 import logging
 import errno
@@ -139,7 +138,8 @@ from Src.Controller import controller as ctrlib
 logPath = "log/"
 fileName = 'testlog'
 
-logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
+logFormatter = logging.Formatter(
+    "%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
 rootLogger = logging.getLogger()
 rootLogger.setLevel(logging.INFO)
 
@@ -153,88 +153,23 @@ consoleHandler.setFormatter(logFormatter)
 rootLogger.addHandler(consoleHandler)
 
 
+ptrn_v2_2 = HUI.generate_pattern(.80, 0.80, 0.90, 0.99, 0.80, 0.80, 0.0, 0.0)
+ptrn_v2_3 = HUI.generate_pattern(.72, 0.74, 0.99, 0.99, 0.69, 0.63, 0.0, 0.0)
+ptrn_v2_4 = HUI.generate_pattern(.64, 0.79, 0.99, 0.99, 0.75, 0.78, 0.0, 0.0)
+ptrn_v2_5 = HUI.generate_pattern(.92, 0.68, 0.93, 0.92, 0.90, 0.74, 0.0, 0.0)
+ptrn_v2_6 = HUI.generate_pattern(.77, 0.99, 0.97, 0.93, 0.70, 0.71, 0.0, 0.0)
+
+ptrn_v3_0 = HUI.generate_pattern(.74, 0.66, 0.99, 0.85, 0.65, 0.86, 0.0, 0.0)
+
+
 # MAX_PRESSURE = 0.85    # [bar] v2.2
 # MAX_PRESSURE = 0.93    # [bar] v2.3
-MAX_PRESSURE = 0.85    # [bar] v2.4
+MAX_PRESSURE = 0.85      # [bar] v2.4
+DEFAULT_PATTERN = ptrn_v3_0      # default pattern
+
 MAX_CTROUT = 0.50     # [10V]
 TSAMPLING = 0.001     # [sec]
 PID = [1.05, 0.03, 0.01]    # [1]
-
-## v2.2
-#PATTERN = [[0.0, 0.8, 0.9, 0.0, 0.25, 0.8, False, True, True, False, 5.0],
-#           [0.0, 0.8, 0.9, 0.0, 0.25, 0.8, True, True, True, True, 2.0],
-#           [0.0, 0.8, 0.9, 0.0, 0.25, 0.8, True, False, False, True, 1.0],
-#           [0.8, 0.0, 0.0, 0.99, 0.8, 0.3, True, False, False, True, 5.0],
-#           [0.8, 0.0, 0.0, 0.99, 0.8, 0.3, True, True, True, True, 2.0],
-#           [0.8, 0.0, 0.0, 0.99, 0.8, 0.3, False, True, True, False, 1.0]]
-
-## v2.3
-#PATTERN = [[0.0, 0.74, 0.99, 0.0, 0.25, 0.63, False, True, True, False, 5.0],
-#           [0.0, 0.74, 0.99, 0.0, 0.25, 0.63, True, True, True, True, 2.0],
-#           [0.0, 0.74, 0.99, 0.0, 0.25, 0.63, True, False, False, True, 1.0],
-#           [0.72, 0.0, 0.0, 0.99, 0.69, 0.25, True, False, False, True, 5.0],
-#           [0.72, 0.0, 0.0, 0.99, 0.69, 0.25, True, True, True, True, 2.0],
-#           [0.72, 0.0, 0.0, 0.99, 0.69, 0.25, False, True, True, False, 1.0]]
-
-## v2.4
-#PATTERN = [[0.0, 0.79, 0.99, 0.0, 0.25, 0.78, False, True, True, False, 5.0],
-#           [0.0, 0.79, 0.99, 0.0, 0.25, 0.78, True, True, True, True, 2.0],
-#           [0.0, 0.79, 0.99, 0.0, 0.25, 0.78, True, False, False, True, 1.0],
-#           [0.64, 0.0, 0.0, 0.99, 0.75, 0.3, True, False, False, True, 5.0],
-#           [0.64, 0.0, 0.0, 0.99, 0.75, 0.3, True, True, True, True, 2.0],
-#           [0.64, 0.0, 0.0, 0.99, 0.75, 0.3, False, True, True, False, 1.0]]
-
-## v2.5
-#PATTERN = [[0.0, 0.68, 0.93, 0.0, 0.30, 0.74, False, True, True, False, 5.0],
-#           [0.0, 0.68, 0.93, 0.0, 0.30, 0.74, True, True, True, True, 2.0],
-#           [0.0, 0.68, 0.93, 0.0, 0.30, 0.74, True, False, False, True, 1.0],
-#           [0.92, 0.0, 0.0, 0.92, 0.90, 0.25, True, False, False, True, 5.0],
-#           [0.92, 0.0, 0.0, 0.92, 0.90, 0.25, True, True, True, True, 2.0],
-#           [0.92, 0.0, 0.0, 0.92, 0.90, 0.25, False, True, True, False, 1.0]]
-
-## v2.6
-#PATTERN = [[0.0, 0.99, 0.97, 0.0, 0.25, 0.71, False, True, True, False, 5.0],
-#           [0.0, 0.99, 0.97, 0.0, 0.25, 0.71, True, True, True, True, 2.0],
-#           [0.0, 0.99, 0.97, 0.0, 0.25, 0.71, True, False, False, True, 1.0],
-#           [0.77, 0.0, 0.0, 0.93, 0.70, 0.25, True, False, False, True, 5.0],
-#           [0.77, 0.0, 0.0, 0.93, 0.70, 0.25, True, True, True, True, 2.0],
-#           [0.77, 0.0, 0.0, 0.93, 0.70, 0.25, False, True, True, False, 1.0]]
-
-
-
-PATTERN30_00 = [[0.25, 0.66, 0.99, 0.0, 0.25, 0.86, 0.0, .0, False, True, True, False, 2.0],
-                [0.0, 0.66, 0.99, 0.0, 0.25, 0.86, 0.5, .5, True, True, True, True, .66],
-                [0.0, 0.66, 0.99, 0.0, 0.25, 0.86, 0.0, .0, True, False, False, True, 0.25],
-                [0.74, 0.25, 0.0, 0.85, 0.65, 0.25, 0.0, .0, True, False, False, True, 2.0],
-                [0.74, 0.0, 0.0, 0.85, 0.65, 0.25, 0.5, .5, True, True, True, True, .66],
-                [0.74, 0.0, 0.0, 0.85, 0.65, 0.25, 0.0, .0, False, True, True, False, 0.25]]
-
-#
-#PATTERN30_20 = [[0.25, 0.66, 0.99, 0.0, 0.25, 0.80, False, True, True, False, 3.0],
-#                [0.0, 0.66, 0.99, 0.0, 0.25, 0.80, True, True, True, True, 1.0],
-#                [0.0, 0.66, 0.99, 0.0, 0.25, 0.80, True, False, False, True, 0.5],
-#                [0.74, 0.25, 0.0, 0.85, 0.65, 0.25, True, False, False, True, 3.0],
-#                [0.74, 0.0, 0.0, 0.85, 0.65, 0.25, True, True, True, True, 1.0],
-#                [0.74, 0.0, 0.0, 0.85, 0.65, 0.25, False, True, True, False, 0.5]]
-#
-## v3.0
-#PATTERN30_50 = [[0.2, 0.62, 0.99, 0.0, 0.2, 0.71, False, True, True, False, 3.0],
-#                [0.0, 0.62, 0.99, 0.0, 0.2, 0.71, True, True, True, True, 1.0],
-#                [0.0, 0.62, 0.99, 0.0, 0.2, 0.71, True, False, False, True, 0.5],
-#                [0.63, 0.25, 0.0, 0.9, 0.52, 0.2, True, False, False, True, 3.0],
-#                [0.63, 0.0, 0.0, 0.9, 0.52, 0.2, True, True, True, True, 1.0],
-#                [0.63, 0.0, 0.0, 0.9, 0.52, 0.2, False, True, True, False, 0.5]]
-#MAX_PRESSURE50_50 = 0.95    # [bar] v2.4
-
-
-# v3.0
-PATTERN = PATTERN30_00
-
-INITIAL_PATTERN = [PATTERN[-1][:8] + [False, False, False, False, 3.0],
-                   PATTERN[-1][:8] + [False, True, True, False, 1.0]]
-
-FINAL_PATTERN = [PATTERN[-1][:8] + [False, True, True, False, 5.0],
-                 [0.]*8 + [False]*4 + [.5]]
 
 
 def init_hardware():
@@ -381,7 +316,8 @@ def main():
         rootLogger.exception('keyboard interrupt detected...   killing UI')
         communication_thread.kill()
     except Exception as err:
-        rootLogger.exception('\n----------caught exception! in Main Thread----------------\n')
+        rootLogger.exception(
+            '\n----------caught exception! in Main Thread----------------\n')
         rootLogger.exception("Unexpected error:\n", sys.exc_info()[0])
         rootLogger.exception(sys.exc_info()[1])
         rootLogger.error(err, exc_info=True)
@@ -430,8 +366,9 @@ def user_control(cargo):
                 cargo.rec[sensor.name] = sensor.get_value()
             except IOError as e:
                 if e.errno == errno.EREMOTEIO:
-                    rootLogger.exception('cant read i2c device in user_control.' +
-                                         'Continue anyway ...Fail in [{}]'.format(sensor.name))
+                    rootLogger.exception(
+                        'cant read i2c device in user_control.' +
+                        'Continue anyway ...Fail in [{}]'.format(sensor.name))
                 else:
                     rootLogger.exception('Sensor [{}]'.format(sensor.name))
                     rootLogger.error(e, exc_info=True)
@@ -469,8 +406,9 @@ def user_reference(cargo):
                 cargo.rec[sensor.name] = sensor.get_value()
             except IOError as e:
                 if e.errno == errno.EREMOTEIO:
-                    rootLogger.exception('cant read i2c device in user_reference.'+
-                                         'Continue anyway ... Fail in [{}]'.format(sensor.name))
+                    rootLogger.exception(
+                        'cant read i2c device in user_reference.' +
+                        'Continue anyway ... Fail in [{}]'.format(sensor.name))
                 else:
                     rootLogger.exception('Sensor [{}]'.format(sensor.name))
                     rootLogger.error(e, exc_info=True)
@@ -513,15 +451,15 @@ def reference_tracking(cargo):
             rootLogger.info('walking is active')
             if idx == 0:
                 rootLogger.info('Do Initial Pattern')
-                cargo = process_pattern(cargo, INITIAL_PATTERN)
+                cargo = process_pattern(cargo, initial=True)
             rootLogger.info('Do Pattern of round {}'.format(idx))
-            cargo = process_pattern(cargo, cargo.wcomm.pattern)
+            cargo = process_pattern(cargo)
             rootLogger.info('wcomm finished round {}'.format(idx))
             idx += 1
         cargo.wcomm.confirm = False
         if cargo.wcomm.is_active:
             rootLogger.info('Do Final Pattern')
-            cargo = process_pattern(cargo, FINAL_PATTERN)
+            cargo = process_pattern(cargo, final=True)
             rootLogger.info('walking is not active')
         cargo.wcomm.is_active = False
         #
@@ -540,7 +478,7 @@ def reference_tracking(cargo):
     return (new_state, cargo)
 
 
-def process_pattern(cargo, pattern):
+def process_pattern(cargo, initial=False, final=False):
     """ Play the given pattern only once.
 
         Args:
@@ -552,10 +490,16 @@ def process_pattern(cargo, pattern):
                                         ...
                                         [refM1, refM2, ..., refMN, tminM]])
     """
+    if initial:
+        pattern = initial_pattern(cargo.wcomm.pattern)
+    elif final:
+        pattern = final_pattern(cargo.wcomm.pattern)
+    else:
+        pattern = cargo.wcomm.pattern
     n_valves = len(cargo.valve)
     n_dvalves = len(pattern[0]) - 1 - n_valves
 
-    for pos in pattern:
+    for idx, pos in enumerate(pattern):
         # read the refs
         local_min_process_time = pos[-1]
         ppos = pos[:n_valves]
@@ -565,7 +509,7 @@ def process_pattern(cargo, pattern):
         for dvalve in cargo.dvalve:
             state = dpos[int(dvalve.name)]
             dvalve.set_state(state)
-        
+
         # hold the thing for local_min_process_time
         tstart = time.time()
         while time.time() - tstart < local_min_process_time:
@@ -575,8 +519,10 @@ def process_pattern(cargo, pattern):
                     cargo.rec[sensor.name] = sensor.get_value()
                 except IOError as e:
                     if e.errno == errno.EREMOTEIO:
-                        rootLogger.exception('cant read i2c device in' +
-                                             'ptrn_proc. Continue anyway ...Fail in [{}]'.format(sensor.name))
+                        rootLogger.exception(
+                            'cant read i2c device in' +
+                            'ptrn_proc. Continue anyway ...' +
+                            'Fail in [{}]'.format(sensor.name))
                     else:
                         rootLogger.exception('Sensor [{}]'.format(sensor.name))
                         rootLogger.error(e, exc_info=True)
@@ -584,7 +530,7 @@ def process_pattern(cargo, pattern):
 
             # write
             for valve, controller in zip(cargo.valve, cargo.controller):
-                ref = ppos[int(valve.name)]
+                ref = cargo.wcomm.pattern[idx][:n_valves][int(valve.name)]
                 sys_out = cargo.rec[valve.name]
                 ctr_out = controller.output(ref, sys_out)
                 valve.set_pwm(ctrlib.sys_input(ctr_out))
@@ -593,7 +539,6 @@ def process_pattern(cargo, pattern):
             # meta
             time.sleep(cargo.sampling_time)
     return cargo
-
 
 
 def error_state(cargo):
@@ -663,11 +608,25 @@ class Cargo(object):
 
 class WCommCargo(object):
     def __init__(self):
-        self.pattern = PATTERN
+        self.pattern = DEFAULT_PATTERN
+        self.ptrndic = {'default': DEFAULT_PATTERN,
+                        'usr_ptrn': HUI.generate_pattern(
+                                0, 0, 0, 0, 0, 0, 0, 0)}
         self.confirm = False
         self.is_active = False
         self.idx_threshold = 3
-        self.infmode = False
+        self.infmode = True  # default: walk forever
+        self.user_pattern = False
+
+
+def initial_pattern(ptrn):
+    return [ptrn[-1][:8] + [False, False, False, False, 2.0],
+            ptrn[-1][:8] + [False, True, True, False, .66]]
+
+
+def final_pattern(ptrn):
+    return [ptrn[-1][:8] + [False, True, True, False, 2.0],
+            [0.]*8 + [False]*4 + [.25]]
 
 
 if __name__ == '__main__':

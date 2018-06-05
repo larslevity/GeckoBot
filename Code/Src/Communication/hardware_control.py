@@ -10,7 +10,6 @@ from __future__ import print_function
 import __builtin__
 import threading
 import time
-import traceback
 import sys
 import Adafruit_BBIO.GPIO as GPIO
 import Adafruit_BBIO.ADC as ADC
@@ -18,6 +17,7 @@ import Adafruit_BBIO.ADC as ADC
 from termcolor import colored
 
 TSamplingUI = .1
+p7_ptrn = 0.0
 
 PWMREFMODE = "P9_23"
 PRESSUREREFMODE = "P9_27"
@@ -39,6 +39,25 @@ CONTINUOUSPRESSUREREF = ["P9_40", "P9_38", "P9_33", "P9_39", "P9_36",
 
 def print(*args, **kwargs):
     __builtin__.print(colored('Comm_Thread: ', 'red'), *args, **kwargs)
+
+
+def generate_pattern(p0, p1, p2, p3, p4, p5, p6, p7):
+    t_move = 2.0
+    t_fix = .66
+    t_dfx = .25
+    p01 = 0.25
+    p11 = 0.25
+    p41 = 0.25
+    p51 = 0.25
+    data = [
+        [p01, p1, p2, 0.0, p41, p5, p6, 0.0, False, True, True, False, t_move],
+        [0.0, p1, p2, 0.0, p41, p5, p6, 0.0, True, True, True, True, t_fix],
+        [0.0, p1, p2, 0.0, p41, p5, p6, 0.0, True, False, False, True, t_dfx],
+        [p0, p11, 0.0, p3, p4, p51, 0.0, p7, True, False, False, True, t_move],
+        [p0, 0.0, 0.0, p3, p4, p51, 0.0, p7, True, True, True, True, t_fix],
+        [p0, 0.0, 0.0, p3, p4, p51, 0.0, p7, False, True, True, False, t_dfx]
+    ]
+    return data
 
 
 class HUIThread(threading.Thread):
@@ -89,15 +108,17 @@ class HUIThread(threading.Thread):
     def run(self):
         """ run HUI """
         self.rootLogger.info('Running HUI Thread ...')
-
+        excp_str = (
+            '\n----------caught exception! in HUI Thread----------------\n')
         try:
             while self.cargo.state != 'EXIT':
                 try:
                     self.get_tasks()
                     time.sleep(TSamplingUI)
                 except Exception as err:
-                    self.rootLogger.exception('\n----------caught exception! in HUI Thread----------------\n')
-                    self.rootLogger.exception("Unexpected error:\n", sys.exc_info()[0])
+                    self.rootLogger.exception(excp_str)
+                    self.rootLogger.exception(
+                            "Unexpected error:\n", sys.exc_info()[0])
                     self.rootLogger.exception(sys.exc_info()[1])
                     self.rootLogger.error(err, exc_info=True)
                     self.rootLogger.info('\nBreaking the HUI loop ...')
@@ -162,8 +183,10 @@ class HUIThread(threading.Thread):
 
     def process_pattern_ref(self):
         self.change_state('REFERENCE_TRACKING')
+        self.set_pattern()
         self.set_walking()
-        self.set_infmode()
+        # self.set_infmode()
+        self.set_userpattern()
 
     def check_state(self):
         new_state = None
@@ -200,7 +223,9 @@ class HUIThread(threading.Thread):
                            (PATTERNLED, "REFERENCE_TRACKING")]:
             GPIO.output(pin, GPIO.HIGH if actual_state == state else GPIO.LOW)
         for pin, state in [(WALKINGCONFIRMLED, self.cargo.wcomm.is_active),
-                           (INFINITYLED, self.cargo.wcomm.infmode)]:
+                           # (INFINITYLED, self.cargo.wcomm.infmode)
+                           (INFINITYLED, self.cargo.wcomm.user_pattern)
+                           ]:
             GPIO.output(pin, GPIO.HIGH if state else GPIO.LOW)
 
     def change_state(self, state):
@@ -219,6 +244,18 @@ class HUIThread(threading.Thread):
             self.cargo.ref_task[str(idx)] = ADC.read(pin)
             self.cargo.ref_task[str(idx)] = round(ADC.read(pin)*100)/100.
 
+    def set_pattern(self):
+        if self.cargo.wcomm.user_pattern:
+            pref = []
+            for idx, pin in enumerate(CONTINUOUSPRESSUREREF):
+                _ = ADC.read(pin)
+                pref.append(round(ADC.read(pin)*100)/100.)
+            pref.append(p7_ptrn)
+            pattern = generate_pattern(*pref)
+            self.cargo.wcomm.pattern = pattern
+#        else:
+#            self.cargo.wcomm.pattern = self.cargo.wcomm.ptrndic['default']
+
     def set_dvalve(self):
         for idx, pin in enumerate(DISCRETEPRESSUREREF):
             self.cargo.dvalve_task[str(idx)] = (
@@ -229,7 +266,8 @@ class HUIThread(threading.Thread):
             if time.time()-self.lastconfirm > 1:
                 confirm = self.cargo.wcomm.confirm
                 self.cargo.wcomm.confirm = not confirm
-                self.rootLogger.info('Walking was turned {}'.format(not confirm))
+                self.rootLogger.info(
+                        'Walking was turned {}'.format(not confirm))
                 self.lastconfirm = time.time()
 
     def set_infmode(self):
@@ -239,6 +277,18 @@ class HUIThread(threading.Thread):
                 self.cargo.wcomm.infmode = not state
                 self.rootLogger.info('Infmode was turned {}'.format(not state))
                 self.lastinfmode = time.time()
+
+    def set_userpattern(self):
+        if GPIO.event_detected(INFINITYMODE):
+            if time.time()-self.lastinfmode > 1:
+                state = self.cargo.wcomm.user_pattern
+                self.cargo.wcomm.user_pattern = not state
+                self.rootLogger.info(
+                        'user_pattern was turned {}'.format(not state))
+                self.lastinfmode = time.time()
+                if state:  # user_pattern was True -> now its False
+                    self.cargo.wcomm.pattern = \
+                        self.cargo.wcomm.ptrndic['default']
 
     def kill(self):
         self.cargo.state = 'EXIT'

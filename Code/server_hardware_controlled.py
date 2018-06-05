@@ -125,6 +125,7 @@ import sys
 #import traceback
 import time
 import logging
+import errno
 
 from Src.Hardware import sensors as sensors
 from Src.Hardware import actuators as actuators
@@ -427,9 +428,14 @@ def user_control(cargo):
         for sensor in cargo.sens:
             try:
                 cargo.rec[sensor.name] = sensor.get_value()
-            except IOError:
-                rootLogger.exception('cant read i2c device in user_control.' +
-                                         'Continue anyway ...')
+            except IOError as e:
+                if e.errno == errno.EREMOTEIO:
+                    rootLogger.exception('cant read i2c device in user_control.' +
+                                         'Continue anyway ...Fail in [{}]'.format(sensor.name))
+                else:
+                    rootLogger.exception('Sensor [{}]'.format(sensor.name))
+                    rootLogger.error(e, exc_info=True)
+                    raise e
 
         # write
         for valve in cargo.valve:
@@ -461,9 +467,14 @@ def user_reference(cargo):
         for sensor in cargo.sens:
             try:
                 cargo.rec[sensor.name] = sensor.get_value()
-            except IOError:
-                rootLogger.exception('cant read i2c device in user_reference.'+
-                                         'Continue anyway ...')
+            except IOError as e:
+                if e.errno == errno.EREMOTEIO:
+                    rootLogger.exception('cant read i2c device in user_reference.'+
+                                         'Continue anyway ... Fail in [{}]'.format(sensor.name))
+                else:
+                    rootLogger.exception('Sensor [{}]'.format(sensor.name))
+                    rootLogger.error(e, exc_info=True)
+                    raise e
 
         # write
         for valve, controller in zip(cargo.valve, cargo.controller):
@@ -562,9 +573,14 @@ def process_pattern(cargo, pattern):
             for sensor in cargo.sens:
                 try:
                     cargo.rec[sensor.name] = sensor.get_value()
-                except IOError:
-                    rootLogger.exception('cant read i2c device in' +
-                                         'ptrn_proc. Continue anyway ...')
+                except IOError as e:
+                    if e.errno == errno.EREMOTEIO:
+                        rootLogger.exception('cant read i2c device in' +
+                                             'ptrn_proc. Continue anyway ...Fail in [{}]'.format(sensor.name))
+                    else:
+                        rootLogger.exception('Sensor [{}]'.format(sensor.name))
+                        rootLogger.error(e, exc_info=True)
+                        raise e
 
             # write
             for valve, controller in zip(cargo.valve, cargo.controller):

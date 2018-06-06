@@ -12,6 +12,7 @@ except ImportError:
     print "Can't import Adafruit_I2C"
 
 import subprocess
+import time
 
 
 # import random
@@ -126,3 +127,50 @@ class DPressureSens(object):
 
     def set_maxpressure(self, maxpressure):
         self.maxpressure = maxpressure
+
+
+class MPU_9150(object):
+    plexer = MultiPlexer(address=0x71)
+
+    def __init__(self, mplx_id, address=0x68):
+        power_mgmt_1 = 0x6b     # register power management of IMU
+        self.mplx_id = mplx_id    # plex ID of IMU
+        # MultiPlexer schlaten, um das Modul ansprechen zu koennen
+        self.i2c = Adafruit_I2C.get_i2c_device(address, busnum=2)
+        self.plexer.select(self.mplx_id)
+        time.sleep(.1)
+        # Power on of Acc
+        self.i2c.write8(power_mgmt_1, 0x00)
+
+    def _read_word(self, reg):
+        sens_bytes = self.i2c.readList(register=reg, length=2)
+        msb = sens_bytes[0]
+        lsb = sens_bytes[1]
+        value = (msb << 8) + lsb
+        return value
+
+    def _read_word_2c(self, reg):
+        val = self._read_word(reg)
+        if (val >= 0x8000):
+            return -((65535 - val) + 1)
+        else:
+            return val
+
+    def get_acceleration(self, raw=False):
+        self.plexer.select(self.mplx_id)
+
+        acc_xout = self._read_word_2c(0x3b)
+        acc_yout = self._read_word_2c(0x3d)
+        acc_zout = self._read_word_2c(0x3f)
+        return (acc_xout, acc_yout, acc_zout)
+
+
+if __name__ == "__main__":
+    IMU = MPU_9150(0)
+    while True:
+        x, y, z = IMU.get_acceleration()
+        s = 'x_acc: {}\n'.format(x)
+        s = s + 'y_acc: {}\n'.format(y)
+        s = s + 'z_acc: {}\n'.format(z)
+        print s
+        time.sleep(.05)

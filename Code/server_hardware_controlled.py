@@ -6,7 +6,7 @@ According to: https://pymotw.com/2/socket/tcp.html
 In order to enable 'P9_28' as pwm pin, you have to load 'cape-universala' in
 /boot/uEnv.txt by adding following line:
 
-nano /boot/uEnv.txt: 
+nano /boot/uEnv.txt
 cape_enable=bone_capemgr.enable_partno=cape-universala
 
 and then configure it with:
@@ -57,9 +57,9 @@ http://samliu.github.io/2017/01/10/daemontools-cheatsheet.html
 ---------------------------
 
 To see what happens in crontab, create a Crontab Logger:
-    
+
 crontab -e:
-    @reboot /home/debian/Git/GeckoBot/boot_autorun_test/ssh_hack.sh 2>&1 | 
+    @reboot /home/debian/Git/GeckoBot/boot_autorun_test/ssh_hack.sh 2>&1 |
         /home/debian/Git/GeckoBot/boot_autorun_test/timestamp.sh  >>
         /home/debian/Git/GeckoBot/boot_autorun_test/log/cronlog.log
 
@@ -74,9 +74,9 @@ To do so run the "ssh_hack.sh" script. it will automatically run the start
 script.
 But you must enable a ssh-login as root without password. 2 Steps:
 #    1. disable root pw:
-#        passwd -d root 
+#        passwd -d root
 #            (to clear the password)
-#            editing 
+#            editing
 #        nano /etc/pam.d/common-auth
 #            Find the "pam_unix.so" line and add "nullok" to the end if its
 #            not there or change "nullok_secure" to be just "nullok" if
@@ -89,7 +89,7 @@ But you must enable a ssh-login as root without password. 2 Steps:
         But dont set "PasswordAuthentication" to 'no'! Since than nobody can
         login with a password anymore, only with a public key. Which is not
         yet created anywhere else except on the BBB itself.
-        
+
         nano /etc/ssh/sshd_config
             PermitRootLogin without-password
     3. restart ssh service:
@@ -106,7 +106,8 @@ But you must enable a ssh-login as root without password. 2 Steps:
 
 
 https://sachinpradeeplinux.wordpress.com/2012/09/28/stdin-is-not-a-tty-error/
-On the destination server, edit /root/.bashrc file and comment out the "mesg y" line.
+On the destination server, edit /root/.bashrc file and comment out
+the "mesg y" line.
 
 If it is no there, please add the following line to .bashrc file .
 
@@ -130,6 +131,8 @@ from Src.Hardware import sensors as sensors
 from Src.Hardware import actuators as actuators
 from Src.Management import state_machine
 from Src.Communication import hardware_control as HUI
+from Src.Math import IMUcalc
+
 
 from Src.Controller import walk_commander
 from Src.Controller import controller as ctrlib
@@ -170,6 +173,9 @@ DEFAULT_PATTERN = ptrn_v3_0      # default pattern
 MAX_CTROUT = 0.50     # [10V]
 TSAMPLING = 0.001     # [sec]
 PID = [1.05, 0.03, 0.01]    # [1]
+PIDimu = [1.05/90., 0.03*20., 0.01]
+
+START_STATE = 'PAUSE'
 
 
 def init_hardware():
@@ -187,7 +193,7 @@ def init_hardware():
         (list of actuators.DValve): list of software repr of initialized
             discrete valves
     """
-    rootLogger.info("Initialize Sensors ...")
+    rootLogger.info("Initialize Pressure Sensors ...")
     sens = []
     sets = [{'name': '0', 'id': 4},
             {'name': '1', 'id': 5},
@@ -200,6 +206,14 @@ def init_hardware():
     for s in sets:
         sens.append(sensors.DPressureSens(name=s['name'], mplx_id=s['id'],
                                           maxpressure=MAX_PRESSURE))
+
+    rootLogger.info("Initialize IMUs ...")
+    # mplx address for IMU is 0x71
+    IMU = []
+    sets = [{'name': '0', 'id': 0},
+            {'name': '1', 'id': 1}]
+    for s in sets:
+        IMU.append(sensors.MPU_9150(name=s['name'], mplx_id=s['id']))
 
     rootLogger.info('Initialize Valves ...')
     valve = []
@@ -223,7 +237,7 @@ def init_hardware():
         dvalve.append(actuators.DiscreteValve(
             name=elem['name'], pin=elem['pin']))
 
-    return sens, valve, dvalve
+    return sens, valve, dvalve, IMU
 
 
 def init_controller():
@@ -257,7 +271,15 @@ def init_controller():
         controller.append(
             ctrlib.PidController([elem['P'], elem['I'], elem['D']],
                                  tsamplingPID, maxoutPID))
-    return controller
+
+    imu_controller = []
+    sets = [{'name': '0', 'P': PIDimu[0], 'I': PIDimu[1], 'D': PIDimu[2]}]
+    for elem in sets:
+        imu_controller.append(
+            ctrlib.PidController([elem['P'], elem['I'], elem['D']],
+                                 tsamplingPID, maxoutPID))
+
+    return controller, imu_controller
 
 
 def main():
@@ -282,17 +304,18 @@ def main():
     - fin
     """
     rootLogger.info('Initialize Hardware ...')
-    sens, valve, dvalve = init_hardware()
-    controller = init_controller()
+    sens, valve, dvalve, IMU = init_hardware()
+    controller, imu_ctr = init_controller()
 
     rootLogger.info('Initialize the shared variables, i.e. cargo ...')
-    start_state = 'PAUSE'
-    cargo = Cargo(start_state, sens=sens,
-                  valve=valve, dvalve=dvalve, controller=controller)
+    start_state = START_STATE
+    cargo = Cargo(start_state, sens=sens, valve=valve, dvalve=dvalve,
+                  controller=controller, IMU=IMU, imu_ctr=imu_ctr)
 
     rootLogger.info('Setting up the StateMachine ...')
     automat = state_machine.StateMachine()
     automat.add_state('PAUSE', pause_state)
+    automat.add_state('IMU_CONTROL', imu_control)
     automat.add_state('ERROR', error_state)
     automat.add_state('REFERENCE_TRACKING', reference_tracking)
     automat.add_state('USER_CONTROL', user_control)
@@ -329,6 +352,50 @@ def main():
     communication_thread.join()
     rootLogger.info('All is done ...')
     sys.exit(0)
+
+
+def imu_control(cargo):
+    rootLogger.info("Arriving in IMU_CONTROL State: ")
+    cargo.actual_state = 'IMU_CONTROL'
+
+    imu_idx = {'0': [0, 1], '1': [1, 2], '2': [1, 4],
+               '3': [1, 4], '4': [3, 4], '5': [4, 5]}
+
+    for valve in cargo.valve:
+        valve.set_pwm(20.)
+        cargo.rec_u['u{}'.format(valve.name)] = 0.
+        cargo.rec_r['r{}'.format(valve.name)] = None
+
+    while cargo.state == 'IMU_CONTROL':
+        for dvalve in cargo.dvalve:
+            state = cargo.dvalve_task[dvalve.name]
+            dvalve.set_state(state)
+
+        for sensor in cargo.sens:
+            cargo.rec[sensor.name] = sensor.get_value()
+
+        for imu in cargo.IMU:
+            cargo.rec_IMU[imu.name] = imu.get_acceleration()
+
+        for valve, controller in zip([cargo.valve[0]], [cargo.imu_ctr[0]]):
+            ref = cargo.ref_task[valve.name]*90.
+            acc0 = cargo.rec_IMU[str(imu_idx[valve.name][0])]
+            acc1 = cargo.rec_IMU[str(imu_idx[valve.name][1])]
+
+            sys_out, delta = IMUcalc.calc_angle(acc0, acc1)
+            ctr_out = controller.output(ref, sys_out)
+
+            s = 'angle: \t {}\npwm: \t {}\ndelta: \t {}\n\n'.format(
+                    sys_out, ctrlib.sys_input(ctr_out), delta)
+            print(s)
+
+            valve.set_pwm(ctrlib.sys_input(ctr_out))
+            cargo.rec_r['r{}'.format(valve.name)] = ref
+            cargo.rec_u['u{}'.format(valve.name)] = ctr_out
+        # End Test IMU
+        time.sleep(cargo.sampling_time)
+        new_state = cargo.state
+    return (new_state, cargo)
 
 
 #  SET UP the state Handler
@@ -573,7 +640,7 @@ class Cargo(object):
     The Cargo, which is transported from state to state
     """
     def __init__(self, state, sens=[], valve=[], dvalve=[],
-                 controller=[]):
+                 controller=[], IMU=[], imu_ctr=[]):
         self.state = state
         self.actual_state = state
         self.sens = sens
@@ -584,6 +651,8 @@ class Cargo(object):
         self.sampling_time = TSAMPLING
         self.pwm_task = {}
         self.dvalve_task = {}
+        self.IMU = IMU
+        self.imu_ctr = imu_ctr
         for dv in dvalve:
             self.dvalve_task[dv.name] = 0.
         self.ref_task = {}
@@ -593,10 +662,13 @@ class Cargo(object):
         self.rec_u = {}
         self.rec_r = {}
         self.rec = {}
+        self.rec_IMU = {}
         self.maxpressure = MAX_PRESSURE
         self.maxctrout = MAX_CTROUT
         for sensor in sens:
             self.rec[sensor.name] = sensor.get_value()
+        for imu in IMU:
+            self.rec_IMU[imu.name] = imu.get_acceleration()
         for valve in self.valve:
             self.rec_u['u{}'.format(valve.name)] = 1.
             self.rec_r['r{}'.format(valve.name)] = None

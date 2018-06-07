@@ -161,7 +161,27 @@ class HUIThread(threading.Thread):
             self.process_pressure_ref()
         elif state == 'REFERENCE_TRACKING':
             self.process_pattern_ref()
-#        self.print_state()
+        elif state == 'IMU_CONTROL':
+            self.process_imu_control()
+        self.print_state()
+
+    def tune_imu_ctr(self):
+        PIDimu = [1.05/90., 0.03*20., 0.01]
+
+        gain = []
+        for idx, pin in enumerate(CONTINUOUSPRESSUREREF[1:4]):
+            _ = ADC.read(pin)
+            gain.append(round(ADC.read(pin)*100)/100.)
+        
+        P, I, D = PIDimu[0]+gain[0]*.3, PIDimu[0]+gain[2]*1, PIDimu[2]+gain[2]*.3
+        self.cargo.imu_ctr[0].set_gain([P, I, D])
+        return P, I, D
+
+    def process_imu_control(self):
+        self.change_state('IMU_CONTROL')
+        self.set_dvalve()
+        self.set_ref()
+        self.set_ctr_gain()
 
     def process_pressure_ref(self):
         self.change_state('USER_REFERENCE')
@@ -276,6 +296,13 @@ class HUIThread(threading.Thread):
                 state = self.cargo.wcomm.infmode
                 self.cargo.wcomm.infmode = not state
                 self.rootLogger.info('Infmode was turned {}'.format(not state))
+                self.lastinfmode = time.time()
+
+    def set_ctr_gain(self):
+        if GPIO.event_detected(INFINITYMODE):
+            if time.time()-self.lastinfmode > 1:
+                P, I, D = self.tune_imu_ctr()
+                self.rootLogger.info('ctr_gain was set to {}'.format([P, I, D]))
                 self.lastinfmode = time.time()
 
     def set_userpattern(self):

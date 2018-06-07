@@ -132,8 +132,9 @@ class DPressureSens(object):
 class MPU_9150(object):
     plexer = MultiPlexer(address=0x71)
 
-    def __init__(self, mplx_id, address=0x68):
+    def __init__(self, name, mplx_id, address=0x68):
         power_mgmt_1 = 0x6b     # register power management of IMU
+        self.name = name
         self.mplx_id = mplx_id    # plex ID of IMU
         # MultiPlexer schlaten, um das Modul ansprechen zu koennen
         self.i2c = Adafruit_I2C.get_i2c_device(address, busnum=2)
@@ -156,7 +157,7 @@ class MPU_9150(object):
         else:
             return val
 
-    def get_acceleration(self, raw=False):
+    def get_acceleration(self):
         self.plexer.select(self.mplx_id)
 
         acc_xout = self._read_word_2c(0x3b)

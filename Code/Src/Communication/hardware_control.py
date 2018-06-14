@@ -163,7 +163,7 @@ class HUIThread(threading.Thread):
             self.process_pattern_ref()
         elif state == 'IMU_CONTROL':
             self.process_imu_control()
-        self.print_state()
+#        self.print_state()
 
     def tune_imu_ctr(self):
         PIDimu = [1.05/90., 0.03*20., 0.01]

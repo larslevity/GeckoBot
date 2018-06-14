@@ -173,9 +173,9 @@ DEFAULT_PATTERN = ptrn_v3_0      # default pattern
 MAX_CTROUT = 0.50     # [10V]
 TSAMPLING = 0.001     # [sec]
 PID = [1.05, 0.03, 0.01]    # [1]
-PIDimu = [1.05/90., 0.03*20., 0.01]
+PIDimu = [0.0117, 1.012, 0.31]
 
-START_STATE = 'PAUSE'
+START_STATE = 'IMU_CONTROL'
 
 
 def init_hardware():
@@ -354,11 +354,38 @@ def main():
     sys.exit(0)
 
 
+def pressure_check(pressure, pressuremax, cutoff):
+    if pressure <= cutoff:
+        out = 0
+    elif pressure >= pressuremax:
+        out = -1
+    else:
+        out = -1./(pressuremax-cutoff)*(pressure-cutoff)
+    return out
+
+
+def cutoff(x, minx, maxx):
+    if x < minx:
+        out = minx
+    elif x > maxx:
+        out = maxx
+    else:
+        out = x
+    return out
+
+
 def imu_control(cargo):
+    ''' Positions of IMUs:
+    0 ----- 1 ----- 2
+            |
+            |
+            |
+    3 ------4 ------5
+    '''
     rootLogger.info("Arriving in IMU_CONTROL State: ")
     cargo.actual_state = 'IMU_CONTROL'
 
-    imu_idx = {'0': [0, 1], '1': [1, 2], '2': [1, 4],
+    imu_idx = {'0': [0, 1], '1': [1, 2], '2': [4, 1],
                '3': [1, 4], '4': [3, 4], '5': [4, 5]}
 
     for valve in cargo.valve:
@@ -377,19 +404,24 @@ def imu_control(cargo):
         for imu in cargo.IMU:
             cargo.rec_IMU[imu.name] = imu.get_acceleration()
 
-        for valve, controller in zip([cargo.valve[0]], [cargo.imu_ctr[0]]):
+        for valve, controller in zip(cargo.valve, cargo.imu_ctr):
             ref = cargo.ref_task[valve.name]*90.
             acc0 = cargo.rec_IMU[str(imu_idx[valve.name][0])]
             acc1 = cargo.rec_IMU[str(imu_idx[valve.name][1])]
 
             sys_out, delta = IMUcalc.calc_angle(acc0, acc1)
             ctr_out = controller.output(ref, sys_out)
+            pressure = cargo.rec[valve.name]
+            pressure_bound = pressure_check(
+                    pressure, 2*cargo.maxpressure, 1.5*cargo.maxpressure)
+            ctr_out_ = cutoff(
+                    ctr_out+pressure_bound, -cargo.maxctrout, cargo.maxctrout)
 
-            s = 'angle: \t {}\npwm: \t {}\ndelta: \t {}\n\n'.format(
-                    sys_out, ctrlib.sys_input(ctr_out), delta)
+            s = 'angle: \t {}\nprss: \t {}\npbound: \t {}\ndelta: \t {}\n\n'.format(
+                    sys_out, pressure, pressure_bound, delta)
             print(s)
 
-            valve.set_pwm(ctrlib.sys_input(ctr_out))
+            valve.set_pwm(ctrlib.sys_input(ctr_out_))
             cargo.rec_r['r{}'.format(valve.name)] = ref
             cargo.rec_u['u{}'.format(valve.name)] = ctr_out
         # End Test IMU
@@ -569,7 +601,6 @@ def process_pattern(cargo, initial=False, final=False):
     for idx, pos in enumerate(pattern):
         # read the refs
         local_min_process_time = pos[-1]
-        ppos = pos[:n_valves]
         dpos = pos[-n_dvalves-1:-1]
 
         # set d valves
@@ -692,7 +723,7 @@ class WCommCargo(object):
 
 
 def initial_pattern(ptrn):
-    return [ptrn[-1][:8] + [False, False, False, False, 2.0],
+    return [ptrn[-1][:8] + [False, False, False, False, 1.0],
             ptrn[-1][:8] + [False, True, True, False, .66]]
 
 

@@ -34,11 +34,11 @@ def calc_angle(vec1, vec2, rotate_angle=0.):
     z = np.mean([z1, z2])
 
     phi1 = np.degrees(np.arctan2(y1, x1))
-    vec2 = rotate(np.c_[[x2, y2, 0]], -phi1, axis=3)
-    
+    vec2 = rotate(np.c_[[x2, y2, 0]], -phi1+90, axis=3)
+
     phi2 = np.degrees(np.arctan2(float(vec2[1]), float(vec2[0])))
 
-    alpha_IMU = -phi2
+    alpha_IMU = -phi2+90
 
     if abs(z) > 1:
         print 'angle is not calculable... z > 1 (arccos(z))'

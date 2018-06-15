@@ -67,6 +67,7 @@ class HUIThread(threading.Thread):
         self.cargo = cargo
         self.lastconfirm = time.time()
         self.lastinfmode = time.time()
+        self.refzero = False
         self.rootLogger = rootLogger
 
         self.rootLogger.info('Initialize HUI Thread ...')
@@ -173,6 +174,7 @@ class HUIThread(threading.Thread):
 
     def process_pressure_ref(self):
         self.change_state('USER_REFERENCE')
+        self.set_refzero()
         self.set_ref()
         self.set_dvalve()
 
@@ -230,11 +232,14 @@ class HUIThread(threading.Thread):
                            (PRESSURELED, "USER_REFERENCE"),
                            (PATTERNLED, "REFERENCE_TRACKING")]:
             GPIO.output(pin, GPIO.HIGH if actual_state == state else GPIO.LOW)
-        for pin, state in [(WALKINGCONFIRMLED, self.cargo.wcomm.is_active),
-                           # (INFINITYLED, self.cargo.wcomm.infmode)
-                           (INFINITYLED, self.cargo.wcomm.user_pattern)
-                           ]:
-            GPIO.output(pin, GPIO.HIGH if state else GPIO.LOW)
+        if actual_state == 'REFERENCE_TRACKING':
+            for pin, state in [(WALKINGCONFIRMLED, self.cargo.wcomm.is_active),
+                               # (INFINITYLED, self.cargo.wcomm.infmode)
+                               (INFINITYLED, self.cargo.wcomm.user_pattern)
+                               ]:
+                GPIO.output(pin, GPIO.HIGH if state else GPIO.LOW)
+        elif actual_state == "USER_REFERENCE":
+            GPIO.output(INFINITYLED, GPIO.HIGH if self.refzero else GPIO.LOW)
 
     def change_state(self, state):
         self.cargo.state = state
@@ -248,8 +253,11 @@ class HUIThread(threading.Thread):
 
     def set_ref(self):
         for idx, pin in enumerate(CONTINUOUSPRESSUREREF):
-            _ = ADC.read(pin)
-            self.cargo.ref_task[str(idx)] = round(ADC.read(pin)*100)/100.
+            if self.refzero:
+                self.cargo.ref_task[str(idx)] = 0.
+            else:
+                _ = ADC.read(pin)
+                self.cargo.ref_task[str(idx)] = round(ADC.read(pin)*100)/100.
 
     def set_pattern(self):
         if self.cargo.wcomm.user_pattern:
@@ -304,6 +312,14 @@ class HUIThread(threading.Thread):
                    PIDimu[2]+gain[2]*.3)
         self.cargo.imu_ctr[0].set_gain([P, I, D])
         return P, I, D
+
+    def set_refzero(self):
+        if GPIO.event_detected(INFINITYMODE):
+            if time.time()-self.lastinfmode > 1:
+                state = self.refzero
+                self.refzero = not state
+                self.rootLogger.info('RefZero was turned {}'.format(not state))
+                self.lastinfmode = time.time()
 
     def set_userpattern(self):
         if GPIO.event_detected(INFINITYMODE):

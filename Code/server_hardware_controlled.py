@@ -211,9 +211,16 @@ def init_hardware():
     # mplx address for IMU is 0x71
     IMU = []
     sets = [{'name': '0', 'id': 0},
-            {'name': '1', 'id': 1}]
-    for s in sets:
-        IMU.append(sensors.MPU_9150(name=s['name'], mplx_id=s['id']))
+            {'name': '1', 'id': 1},
+            {'name': '2', 'id': 2},
+            {'name': '3', 'id': 3},
+            {'name': '4', 'id': 4},
+            {'name': '5', 'id': 5}]
+    try:
+        for s in sets:
+            IMU.append(sensors.MPU_9150(name=s['name'], mplx_id=s['id']))
+    except IOError:  # not connected
+         IMU = False
 
     rootLogger.info('Initialize Valves ...')
     valve = []
@@ -273,7 +280,12 @@ def init_controller():
                                  tsamplingPID, maxoutPID))
 
     imu_controller = []
-    sets = [{'name': '0', 'P': PIDimu[0], 'I': PIDimu[1], 'D': PIDimu[2]}]
+    sets = [{'name': '0', 'P': PIDimu[0], 'I': PIDimu[1], 'D': PIDimu[2]},
+            {'name': '1', 'P': PIDimu[0], 'I': PIDimu[1], 'D': PIDimu[2]},
+            {'name': '2', 'P': PIDimu[0], 'I': PIDimu[1], 'D': PIDimu[2]},
+            {'name': '3', 'P': PIDimu[0], 'I': PIDimu[1], 'D': PIDimu[2]},
+            {'name': '4', 'P': PIDimu[0], 'I': PIDimu[1], 'D': PIDimu[2]},
+            {'name': '5', 'P': PIDimu[0], 'I': PIDimu[1], 'D': PIDimu[2]}]
     for elem in sets:
         imu_controller.append(
             ctrlib.PidController([elem['P'], elem['I'], elem['D']],
@@ -344,8 +356,6 @@ def main():
         rootLogger.exception("Unexpected error:\n", sys.exc_info()[0])
         rootLogger.exception(sys.exc_info()[1])
         rootLogger.error(err, exc_info=True)
-#        traceback.print_tb(sys.exc_info()[2])
-
         rootLogger.info('\n ----------------------- killing UI --')
         communication_thread.kill()
 
@@ -354,6 +364,7 @@ def main():
     sys.exit(0)
 
 
+# HELP FUNCTIONS
 def pressure_check(pressure, pressuremax, cutoff):
     if pressure <= cutoff:
         out = 0
@@ -374,78 +385,132 @@ def cutoff(x, minx, maxx):
     return out
 
 
-def imu_control(cargo):
+def imu_set_ref(cargo):
     ''' Positions of IMUs:
+    <       ^       >
     0 ----- 1 ----- 2
             |
             |
             |
     3 ------4 ------5
+    <       v       >
+    In IMUcalc.calc_angle(acc0, acc1, rot_angle), "acc0" is turned by rot_angle
     '''
+    imu_idx = {'0': [0, 1, -90], '1': [1, 2, -90], '2': [1, 4, 180],
+               '3': [4, 1, 180], '4': [4, 3, -90], '5': [5, 4, -90]}
+    s = ''
+    for valve, controller in zip(cargo.valve, cargo.imu_ctr):
+        ref = cargo.ref_task[valve.name]*90.
+        acc0 = cargo.rec_IMU[str(imu_idx[valve.name][0])]
+        acc1 = cargo.rec_IMU[str(imu_idx[valve.name][1])]
+        rot_angle = imu_idx[valve.name][2]
+
+        sys_out, delta = IMUcalc.calc_angle(acc0, acc1, rot_angle)
+        ctr_out = controller.output(ref, sys_out)
+        pressure = cargo.rec[valve.name]
+        pressure_bound = pressure_check(
+                pressure, 2*cargo.maxpressure, 1.5*cargo.maxpressure)
+        ctr_out_ = cutoff(
+                ctr_out+pressure_bound, -cargo.maxctrout, cargo.maxctrout)
+
+        ss = 'Channel[{}]\nangle: \t {}\tprss: \t {}\tpbound:\t {}\tdelta: \t {}\n'.format(
+                valve.name, round(sys_out*100)/100., round(pressure*100)/100.,
+                round(pressure_bound*100)/100., round(delta*100)/100.)
+        s = s + ss
+
+        valve.set_pwm(ctrlib.sys_input(ctr_out_))
+        cargo.rec_r['r{}'.format(valve.name)] = ref
+        cargo.rec_u['u{}'.format(valve.name)] = ctr_out
+    s = s + '\n\n'
+    print(s)
+    return cargo
+
+
+def set_ref(cargo):
+    for valve, controller in zip(cargo.valve, cargo.controller):
+        ref = cargo.ref_task[valve.name]
+        sys_out = cargo.rec[valve.name]
+        ctr_out = controller.output(ref, sys_out)
+        valve.set_pwm(ctrlib.sys_input(ctr_out))
+        cargo.rec_r['r{}'.format(valve.name)] = ref
+        cargo.rec_u['u{}'.format(valve.name)] = ctr_out
+    return cargo
+
+
+def set_dvalve(cargo):
+    for dvalve in cargo.dvalve:
+        state = cargo.dvalve_task[dvalve.name]
+        dvalve.set_state(state)
+
+
+def read_sens(cargo):
+    for sensor in cargo.sens:
+        try:
+            cargo.rec[sensor.name] = sensor.get_value()
+        except IOError as e:
+            if e.errno == errno.EREMOTEIO:
+                rootLogger.exception(
+                    'cant read i2c device.' +
+                    'Continue anyway ...Fail in [{}]'.format(sensor.name))
+            else:
+                rootLogger.exception('Sensor [{}]'.format(sensor.name))
+                rootLogger.error(e, exc_info=True)
+                raise e
+    return cargo
+
+
+def read_imu(cargo):
+    for imu in cargo.IMU:
+        try:
+            cargo.rec_IMU[imu.name] = imu.get_acceleration()
+        except IOError as e:
+            if e.errno == errno.EREMOTEIO:
+                rootLogger.exception(
+                    'cant read imu device.' +
+                    'Continue anyway ...Fail in [{}]'.format(imu.name))
+            else:
+                rootLogger.exception('Sensor [{}]'.format(imu.name))
+                rootLogger.error(e, exc_info=True)
+                raise e
+    return cargo
+
+
+def init_output(cargo):
+    for valve in cargo.valve:
+        valve.set_pwm(20.)
+        cargo.rec_u['u{}'.format(valve.name)] = 20.
+        cargo.rec_r['r{}'.format(valve.name)] = None
+    return cargo
+
+
+#  SET UP the state Handler
+def imu_control(cargo):
     rootLogger.info("Arriving in IMU_CONTROL State: ")
     cargo.actual_state = 'IMU_CONTROL'
 
-    imu_idx = {'0': [0, 1], '1': [1, 2], '2': [4, 1],
-               '3': [1, 4], '4': [3, 4], '5': [4, 5]}
-
-    for valve in cargo.valve:
-        valve.set_pwm(20.)
-        cargo.rec_u['u{}'.format(valve.name)] = 0.
-        cargo.rec_r['r{}'.format(valve.name)] = None
-
+    cargo = init_output(cargo)
     while cargo.state == 'IMU_CONTROL':
-        for dvalve in cargo.dvalve:
-            state = cargo.dvalve_task[dvalve.name]
-            dvalve.set_state(state)
+        if cargo.IMU:
+            set_dvalve(cargo)
+            cargo = read_sens(cargo)
+            cargo = read_imu(cargo)
+            cargo = imu_set_ref(cargo)
 
-        for sensor in cargo.sens:
-            cargo.rec[sensor.name] = sensor.get_value()
-
-        for imu in cargo.IMU:
-            cargo.rec_IMU[imu.name] = imu.get_acceleration()
-
-        for valve, controller in zip(cargo.valve, cargo.imu_ctr):
-            ref = cargo.ref_task[valve.name]*90.
-            acc0 = cargo.rec_IMU[str(imu_idx[valve.name][0])]
-            acc1 = cargo.rec_IMU[str(imu_idx[valve.name][1])]
-
-            sys_out, delta = IMUcalc.calc_angle(acc0, acc1)
-            ctr_out = controller.output(ref, sys_out)
-            pressure = cargo.rec[valve.name]
-            pressure_bound = pressure_check(
-                    pressure, 2*cargo.maxpressure, 1.5*cargo.maxpressure)
-            ctr_out_ = cutoff(
-                    ctr_out+pressure_bound, -cargo.maxctrout, cargo.maxctrout)
-
-            s = 'angle: \t {}\nprss: \t {}\npbound: \t {}\ndelta: \t {}\n\n'.format(
-                    sys_out, pressure, pressure_bound, delta)
-            print(s)
-
-            valve.set_pwm(ctrlib.sys_input(ctr_out_))
-            cargo.rec_r['r{}'.format(valve.name)] = ref
-            cargo.rec_u['u{}'.format(valve.name)] = ctr_out
-        # End Test IMU
         time.sleep(cargo.sampling_time)
         new_state = cargo.state
     return (new_state, cargo)
 
 
-#  SET UP the state Handler
 def pause_state(cargo):
     """
     do nothing. waiting for tasks
     """
     rootLogger.info("Arriving in PAUSE State: ")
     cargo.actual_state = 'PAUSE'
-
-    for valve in cargo.valve:
-        valve.set_pwm(1.)
-        cargo.rec_u['u{}'.format(valve.name)] = 0.
-        cargo.rec_r['r{}'.format(valve.name)] = None
+    cargo = init_output(cargo)
 
     while cargo.state == 'PAUSE':
-        for sensor in cargo.sens:
-            cargo.rec[sensor.name] = sensor.get_value()
+        cargo = read_sens(cargo)
         time.sleep(cargo.sampling_time)
         new_state = cargo.state
     return (new_state, cargo)
@@ -460,18 +525,7 @@ def user_control(cargo):
 
     while cargo.state == 'USER_CONTROL':
         # read
-        for sensor in cargo.sens:
-            try:
-                cargo.rec[sensor.name] = sensor.get_value()
-            except IOError as e:
-                if e.errno == errno.EREMOTEIO:
-                    rootLogger.exception(
-                        'cant read i2c device in user_control.' +
-                        'Continue anyway ...Fail in [{}]'.format(sensor.name))
-                else:
-                    rootLogger.exception('Sensor [{}]'.format(sensor.name))
-                    rootLogger.error(e, exc_info=True)
-                    raise e
+        cargo = read_sens(cargo)
 
         # write
         for valve in cargo.valve:
@@ -479,11 +533,7 @@ def user_control(cargo):
             valve.set_pwm(pwm)
             cargo.rec_r['r{}'.format(valve.name)] = None
             cargo.rec_u['u{}'.format(valve.name)] = pwm/100.
-
-        for dvalve in cargo.dvalve:
-            state = cargo.dvalve_task[dvalve.name]
-            dvalve.set_state(state)
-
+        set_dvalve(cargo)
         # meta
         time.sleep(cargo.sampling_time)
 
@@ -500,32 +550,10 @@ def user_reference(cargo):
 
     while cargo.state == 'USER_REFERENCE':
         # read
-        for sensor in cargo.sens:
-            try:
-                cargo.rec[sensor.name] = sensor.get_value()
-            except IOError as e:
-                if e.errno == errno.EREMOTEIO:
-                    rootLogger.exception(
-                        'cant read i2c device in user_reference.' +
-                        'Continue anyway ... Fail in [{}]'.format(sensor.name))
-                else:
-                    rootLogger.exception('Sensor [{}]'.format(sensor.name))
-                    rootLogger.error(e, exc_info=True)
-                    raise e
-
+        cargo = read_sens(cargo)
         # write
-        for valve, controller in zip(cargo.valve, cargo.controller):
-            ref = cargo.ref_task[valve.name]
-            sys_out = cargo.rec[valve.name]
-            ctr_out = controller.output(ref, sys_out)
-            valve.set_pwm(ctrlib.sys_input(ctr_out))
-            cargo.rec_r['r{}'.format(valve.name)] = ref
-            cargo.rec_u['u{}'.format(valve.name)] = ctr_out
-
-        for dvalve in cargo.dvalve:
-            state = cargo.dvalve_task[dvalve.name]
-            dvalve.set_state(state)
-
+        cargo = set_ref(cargo)
+        set_dvalve(cargo)
         # meta
         time.sleep(cargo.sampling_time)
         new_state = cargo.state
@@ -537,10 +565,9 @@ def reference_tracking(cargo):
     rootLogger.info("Arriving in REFERENCE_TRACKING State: ")
     cargo.actual_state = 'REFERENCE_TRACKING'
 
-    while cargo.state == 'REFERENCE_TRACKING':
-        for valve in cargo.valve:
-            cargo.ref_task[valve.name] = 0.0
+    cargo = init_output(cargo)
 
+    while cargo.state == 'REFERENCE_TRACKING':
         idx = 0
         while (cargo.wcomm.confirm and
                cargo.state == 'REFERENCE_TRACKING' and
@@ -561,16 +588,10 @@ def reference_tracking(cargo):
             cargo = process_pattern(cargo, final=True)
             rootLogger.info('walking is not active')
         cargo.wcomm.is_active = False
-        #
+        # clean
         time.sleep(cargo.sampling_time)
         new_state = cargo.state
-
-        # write
-        for valve, controller in zip(cargo.valve, cargo.controller):
-            valve.set_pwm(1.)
-            cargo.rec_r['r{}'.format(valve.name)] = None
-            cargo.rec_u['u{}'.format(valve.name)] = 1.
-
+        cargo = init_output(cargo)
         for dvalve in cargo.dvalve:
             dvalve.set_state(False)
     new_state = cargo.state
@@ -602,38 +623,18 @@ def process_pattern(cargo, initial=False, final=False):
         # read the refs
         local_min_process_time = pos[-1]
         dpos = pos[-n_dvalves-1:-1]
-
-        # set d valves
-        for dvalve in cargo.dvalve:
-            state = dpos[int(dvalve.name)]
-            dvalve.set_state(state)
+        for jdx, dp in enumerate(dpos):
+            cargo.dvalve_task[str(jdx)] = dp
+        set_dvalve(cargo)
 
         # hold the thing for local_min_process_time
         tstart = time.time()
         while time.time() - tstart < local_min_process_time:
-            # read
-            for sensor in cargo.sens:
-                try:
-                    cargo.rec[sensor.name] = sensor.get_value()
-                except IOError as e:
-                    if e.errno == errno.EREMOTEIO:
-                        rootLogger.exception(
-                            'cant read i2c device in' +
-                            'ptrn_proc. Continue anyway ...' +
-                            'Fail in [{}]'.format(sensor.name))
-                    else:
-                        rootLogger.exception('Sensor [{}]'.format(sensor.name))
-                        rootLogger.error(e, exc_info=True)
-                        raise e
-
-            # write
-            for valve, controller in zip(cargo.valve, cargo.controller):
-                ref = cargo.wcomm.pattern[idx][:n_valves][int(valve.name)]
-                sys_out = cargo.rec[valve.name]
-                ctr_out = controller.output(ref, sys_out)
-                valve.set_pwm(ctrlib.sys_input(ctr_out))
-                cargo.rec_r['r{}'.format(valve.name)] = ref
-                cargo.rec_u['u{}'.format(valve.name)] = ctr_out
+            cargo = read_sens(cargo)
+            for valve in cargo.valve:
+                cargo.ref_task[valve.name] = \
+                    cargo.wcomm.pattern[idx][:n_valves][int(valve.name)]
+            cargo = set_ref(cargo)
             # meta
             time.sleep(cargo.sampling_time)
     return cargo
@@ -646,7 +647,6 @@ def error_state(cargo):
 
     rootLogger.exception("Unexpected error:\n", cargo.errmsg[0])
     rootLogger.exception(cargo.errmsg[1])
-#    traceback.print_tb(cargo.errmsg[2])
 
     return ('PAUSE', cargo)
 
@@ -698,8 +698,9 @@ class Cargo(object):
         self.maxctrout = MAX_CTROUT
         for sensor in sens:
             self.rec[sensor.name] = sensor.get_value()
-        for imu in IMU:
-            self.rec_IMU[imu.name] = imu.get_acceleration()
+        if IMU:
+            for imu in IMU:
+                self.rec_IMU[imu.name] = imu.get_acceleration()
         for valve in self.valve:
             self.rec_u['u{}'.format(valve.name)] = 1.
             self.rec_r['r{}'.format(valve.name)] = None

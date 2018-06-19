@@ -369,9 +369,9 @@ def pressure_check(pressure, pressuremax, cutoff):
     if pressure <= cutoff:
         out = 0
     elif pressure >= pressuremax:
-        out = -1
+        out = -MAX_CTROUT
     else:
-        out = -1./(pressuremax-cutoff)*(pressure-cutoff)
+        out = -MAX_CTROUT/(pressuremax-cutoff)*(pressure-cutoff)
     return out
 
 
@@ -413,11 +413,20 @@ def imu_set_ref(cargo):
         ctr_out_ = cutoff(
                 ctr_out+pressure_bound, -cargo.maxctrout, cargo.maxctrout)
 
-        ss = 'Channel[{}]\nangle: \t {}\tprss: \t {}\tpbound:\t {}\tdelta: \t {}\n'.format(
-                valve.name, round(sys_out*100)/100., round(pressure*100)/100.,
+        ss = 'Channel[{}]\nangle: \t {}\tref: \t {}\tprss: \t {}\tpbound:\t {}\tdelta: \t {}\n'.format(
+                valve.name, round(sys_out*100)/100., ref, round(pressure*100)/100.,
                 round(pressure_bound*100)/100., round(delta*100)/100.)
         s = s + ss
-
+        # for torso, set pwm to 0 if other ref is higher:
+        if valve.name in ['2', '3']:
+            other = '2' if valve.name == '3' else '3'
+            other_ref = cargo.ref_task[other]*90
+            if ref == 0 and ref == other_ref:
+                if pressure > .5:
+                    ctr_out_ = -MAX_CTROUT
+            elif ref < other_ref or (ref == other_ref and ref > 0):
+                ctr_out_ = -MAX_CTROUT
+             
         valve.set_pwm(ctrlib.sys_input(ctr_out_))
         cargo.rec_r['r{}'.format(valve.name)] = ref
         cargo.rec_u['u{}'.format(valve.name)] = ctr_out

@@ -26,6 +26,9 @@ PATTERNREFMODE = 'P9_30'  # "P9_25"  # 25 doesnt work.
 WALKINGCONFIRM = "P9_24"
 INFINITYMODE = "P9_26"
 
+BTNS = [PWMREFMODE, PRESSUREREFMODE, PATTERNREFMODE, WALKINGCONFIRM,
+        INFINITYMODE]
+
 PWMLED = "P8_15"  # "P8_16"
 PRESSURELED = "P8_14"  # "P8_15"
 PATTERNLED = "P8_17"
@@ -154,7 +157,9 @@ class HUIThread(threading.Thread):
         print('\n')
 
     def get_tasks(self):
-        state, _ = self.check_state()
+        state, change = self.check_state()
+        if change:
+            self.reset_events()
         self.set_leds()
         if state == 'USER_CONTROL':
             self.process_pwm_ref()
@@ -240,6 +245,13 @@ class HUIThread(threading.Thread):
                 GPIO.output(pin, GPIO.HIGH if state else GPIO.LOW)
         elif actual_state == "USER_REFERENCE":
             GPIO.output(INFINITYLED, GPIO.HIGH if self.refzero else GPIO.LOW)
+            GPIO.output(WALKINGCONFIRMLED, GPIO.LOW)
+        elif actual_state == "USER_CONTROL":
+            GPIO.output(INFINITYLED, GPIO.LOW)
+            GPIO.output(WALKINGCONFIRMLED, GPIO.LOW)
+        elif actual_state == "IMU_CONTROL":
+            GPIO.output(INFINITYLED, GPIO.LOW)
+            GPIO.output(WALKINGCONFIRMLED, GPIO.LOW)
 
     def change_state(self, state):
         self.cargo.state = state
@@ -335,6 +347,10 @@ class HUIThread(threading.Thread):
 
     def kill(self):
         self.cargo.state = 'EXIT'
+
+    def reset_events(self):
+        for btn in BTNS:
+            GPIO.event_detected(btn)
 
     def print_state(self):
         state_str = ('Current State: \n\n' +

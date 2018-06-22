@@ -6,7 +6,7 @@ Created on Sun May 27 15:50:36 2018
 """
 
 
-animate = False
+animate = True
 save = False
 
 if __name__ == "__main__":
@@ -35,32 +35,32 @@ if __name__ == "__main__":
     poses = []
 
     ''' Circle like gait '''
-#    for i in range(14):
-#        poses.append((.1, 90, 90, .1, 90, False, True, True, False))
-#        poses.append((.1, 90, 90, .1, 90, True, False, False, True))
-#        poses.append((5, 45, 45, .1, 45, True, False, False, True))
-#        poses.append((10, 0.1, -10, 10, .1, True, False, False, True))
-#        poses.append((10, .1, -10, 10, .1, False, True, True, False))
-#        poses.append((5, 45, 45, .1, 45, False, True, True, False))
-#    poses.append((.1, 90, 90, .1, 90, False, True, True, False))
-#    poses.append((.1, 90, 90, .1, 90, True, False, False, True))
-#    poses.append((5, 45, 45, .1, 45, True, False, False, True))
-#    poses.append((5, 45, 45, .1, 45, False, True, True, False))
+    for i in range(14):
+        poses.append((.1, 90, 90, .1, 90, False, True, True, False))
+        poses.append((.1, 90, 90, .1, 90, True, False, False, True))
+        poses.append((5, 45, 45, .1, 45, True, False, False, True))
+        poses.append((10, 0.1, -10, 10, .1, True, False, False, True))
+        poses.append((10, .1, -10, 10, .1, False, True, True, False))
+        poses.append((5, 45, 45, .1, 45, False, True, True, False))
+    poses.append((.1, 90, 90, .1, 90, False, True, True, False))
+    poses.append((.1, 90, 90, .1, 90, True, False, False, True))
+    poses.append((5, 45, 45, .1, 45, True, False, False, True))
+    poses.append((5, 45, 45, .1, 45, False, True, True, False))
 
-    ''' 3 point fixed gait'''
-    for i in range(2):
-        poses.append(( 5, 50, -25, 10,  5, True, False, True, True))
-        poses.append((10, 20, -90, 20, 10, True, False, True, True))
-        poses.append((10, 50, -70, 10,  5, True, True, False, True))
-        poses.append((10, 10, -90, .1, .1, True, True, False, True))
-        poses.append((50,  5,  25,  5, 10, True, True, True, False))
-        poses.append((10, 10,  90, .1, .1, True, True, True, False))
-        poses.append((50, 10,  70,  5, 10, False, True, True, True))
-        poses.append((40, 10,  90, 10, 20, False, True, True, True))
-#        poses.append((1, 90, -40, 90, 90, True, False, True, True))
-#        poses.append((10, 0.1, -10, 10, .1, True, False, False, True))
-#        poses.append((10, .1, -10, 10, .1, False, True, True, False))
-#        poses.append((5, 45, 45, .1, 45, False, True, True, False))
+#    ''' 3 point fixed gait'''
+#    for i in range(2):
+#        poses.append(( 5, 50, -25, 10,  5, True, False, True, True))
+#        poses.append((10, 20, -90, 20, 10, True, False, True, True))
+#        poses.append((10, 50, -70, 10,  5, True, True, False, True))
+#        poses.append((10, 10, -90, .1, .1, True, True, False, True))
+#        poses.append((50,  5,  25,  5, 10, True, True, True, False))
+#        poses.append((10, 10,  90, .1, .1, True, True, True, False))
+#        poses.append((50, 10,  70,  5, 10, False, True, True, True))
+#        poses.append((40, 10,  90, 10, 20, False, True, True, True))
+##        poses.append((1, 90, -40, 90, 90, True, False, True, True))
+##        poses.append((10, 0.1, -10, 10, .1, True, False, False, True))
+##        poses.append((10, .1, -10, 10, .1, False, True, True, False))
+##        poses.append((5, 45, 45, .1, 45, False, True, True, False))
 
     data, data_fp, data_nfp = [], [], []
     for idx, pose in enumerate(poses):
@@ -105,7 +105,7 @@ if __name__ == "__main__":
                                            fargs=(data, l, data_fp, lfp,
                                                   data_nfp, lnfp),
                                            interval=300, blit=True)
-        plt.show()
+    plt.show()
 
         if save:
             # Set up formatting for the movie files

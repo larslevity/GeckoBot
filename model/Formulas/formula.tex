@@ -13,7 +13,7 @@
 
 
 \author{Lars Schiller}
-\title{Algorithm for predicting the pose of a gecko-inspired soft robot}
+\title{Algorithm for predicting the pose of a gecko-inspired soft robot for a given reference input}
 
 
 \usepackage{multicol}
@@ -34,26 +34,44 @@ The algorithm can be used to predict the actual pose of the robot for a given re
 \label{fig:model}
 \end{figure}
 
-To let the robot take a pose, the user has nine degrees of freedom at his disposal: the correspondending pressure for the five deformation angles of the limbs $\varphi_i \in [-120,~120]$ and 
-and the state of the fixation actuators $f_i \in [0,~1]$.
-Accordingly, a reference pose can be described by:
+In order to let the robot take a pose, i.\,e., a position and orientation, the user has nine degrees of freedom at his disposal: the correspondending pressures $p_i$ for the five deformation angles $\alpha_i$ of the limbs $i=1,\dots,5$ and the state of the fixation actuators $f_j \in \{0,1\}$ of the feet $j=1,\dots,4$.
+Accordingly, a reference pose can be described by
 \begin{equation}
-\bm{p}_{ref} = \left[ \varphi_1~\varphi_2~\varphi_3~\varphi_4~\varphi_5~f_1~f_2~f_3~f_4~ \right]^T.
+\bm{ref} = \left[ p_1~p_2~p_3~p_4~p_5~f_1~f_2~f_3~f_4~ \right]^\top.
 \end{equation}
 
 
-However, this information is not yet sufficient to describe the robot's actual pose.
-The exact position and orientation of at least one foot must be known.
-Also, experiments have shown that the length of a limb can vary due to the soft material. The deformation angle of a limb can also be very different at the same pressure.
-In order to describe the actual pose, the actual deformation angles ($\alpha_i, \gamma, \beta_i$), the actual lengths of the individual limbs ($\ell_i$) and the position and orientation of one foot ($F_i$ and $c_i$) must be known (see Fig.~\ref{fig:model}).
-For example, if the position and orientation of the front left foot is known, the pose can be clearly described by the following expression:
+Mapping function.
+\vspace{1cm}
+
+However, this information is not sufficient to describe the robot's actual pose.
+%The exact position and orientation of at least one foot must be known.
+Experiments have shown that the deformation angle of a limb can vary significantly  at the same pressure level due to the softness of the used material. The length of a limb can also differ.
+
+
+In order to describe the pose of the robot, the deformation angles $\alpha_i$, the actual lengths of the individual limbs $\ell_i$, and the position and orientation of (at least) one foot ($\bm{r}_{j} \in \mathbb{R}^{2 \times 1}$ and $\varphi_{j}$) must be known (see Fig.~\ref{fig:model}).
+For example, if the position and orientation of the front left foot is known, the pose can be described by the following expression:
 
 \begin{equation}
-\bm{p}_{act, F1} = \left[ \alpha_1~\beta_1~\gamma~\alpha_2~\beta_2,~c_1,~\ell_1,~\ell_2,~\ell_\gamma,~\ell_3,~\ell_4,~F1_x,~F1_y\right]^T.
+\bm{\alpha} = \left[ \alpha_1~\alpha_2~\alpha_3~\alpha_4~\alpha_5 \right]^\top.
 \end{equation}
 
-Here the pose seems to be independent of the fixed feet. But the dependency lies in the actual angles of deformation and the actual lengths of the limbs. These must be determined in such a way that the actual positions of the fixed feet correspond to the theoretical positions from the geometric model.
-With the equations \eqref{eq:F1_start}--\eqref{eq:F1_end} the theoretical positions of all feet can be determined, in case the front left foot is fixed. The equations \eqref{eq:F2_start}--\eqref{eq:F2_end} describe the positions if the right front foot is fixed.
+\begin{equation}
+\bm{\ell} = \left[ \ell_1~\ell_2~\ell_3~\ell_4~\ell_5 \right]^\top.
+\end{equation}
+
+
+
+\begin{equation}
+\bm{\rho}_{F_1} = \left[ \alpha_1~\alpha_2~\alpha_3~\alpha_4~\alpha_5 ~\ell_1 ~\ell_2 ~\ell_3 ~\ell_4 ~\ell_5 ~\bm{r}^\top_{1} ~\varphi_1 \right]^\top.
+\end{equation}
+
+\begin{equation}
+\bm{\rho}_{F_1} = \left[ \bm{x} ~\bm{r}_{1} \right]^\top.
+\end{equation}
+
+Here, the pose seems to be independent of the fixed feet. But the dependency lies in the angles of deformation and the actual lengths of the limbs. These must be determined in such a way that the actual positions of the fixed feet correspond to the theoretical positions from the geometric model.
+Using the equations \eqref{eq:F1_start}--\eqref{eq:F1_end}, the theoretical positions of all feet can be determined, in case the front left foot is fixed. The equations \eqref{eq:F2_start}--\eqref{eq:F2_end} describe the positions if the front right foot is fixed.
 The actual positions of the feet are assumed to be the positions from the previous pose.
 This can be used to define the constraint for the new pose.
 All newly fixed feet must have the same position as in the previous step:

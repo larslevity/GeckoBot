@@ -9,9 +9,9 @@ import numpy as np
 from scipy.optimize import minimize
 
 
-f_len = 1000.     # factor on length objective
-f_ori = .03     # factor on orientation objective
-f_ang = 1000     # factor on angle objective
+f_len = 100.     # factor on length objective
+f_ori = 0.01  # .0003     # factor on orientation objective
+f_ang = 10     # factor on angle objective
 
 blow = .9       # lower stretching bound
 bup = 1.1       # upper stretching bound
@@ -31,7 +31,7 @@ class RobotRepr(object):
         self.state = {'alp1': 0.1, 'alp2': .1,
                       'gam': 0.1, 'bet1': .1, 'bet2': .1,
                       'F1': True, 'F2': False, 'F3': False, 'F4': False}
-        self.meta = {'C1': 90, 'C2': -90, 'C3': 90, 'C4': -90,
+        self.meta = {'C1': 90, 'C2': -90, 'C3': 90, 'C4': -90, 'eps': 90,
                      'C0': {'C1': 90, 'C2': -90, 'C3': 90, 'C4': -90},
                      'l1': self.len_leg, 'l2': self.len_leg,
                      'lg': self.len_tor, 'l3': self.len_leg,
@@ -138,6 +138,7 @@ class RobotRepr(object):
         x4, y4 = self.coords['F4']
         c0 = [self.meta['C1'], self.meta['C2'],
               self.meta['C3'], self.meta['C4']]
+        eps0 = self.meta['eps']
         l10 = len_leg
         l20 = len_leg
         lg0 = len_tor
@@ -150,31 +151,39 @@ class RobotRepr(object):
         bet20 = self.ref['bet2']
 
         # Initial guess
-        X0 = np.array([c0[0], c0[1], l10, l20, lg0, l30, l40,
+        X0 = np.array([eps0, l10, l20, lg0, l30, l40,
                        alp10, bet10, gam0, alp20, bet20])
 
         def objective(X):
             f_len = self.cost['f_len']
             f_ori = self.cost['f_ori']
             f_ang = self.cost['f_ang']
-            c1, c2, l1, l2, lg, l3, l4, alp1, bet1, gam, alp2, bet2 = X
-            c1 = np.mod(c1+360, 360)
-            c2 = np.mod(c2+360, 360)
+            eps, l1, l2, lg, l3, l4, alp1, bet1, gam, alp2, bet2 = X
             # calc orientation of foot 3 and 4
             if self.state['F1']:
-                c2_calc = c1 + alp1 + bet1
-                c3 = np.mod(180 + gam - bet1 + alp2 + c2_calc + 360, 360)
+                c1 = np.mod(eps - alp1 - gam*.5 + 360, 360)
+                c2 = np.mod(c1 + alp1 + bet1 + 360, 360)
+                c3 = np.mod(180 + gam - bet1 + alp2 + c2 + 360, 360)
                 c4 = np.mod(180 + gam + alp1 - bet2 + c1 + 360, 360)
             elif self.state['F2']:
-                c1_calc = c2 - alp1 - bet1
+                c2 = np.mod(eps - gam*.5 + bet1 + 360, 360)
+                c1 = np.mod(c2 - alp1 - bet1 + 360, 360)
                 c3 = np.mod(180 + gam - bet1 + alp2 + c2 + 360, 360)
-                c4 = np.mod(180 + gam + alp1 - bet2 + c1_calc + 360, 360)
+                c4 = np.mod(180 + gam + alp1 - bet2 + c1 + 360, 360)
             C = [c1, c2, c3, c4]
             feet = ['F1', 'F2', 'F3', 'F4']
             obj_ori = 0
             for idx, foot in enumerate(feet):
                 if self.state[foot]:
-                    obj_ori = obj_ori + (C[idx]-c0[idx])**2
+                    phi0 = c0[idx]
+                    theta = -np.radians(phi0)
+                    c, s = np.cos(theta), np.sin(theta)
+                    R = np.matrix([[c, -s, 0], [s, c, 0], [0, 0, 1]])
+                    x2 = np.cos(np.radians(C[idx]))
+                    y2 = np.sin(np.radians(C[idx]))
+                    vec_ = R*np.c_[[x2, y2, 0]]
+                    C_ = np.degrees(np.arctan2(float(vec_[1]), float(vec_[0])))
+                    obj_ori = float(obj_ori + (C_)**2)
             obj_ang = 0
             for key in self.ref:
                 obj_ang = obj_ang + (self.ref[key]-self.state[key])**2
@@ -210,28 +219,26 @@ class RobotRepr(object):
         btor = (blow*len_tor, bup*len_tor)
         bang = [(self.ref[ang]-dev_angle, self.ref[ang]+dev_angle)
                 for ang in ['alp1', 'bet1', 'gam', 'alp2', 'bet2']]
-        bnds = ((0, 360), (0, 360), bleg, bleg, btor, bleg, bleg,
+        bnds = ((0, 360), bleg, bleg, btor, bleg, bleg,
                 bang[0], bang[1], bang[2], bang[3], bang[4])
         con1 = {'type': 'eq', 'fun': constraint1}
         cons = ([con1])
         solution = minimize(objective, X0, method='SLSQP',
                             bounds=bnds, constraints=cons)
         X = solution.x
-        c1, c2, l1, l2, lg, l3, l4, alp1, bet1, gam, alp2, bet2 = X
+        eps, l1, l2, lg, l3, l4, alp1, bet1, gam, alp2, bet2 = X
+        c1 = np.mod(eps - alp1 - gam*.5 + 360, 360)
+        c2 = np.mod(c1 + alp1 + bet1 + 360, 360)
+        c3 = np.mod(180 + gam - bet1 + alp2 + c2 + 360, 360)
+        c4 = np.mod(180 + gam + alp1 - bet2 + c1 + 360, 360)
         if self.state['F1']:
             (xom, yom), (xum, yum), (xf1, yf1), (xf2, yf2), \
                 (xf3, yf3), (xf4, yf4) = \
                 self.calc_coords_F1(X)
-            c2 = c1 + alp1 + bet1
         elif self.state['F2']:
             (xom, yom), (xum, yum), (xf1, yf1), (xf2, yf2), \
                 (xf3, yf3), (xf4, yf4) = \
                 self.calc_coords_F2(X)
-            c1 = c2 - alp1 - bet1
-        c3 = np.mod(180 + gam - bet1 + alp2 + c2 + 360, 360)
-        c4 = np.mod(180 + gam + alp1 - bet2 + c1 + 360, 360)
-        c1 = np.mod(c1+360, 360)
-        c2 = np.mod(c2+360, 360)
         # save opt meta data
         if self.debug:
             print 'constraint function: ', constraint1(X)
@@ -242,6 +249,7 @@ class RobotRepr(object):
         self.meta['C2'] = c2
         self.meta['C3'] = c3
         self.meta['C4'] = c4
+        self.meta['eps'] = eps
         self.meta['l1'] = l1
         self.meta['l2'] = l2
         self.meta['l3'] = l3
@@ -264,7 +272,8 @@ class RobotRepr(object):
     def calc_coords_F1(self, X):
         """ X = [c1, l1, lg, l4]"""
         xf1, yf1 = self.coords['F1']
-        c1, c2, l1, l2, lg, l3, l4, alp1, bet1, gam, alp2, bet2 = X
+        eps, l1, l2, lg, l3, l4, alp1, bet1, gam, alp2, bet2 = X
+        c1 = eps - alp1 - gam*.5
         r1 = calc_rad(l1, alp1)
         rg = calc_rad(lg, gam)
         r4 = calc_rad(l4, bet2)
@@ -308,7 +317,8 @@ class RobotRepr(object):
     def calc_coords_F2(self, X):
         """ X = [c1, l1, lg, l4]"""
         xf2, yf2 = self.coords['F2']
-        c1, c2, l1, l2, lg, l3, l4, alp1, bet1, gam, alp2, bet2 = X
+        eps, l1, l2, lg, l3, l4, alp1, bet1, gam, alp2, bet2 = X
+        c2 = eps + bet1 - gam*.5
         r1 = calc_rad(l1, alp1)
         rg = calc_rad(lg, gam)
         r4 = calc_rad(l4, bet2)
@@ -385,6 +395,8 @@ if __name__ == "__main__":
     save = False
 
     robrepr = RobotRepr()
+    robrepr.meta['eps'] = 270
+    robrepr.set_pose((.1, .1, .1, .1, .1, True, False, False, False))
 
     (x, y), fp, nfp = robrepr.get_repr()
     fpx, fpy = fp
@@ -394,7 +406,7 @@ if __name__ == "__main__":
     plt.plot(nfpx, nfpy, 'kx', markersize=10)
 
     poses = []
-    for i in range(15):
+    for i in range(14):
         poses.append((.1, 90, 90, .1, 90, False, True, True, False))
         poses.append((.1, 90, 90, .1, 90, True, False, False, True))
         poses.append((5, 45, 45, .1, 45, True, False, False, True))
@@ -436,8 +448,8 @@ if __name__ == "__main__":
     l, = plt.plot([], [], '.')
     lfp, = plt.plot([], [], 'o', markersize=15)
     lnfp, = plt.plot([], [], 'x', markersize=10)
-    plt.xlim(-2, 6)
-    plt.ylim(-4, 3)
+    plt.xlim(-6, 6)
+    plt.ylim(-4, 4)
 #    plt.axis('equal')
     plt.title('Gecko-robot model walking a circle')
     line_ani = animation.FuncAnimation(fig1, update_line, n,

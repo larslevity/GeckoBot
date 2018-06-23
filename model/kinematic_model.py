@@ -10,7 +10,7 @@ from scipy.optimize import minimize
 
 
 f_len = 100.     # factor on length objective
-f_ori = 0.01  # .0003     # factor on orientation objective
+f_ori = 0.001  # .0003     # factor on orientation objective
 f_ang = 10     # factor on angle objective
 
 blow = .9       # lower stretching bound
@@ -58,7 +58,8 @@ class RobotRepr(object):
         self.state['F2'] = F2
         self.state['F3'] = F3
         self.state['F4'] = F4
-        self.calc_pose()
+        _, objective = self.calc_pose()
+        return objective
 
     def get_coords(self):
         print '\n'
@@ -175,18 +176,14 @@ class RobotRepr(object):
             obj_ori = 0
             for idx, foot in enumerate(feet):
                 if self.state[foot]:
-                    phi0 = c0[idx]
-                    theta = -np.radians(phi0)
-                    c, s = np.cos(theta), np.sin(theta)
-                    R = np.matrix([[c, -s, 0], [s, c, 0], [0, 0, 1]])
-                    x2 = np.cos(np.radians(C[idx]))
-                    y2 = np.sin(np.radians(C[idx]))
-                    vec_ = R*np.c_[[x2, y2, 0]]
-                    C_ = np.degrees(np.arctan2(float(vec_[1]), float(vec_[0])))
-                    obj_ori = float(obj_ori + (C_)**2)
+                    obj_ori = (obj_ori + (C[idx] - c0[idx])**2)
+#                    obj_ori = (obj_ori + calc_difference(C[idx], c0[idx])**2)
+
             obj_ang = 0
             for key in self.ref:
                 obj_ang = obj_ang + (self.ref[key]-self.state[key])**2
+#                obj_ang = obj_ang + calc_difference(self.ref[key], self.state[key])**2
+
             objective = (f_ori*np.sqrt(obj_ori) +
                          f_ang*np.sqrt(obj_ang) +
                          f_len*np.sqrt((l1-len_leg)**2 + (l2-len_leg)**2 +
@@ -267,7 +264,7 @@ class RobotRepr(object):
         self.coords['F3'] = (xf3, yf3)
         self.coords['F4'] = (xf4, yf4)
 
-        return X
+        return X, objective(X)
 
     def calc_coords_F1(self, X):
         """ X = [c1, l1, lg, l4]"""
@@ -382,6 +379,17 @@ def calc_arc_coords(xy, alp1, alp2, rad):
     return x, y
 
 
+def calc_difference(phi0, phi1):
+    theta = -np.radians(phi0)
+    c, s = np.cos(theta), np.sin(theta)
+    R = np.matrix([[c, -s, 0], [s, c, 0], [0, 0, 1]])
+    x2 = np.cos(np.radians(phi1))
+    y2 = np.sin(np.radians(phi1))
+    vec_ = R*np.c_[[x2, y2, 0]]
+    diff = np.degrees(np.arctan2(float(vec_[1]), float(vec_[0])))
+    return diff
+
+
 if __name__ == "__main__":
     """
     To save the animation you need the libav-tool to be installed:
@@ -392,10 +400,10 @@ if __name__ == "__main__":
     import matplotlib
     matplotlib.use("Agg")
 
-    save = False
+    save = True
 
     robrepr = RobotRepr()
-    robrepr.meta['eps'] = 270
+    robrepr.meta['eps'] = 359
     robrepr.set_pose((.1, .1, .1, .1, .1, True, False, False, False))
 
     (x, y), fp, nfp = robrepr.get_repr()
@@ -406,19 +414,27 @@ if __name__ == "__main__":
     plt.plot(nfpx, nfpy, 'kx', markersize=10)
 
     poses = []
-    for i in range(14):
-        poses.append((.1, 90, 90, .1, 90, False, True, True, False))
-        poses.append((.1, 90, 90, .1, 90, True, False, False, True))
-        poses.append((5, 45, 45, .1, 45, True, False, False, True))
-        poses.append((10, 0.1, -10, 10, .1, True, False, False, True))
-        poses.append((10, .1, -10, 10, .1, False, True, True, False))
-        poses.append((5, 45, 45, .1, 45, False, True, True, False))
+#    for i in range(14):
+#        poses.append((.1, 90, 90, .1, 90, False, True, True, False))
+#        poses.append((.1, 90, 90, .1, 90, True, False, False, True))
+#        poses.append((5, 45, 45, .1, 45, True, False, False, True))
+#        poses.append((10, 0.1, -10, 10, .1, True, False, False, True))
+#        poses.append((10, .1, -10, 10, .1, False, True, True, False))
+#        poses.append((5, 45, 45, .1, 45, False, True, True, False))
+    for i in range(11):
+        poses.append((5, 90, 90, 5, 90, False, True, True, False))
+        poses.append((5, 90, 90, 5, 90, True, False, False, True))
+        poses.append((5, 45, 45, 5, 45, True, False, False, True))
+        poses.append((10, 5, -10, 10, 5, True, False, False, True))
+        poses.append((10, 5, -10, 10, 5, False, True, True, False))
+        poses.append((5, 45, 45, 5, 45, False, True, True, False))
 
-    data, data_fp, data_nfp = [], [], []
+    data, data_fp, data_nfp, costs = [], [], [], []
     for idx, pose in enumerate(poses):
         print '\n\nPOSE ', idx, '\n'
         col = (.1, .5, float(idx)/len(poses))
-        robrepr.set_pose(pose)
+        objj = robrepr.set_pose(pose)
+        costs.append(objj)
         (x, y), fp, nfp = robrepr.get_repr()
         fpx, fpy = fp
         nfpx, nfpy = nfp
@@ -431,6 +447,10 @@ if __name__ == "__main__":
         data_nfp.append((nfpx, nfpy))
 
     plt.axis('equal')
+
+    fig_obj = plt.figure()
+    plt.title('Costs or "Stress" inside the robot')
+    plt.plot(costs)
 
     # Animation
     def update_line(num, data, line, data_fp, line_fp, data_nfp, line_nfp):
@@ -448,19 +468,20 @@ if __name__ == "__main__":
     l, = plt.plot([], [], '.')
     lfp, = plt.plot([], [], 'o', markersize=15)
     lnfp, = plt.plot([], [], 'x', markersize=10)
-    plt.xlim(-6, 6)
-    plt.ylim(-4, 4)
+    plt.xlim(-4, 4)
+    plt.ylim(-6, 2)
 #    plt.axis('equal')
     plt.title('Gecko-robot model walking a circle')
     line_ani = animation.FuncAnimation(fig1, update_line, n,
                                        fargs=(data, l, data_fp, lfp,
                                               data_nfp, lnfp),
                                        interval=300, blit=True)
-    plt.show()
 
     if save:
         # Set up formatting for the movie files
         Writer = animation.writers['avconv']
         writer = Writer(fps=15, metadata=dict(artist='Lars Schiller'),
                         bitrate=1800)
-        line_ani.save('lines.mp4', writer=writer)
+        line_ani.save('circle.mp4', writer=writer)
+
+    plt.show()

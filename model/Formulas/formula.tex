@@ -7,7 +7,7 @@
 \usepackage{amssymb}
 \usepackage{graphicx}
 \usepackage{bm}
-\usepackage[rmargin=1.5cm, lmargin=1.5cm, bmargin=1.5cm]{geometry}
+\usepackage[rmargin=1.5cm, lmargin=1.5cm, bmargin=2cm, tmargin=2cm]{geometry}
 \usepackage{enumitem}
 \setitemize{noitemsep,topsep=0pt,parsep=0pt,partopsep=0pt}
 
@@ -26,100 +26,146 @@
 \maketitle
 
 Due to the fact that the behaviour of soft materials is difficult to predict with conventional methods, an algorithm based on a geometric optimization problem is presented.
-The algorithm can be used to predict the actual pose of the robot for a given reference pose.
+The algorithm can be used to predict the actual pose of the robot for a given reference input.
+Figure~\ref{fig:example} is taken as an example. The initial position is shown in black. 
+The individual limbs of the robot have a certain bending angle and all feet are fixed.
+Now the torso of the robot should be actuated. 
+If only the bending angle of the torso is changed, the grey dashed pose is obtained. 
+Obviously, the two rear feet are no longer in the same position. 
+Since these feet are fixed, the robot will behave differently in reality. 
+In fact, it's much more likely to take up the grey pose. 
+Although the bending angles of all limbs have changed, the condition that all feet remain motionless has been fulfilled.
+
+\begin{figure}[h]
+\centering\includegraphics[scale=1]{../Pics/intro/intro.pdf}
+\caption{Example Usage}
+\label{fig:example}
+\end{figure}
+
+In order to let the robot take a pose
+%, i.\,e., a position and orientation, 
+the user has nine degrees of freedom at his disposal: 
+the correspondending pressures $p_i$ for the five bending angles $\alpha_i$ of the limbs $i=1,\dots,5$ and the state of the fixation actuators $f_j \in \{0,1\}$ of the feet $j=1,\dots,4$.
+Accordingly, a reference input can be described by
+\begin{equation}
+\bm{ref} = \left[~ p_1~p_2~p_3~p_4~p_5~f_1~f_2~f_3~f_4~ \right]^\top.
+\end{equation}
+
+For the unloaded state, a calibration function can be formulated for each limb, which maps the pressure on the bending angle.
+Under load, this function no longer needs to be valid.
+
+\begin{equation}
+\alpha_{\textnormal{clb},i} = \textnormal{map}_i(p_i)
+\end{equation}
+
+However, this information is not sufficient to describe the robot's actual pose.
+%The exact position and orientation of at least one foot must be known.
+Experiments have shown that the bending angle of a limb can vary significantly  at the same pressure level due to the softness of the used material. 
+The length of a limb can also differ.
+In order to describe the pose of the robot, the bending angles $\bm{\alpha}$: 
+\begin{equation}
+\bm{\alpha} = \left[ \alpha_1~\alpha_2~\alpha_3~\alpha_4~\alpha_5 \right]^\top,
+\end{equation}
+the actual lengths of the individual limbs $\bm{\ell$}: 
+\begin{equation}
+\bm{\ell} = \left[ \ell_1~\ell_2~\ell_3~\ell_4~\ell_5 \right]^\top,
+\end{equation}
+and the orientation of the robot's center point $\varepsilon$ must be known (see Fig.~\ref{fig:model}).
+These quantities are defined as the variable to be optimized:
+\begin{equation}
+\bm{x} = \left[~\bm{\alpha}^\top~\bm{\ell}^\top~\varepsilon~\right]^\top.
+\end{equation}
+
+Furthermore, the position of (at least) one fixed foot ($\bm{r}_{j} \in \mathbb{R}^{2 \times 1}$) must be known.
+Then, the pose of the robot $\bm{\rho}$, i.\,e. the positions of all feet, can be determined under the assumption of a constant curvature by using the equations \eqref{eq:F1_start}--\eqref{eq:F1_end} if the front left foot is fixed, or the equations \eqref{eq:F2_start}--\eqref{eq:F2_end} if the front right foot is fixed.
+The pose can therefore be described as a function of $\bm{x}$ and the position of a fixed foot:
+
+\begin{equation}
+\bm{\rho} = \textnormal{fun}\left(\bm{x},~\bm{r}_{j} \right).
+\end{equation}
+
 
 \begin{figure}
-\includegraphics[scale=1]{../Pics/model/model.pdf}
+\centering\includegraphics[scale=1]{../Pics/model/model.pdf}
 \caption{Nomencalture}
 \label{fig:model}
 \end{figure}
 
-In order to let the robot take a pose, i.\,e., a position and orientation, the user has nine degrees of freedom at his disposal: the correspondending pressures $p_i$ for the five deformation angles $\alpha_i$ of the limbs $i=1,\dots,5$ and the state of the fixation actuators $f_j \in \{0,1\}$ of the feet $j=1,\dots,4$.
-Accordingly, a reference pose can be described by
-\begin{equation}
-\bm{ref} = \left[ p_1~p_2~p_3~p_4~p_5~f_1~f_2~f_3~f_4~ \right]^\top.
-\end{equation}
-
-
-Mapping function.
-\vspace{1cm}
-
-However, this information is not sufficient to describe the robot's actual pose.
-%The exact position and orientation of at least one foot must be known.
-Experiments have shown that the deformation angle of a limb can vary significantly  at the same pressure level due to the softness of the used material. The length of a limb can also differ.
-
-
-In order to describe the pose of the robot, the deformation angles $\alpha_i$, the actual lengths of the individual limbs $\ell_i$, and the position and orientation of (at least) one foot ($\bm{r}_{j} \in \mathbb{R}^{2 \times 1}$ and $\varphi_{j}$) must be known (see Fig.~\ref{fig:model}).
-For example, if the position and orientation of the front left foot is known, the pose can be described by the following expression:
-
-\begin{equation}
-\bm{\alpha} = \left[ \alpha_1~\alpha_2~\alpha_3~\alpha_4~\alpha_5 \right]^\top.
-\end{equation}
-
-\begin{equation}
-\bm{\ell} = \left[ \ell_1~\ell_2~\ell_3~\ell_4~\ell_5 \right]^\top.
-\end{equation}
-
-
-
-\begin{equation}
-\bm{\rho}_{F_1} = \left[ \alpha_1~\alpha_2~\alpha_3~\alpha_4~\alpha_5 ~\ell_1 ~\ell_2 ~\ell_3 ~\ell_4 ~\ell_5 ~\bm{r}^\top_{1} ~\varphi_1 \right]^\top.
-\end{equation}
-
-\begin{equation}
-\bm{\rho}_{F_1} = \left[ \bm{x} ~\bm{r}_{1} \right]^\top.
-\end{equation}
-
-Here, the pose seems to be independent of the fixed feet. But the dependency lies in the angles of deformation and the actual lengths of the limbs. These must be determined in such a way that the actual positions of the fixed feet correspond to the theoretical positions from the geometric model.
-Using the equations \eqref{eq:F1_start}--\eqref{eq:F1_end}, the theoretical positions of all feet can be determined, in case the front left foot is fixed. The equations \eqref{eq:F2_start}--\eqref{eq:F2_end} describe the positions if the front right foot is fixed.
-The actual positions of the feet are assumed to be the positions from the previous pose.
+Here, the pose seems to be independent of the fixed feet.
+But the dependency lies in the bending angles and the actual lengths of the limbs. 
+These must be determined in such a way that the positions of the fixed feet do not change.
+To describe this mathematically, a new index $t$ is introduced, which assigns the quantities to a specific time step.
+The new positions of the fixed feet $\bm{r}_{j,t+1}$ are assumed to be the positions from the previous pose $\bm{r}_{j,t}$.
 This can be used to define the constraint for the new pose.
 All newly fixed feet must have the same position as in the previous step:
+%
+%So, the new pose is strongly dependent on where the newly fixed feet were in the prior pose.
 
 \newcommand{\mbeq}{\overset{!}{=}}
 \begin{equation}
-\textnormal{if}~f_i:~~F_{i,j} - F_{i,j-1} \mbeq 0,
+\textnormal{if}~f_{j,t+1}:~~\big|\bm{r}_{j,t+1} - \bm{r}_{j,t}\big|_2 \mbeq 0,
 \label{eq:constraint}
 \end{equation}
-where $i$ indicates the individual limbs and $j$ the time sequence.
-So, the new pose is strongly dependent on where the newly fixed feet were in the prior pose and what orientation they had.
-It has already been mentioned that the lengths and the deformation angles of the limbs are quite variable. 
-The orientation angles of the fixation actuators ($c_i$) also have a certain margin.
-This can be formulated as a objective function:
+
+Please note that if this condition is met, at least one foot per time step always remains motionless.
+Thus, at least one foot position of the new pose is determined from the beginning and thus dependent on the previous pose.
+As a result, all poses of a gait are dependent on the initial position.
+%\begin{equation}
+%\bm{\rho}_t = \textnormal{fun}\left(\bm{x}_t,~\bm{r}_{j,0} \right).
+%\end{equation}
+
+
+
+It has already been mentioned that the bending angles $\bm{\alpha}$ and the lengths of the limbs $\bm{\ell}$ are quite variable. 
+The orientation angles of the fixation actuators $\varphi_j$ also have a certain margin.
+By defining $\bm{\ell}_n = \left[ \ell_{1,n}~\ell_{2,n}~\ell_{3,n}~\ell_{4,n}~\ell_{5,n} \right]^\top$ as the vector containing the nominal length of each limb,
+this can be formulated as a objective function:
+%\begin{equation}
+%obj(\bm{x}) = w_{len}\sqrt{\sum_i \left( \ell_{n,i} - \ell_i \right)^2} 
+%+ w_{ang} \sqrt{\sum_i \left( \varphi_i - \alpha_i \right)^2}
+%+ w_{ori} \sqrt{\sum_i \textnormal{if}~f_i:~\left( c_{i,j-1} - c_{i, j} \right)^2}
+%\label{eq:objective_function}
+%\end{equation}
 
 \begin{equation}
-obj(\bm{x}) = w_{len}\sqrt{\sum_i \left( \ell_{n,i} - \ell_i \right)^2} 
-+ w_{ang} \sqrt{\sum_i \left( \varphi_i - \alpha_i \right)^2}
-+ w_{ori} \sqrt{\sum_i \textnormal{if}~f_i:~\left( c_{i,j-1} - c_{i, j} \right)^2}
+obj(\bm{x}_t) = 
+  w_{\textnormal{len}}\big| \bm{\ell}_t - \bm{\ell}_n \big|_2
++ w_{\textnormal{ang}}\big| \bm{\alpha}_t - \bm{\alpha}_{\textnormal{clb},t} \big|_2
++ w_{\textnormal{ori}}\sqrt{\sum_j \textnormal{if}~f_{j,t+1}:~\left( \varphi_{j,t+1} - \varphi_{j, t} \right)^2}
 \label{eq:objective_function}
 \end{equation}
-
-where the weighting factor $w_{len}$ describes the elasticity of the limbs, $w_{ang}$ the bending stiffness of the limbs and $w_{ori}$ the torsional stiffness of the fixing actuators.
-Furthermore, $\ell_{n,i}$ describes the nominal length of the $i$-th limb.
-The new actual pose can now be determined by solving the optimization problem:
+where the weighting factor $w_{\textnormal{len}}$ describes the elasticity of the limbs and $w_{\textnormal{ang}}$ the bending stiffness of the limbs.
+The term weighted by $w_{\textnormal{ori}}$ describes the difference between the orientation of the newly fixed feet compared to the orientation in the previous time step.
+This can be seen as a dimension for the torsional stiffness of the fixation actuators.
+The new pose can now be determined by solving the non-linear optimization problem:
 
 \begin{equation}
-\min_{\bm{x} \in \mathcal{X}} ~ obj(\bm{x})~~ s.\,t.~ \textnormal{if}~f_i:~~F_{i,j} - F_{i,j-1} = 0.
+\min_{\bm{x}_t \in \mathcal{X}} ~ obj(\bm{x}_t)~~ s.\,t.~ \textnormal{if}~f_{j,t}:~~\big|\bm{r}_{j,t+1} - \bm{r}_{j,t}\big|_2 = 0
 \end{equation}
+Here  $\mathcal{X}$ describes the set of allowed values.
+Each quantity inside $\bm{x}$ has bounds, which are given in the following table:
 
-
-Here $\bm{x} = \left[ \alpha_1 ~ \beta_1 ~ \gamma ~ \alpha_2 ~ \beta_2 ~ c_1 ~ c_2 ~ \ell_1 ~ \ell_2 ~ \ell_\gamma ~ \ell_3 ~ \ell_4 \right]^T$ describes the variables to be optimized, and $\mathcal{X}$ the set of allowed values.
-Each variable has bounds. 
-For the deformation angles it is:
-
-.....
-
-Radii:
-\begin{equation}
-r_i = \frac{360 ~ \ell_i}{2 \pi ~ \varphi_i},~~ \textnormal{for}~ i \in [1,2,\gamma,3,4]
-\end{equation}
-
+\begin{center}
+\begin{tabular}{c|c|c|c}
+var & $\bm{\alpha}$ & $\bm{\ell}$ & $\varepsilon$ \\ 
+\hline
+bounds & $\left[ \bm{\alpha_{\textnormal{clb}}}-b_{\textnormal{ang}},~\bm{\alpha_{\textnormal{clb}}}+b_{\textnormal{ang}} \right]$ &
+$\left[ (1-b_\textnormal{len})\bm{\ell}_n,~(1+b_\textnormal{len})\bm{\ell}_n \right]$ &
+$\left[ 0^\circ,~ 360^\circ \right]$
+\end{tabular}
+\end{center}
+These bounds can be tuned with the scalars $b_{\textnormal{ang}}$ and $b_{\textnormal{len}}$.
+For solving the problem, for example the \texttt{SLSQP}-Algorithm provided by the python package \texttt{scipy} can be used.
 
 
 \clearpage
 \begin{multicols}{2}
 
 Coordinates for $F1$ fixed:
+
+\begin{equation}
+r_i = \frac{360 ~ \ell_i}{2 \pi ~ \alpha_i},~~ \textnormal{for}~ i \in [1,2,3,4,5]
+\end{equation}
 
 \begin{equation}
 c_2 = c_1 + \alpha_1 + \beta_1

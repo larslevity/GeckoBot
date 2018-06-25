@@ -21,9 +21,9 @@ if __name__ == "__main__":
     from kinematic_model import RobotRepr
     matplotlib.use("Agg")
 
-    robrepr = RobotRepr(f_ori=0.1, f_ang=100, f_len=1)
-    robrepr.meta['C1'] = 90
-    robrepr.set_pose((.1, .1, .1, .1, .1, True, False, False, False))
+    robrepr = RobotRepr(f_ori=0.001, f_ang=100, f_len=.1)
+    robrepr.meta['eps'] = 90
+    robrepr.set_pose((30, 10, 10, 30, 10, True, False, False, False))
 
     (x, y), fp, nfp = robrepr.get_repr()
     fpx, fpy = fp
@@ -34,20 +34,23 @@ if __name__ == "__main__":
 
     poses = []
 
-    ''' Circle like gait '''
-    for i in range(14):
-        poses.append((.1, 90, 90, .1, 90, False, True, True, False))
-        poses.append((.1, 90, 90, .1, 90, True, False, False, True))
-        poses.append((5, 45, 45, .1, 45, True, False, False, True))
-        poses.append((10, 0.1, -10, 10, .1, True, False, False, True))
-        poses.append((10, .1, -10, 10, .1, False, True, True, False))
-        poses.append((5, 45, 45, .1, 45, False, True, True, False))
-    poses.append((.1, 90, 90, .1, 90, False, True, True, False))
-    poses.append((.1, 90, 90, .1, 90, True, False, False, True))
-    poses.append((5, 45, 45, .1, 45, True, False, False, True))
-    poses.append((5, 45, 45, .1, 45, False, True, True, False))
+    poses.append(((30, 10, 10, 30, 10, True, True, True, True)))
+    poses.append(((1, 60, 90, 1, 10, True, True, True, True)))
 
-#    ''' 3 point fixed gait'''
+##    ''' Circle like gait '''
+#    for i in range(14):
+#        poses.append((.1, 90, 90, .1, 90, False, True, True, False))
+#        poses.append((.1, 90, 90, .1, 90, True, False, False, True))
+#        poses.append((5, 45, 45, .1, 45, True, False, False, True))
+#        poses.append((10, 0.1, -10, 10, .1, True, False, False, True))
+#        poses.append((10, .1, -10, 10, .1, False, True, True, False))
+#        poses.append((5, 45, 45, .1, 45, False, True, True, False))
+#    poses.append((.1, 90, 90, .1, 90, False, True, True, False))
+#    poses.append((.1, 90, 90, .1, 90, True, False, False, True))
+#    poses.append((5, 45, 45, .1, 45, True, False, False, True))
+#    poses.append((5, 45, 45, .1, 45, False, True, True, False))
+
+##    ''' 3 point fixed gait'''
 #    for i in range(2):
 #        poses.append(( 5, 50, -25, 10,  5, True, False, True, True))
 #        poses.append((10, 20, -90, 20, 10, True, False, True, True))
@@ -57,10 +60,10 @@ if __name__ == "__main__":
 #        poses.append((10, 10,  90, .1, .1, True, True, True, False))
 #        poses.append((50, 10,  70,  5, 10, False, True, True, True))
 #        poses.append((40, 10,  90, 10, 20, False, True, True, True))
-##        poses.append((1, 90, -40, 90, 90, True, False, True, True))
-##        poses.append((10, 0.1, -10, 10, .1, True, False, False, True))
-##        poses.append((10, .1, -10, 10, .1, False, True, True, False))
-##        poses.append((5, 45, 45, .1, 45, False, True, True, False))
+###        poses.append((1, 90, -40, 90, 90, True, False, True, True))
+###        poses.append((10, 0.1, -10, 10, .1, True, False, False, True))
+###        poses.append((10, .1, -10, 10, .1, False, True, True, False))
+###        poses.append((5, 45, 45, .1, 45, False, True, True, False))
 
     data, data_fp, data_nfp = [], [], []
     for idx, pose in enumerate(poses):
@@ -74,6 +77,7 @@ if __name__ == "__main__":
         plt.plot(fpx, fpy, 'o', markersize=15, color=col)
         plt.plot(nfpx, nfpy, 'x', markersize=10, color=col)
         robrepr.get_coords()
+        print robrepr.tikz_interface()
         data.append((x, y))
         data_fp.append((fpx, fpy))
         data_nfp.append((nfpx, nfpy))
@@ -105,11 +109,12 @@ if __name__ == "__main__":
                                            fargs=(data, l, data_fp, lfp,
                                                   data_nfp, lnfp),
                                            interval=300, blit=True)
-    plt.show()
 
-        if save:
-            # Set up formatting for the movie files
-            Writer = animation.writers['avconv']
-            writer = Writer(fps=15, metadata=dict(artist='Lars Schiller'),
-                            bitrate=1800)
-            line_ani.save('gait.mp4', writer=writer)
+    if save:
+        # Set up formatting for the movie files
+        Writer = animation.writers['avconv']
+        writer = Writer(fps=15, metadata=dict(artist='Lars Schiller'),
+                        bitrate=1800)
+        line_ani.save('gait.mp4', writer=writer)
+
+    plt.show()

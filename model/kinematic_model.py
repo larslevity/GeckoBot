@@ -69,6 +69,14 @@ class RobotRepr(object):
         print 'Coords F4', self.coords['F4']
         print '\n'
 
+    def tikz_interface(self):
+        F1 = self.coords['F1']
+        alpha = [self.state[key] for key in
+                 ['alp1', 'bet1', 'gam', 'alp2', 'bet2']]
+        ell = [self.meta[key] for key in ['l1', 'l2', 'lg', 'l3', 'l4']]
+        eps = self.meta['eps']
+        return alpha, ell, eps, F1
+
     def get_repr(self):
         c1 = self.meta['C1']
         l1 = self.meta['l1']
@@ -160,17 +168,10 @@ class RobotRepr(object):
             f_ori = self.cost['f_ori']
             f_ang = self.cost['f_ang']
             eps, l1, l2, lg, l3, l4, alp1, bet1, gam, alp2, bet2 = X
-            # calc orientation of foot 3 and 4
-            if self.state['F1']:
-                c1 = np.mod(eps - alp1 - gam*.5 + 360, 360)
-                c2 = np.mod(c1 + alp1 + bet1 + 360, 360)
-                c3 = np.mod(180 + gam - bet1 + alp2 + c2 + 360, 360)
-                c4 = np.mod(180 + gam + alp1 - bet2 + c1 + 360, 360)
-            elif self.state['F2']:
-                c2 = np.mod(eps - gam*.5 + bet1 + 360, 360)
-                c1 = np.mod(c2 - alp1 - bet1 + 360, 360)
-                c3 = np.mod(180 + gam - bet1 + alp2 + c2 + 360, 360)
-                c4 = np.mod(180 + gam + alp1 - bet2 + c1 + 360, 360)
+            c1 = np.mod(eps - alp1 - gam*.5 + 360, 360)
+            c2 = np.mod(c1 + alp1 + bet1 + 360, 360)
+            c3 = np.mod(180 + gam - bet1 + alp2 + c2 + 360, 360)
+            c4 = np.mod(180 + gam + alp1 - bet2 + c1 + 360, 360)
             C = [c1, c2, c3, c4]
             feet = ['F1', 'F2', 'F3', 'F4']
             obj_ori = 0
@@ -193,14 +194,8 @@ class RobotRepr(object):
 
         def constraint1(X):
             """ feet should be at the right position """
-            if self.state['F1']:
-                _, _, (xf1, yf1), (xf2, yf2), (xf3, yf3), (xf4, yf4) = \
-                    self.calc_coords_F1(X)
-            elif self.state['F2']:
-                _, _, (xf1, yf1), (xf2, yf2), (xf3, yf3), (xf4, yf4) = \
-                    self.calc_coords_F2(X)
-            else:
-                AssertionError('Either F1 or F2 or both must be fixed!')
+            _, _, (xf1, yf1), (xf2, yf2), (xf3, yf3), (xf4, yf4) = \
+                self.calc_coords_F1(X)
             xf = [xf1, xf2, xf3, xf4]
             yf = [yf1, yf2, yf3, yf4]
             feet = ['F1', 'F2', 'F3', 'F4']
@@ -216,7 +211,7 @@ class RobotRepr(object):
         btor = (blow*len_tor, bup*len_tor)
         bang = [(self.ref[ang]-dev_angle, self.ref[ang]+dev_angle)
                 for ang in ['alp1', 'bet1', 'gam', 'alp2', 'bet2']]
-        bnds = ((0, 360), bleg, bleg, btor, bleg, bleg,
+        bnds = ((-360, 360), bleg, bleg, btor, bleg, bleg,
                 bang[0], bang[1], bang[2], bang[3], bang[4])
         con1 = {'type': 'eq', 'fun': constraint1}
         cons = ([con1])
@@ -228,14 +223,8 @@ class RobotRepr(object):
         c2 = np.mod(c1 + alp1 + bet1 + 360, 360)
         c3 = np.mod(180 + gam - bet1 + alp2 + c2 + 360, 360)
         c4 = np.mod(180 + gam + alp1 - bet2 + c1 + 360, 360)
-        if self.state['F1']:
-            (xom, yom), (xum, yum), (xf1, yf1), (xf2, yf2), \
-                (xf3, yf3), (xf4, yf4) = \
-                self.calc_coords_F1(X)
-        elif self.state['F2']:
-            (xom, yom), (xum, yum), (xf1, yf1), (xf2, yf2), \
-                (xf3, yf3), (xf4, yf4) = \
-                self.calc_coords_F2(X)
+        (xom, yom), (xum, yum), (xf1, yf1), (xf2, yf2), \
+            (xf3, yf3), (xf4, yf4) = self.calc_coords(X)
         # save opt meta data
         if self.debug:
             print 'constraint function: ', constraint1(X)
@@ -266,23 +255,46 @@ class RobotRepr(object):
 
         return X, objective(X)
 
-    def calc_coords_F1(self, X):
+    def calc_coords(self, X):
         """ X = [c1, l1, lg, l4]"""
-        xf1, yf1 = self.coords['F1']
         eps, l1, l2, lg, l3, l4, alp1, bet1, gam, alp2, bet2 = X
         c1 = eps - alp1 - gam*.5
+        c2 = eps + bet1 - gam*.5
         r1 = calc_rad(l1, alp1)
         rg = calc_rad(lg, gam)
         r4 = calc_rad(l4, bet2)
         r3 = calc_rad(l3, alp2)
         r2 = calc_rad(l2, bet1)
 
-        # coords cp upper left leg
-        xr1 = xf1 + np.cos(np.deg2rad(c1))*r1
-        yr1 = yf1 + np.sin(np.deg2rad(c1))*r1
-        # coords upper torso
-        xom = xr1 - np.sin(np.deg2rad(90-c1-alp1))*r1
-        yom = yr1 - np.cos(np.deg2rad(90-c1-alp1))*r1
+        if self.state['F1']:
+            xf1, yf1 = self.coords['F1']
+            # coords cp upper left leg
+            xr1 = xf1 + np.cos(np.deg2rad(c1))*r1
+            yr1 = yf1 + np.sin(np.deg2rad(c1))*r1
+            # coords upper torso
+            xom = xr1 - np.sin(np.deg2rad(90-c1-alp1))*r1
+            yom = yr1 - np.cos(np.deg2rad(90-c1-alp1))*r1
+            # coords cp R2
+            xr2 = xom + np.cos(np.deg2rad(c1+alp1))*r2
+            yr2 = yom + np.sin(np.deg2rad(c1+alp1))*r2
+            # coords F2
+            xf2 = xr2 + np.sin(np.deg2rad(bet1 - (90-c1-alp1)))*r2
+            yf2 = yr2 - np.cos(np.deg2rad(bet1 - (90-c1-alp1)))*r2
+        elif self.state['F2']:
+            xf2, yf2 = self.coords['F2']
+            # coords cp upper right leg
+            xr2 = xf2 - np.sin(np.deg2rad(c2-90))*r2
+            yr2 = yf2 + np.cos(np.deg2rad(c2-90))*r2
+            # coords upper torso
+            xom = xr2 - np.sin(np.deg2rad(90-c2+bet1))*r2
+            yom = yr2 - np.cos(np.deg2rad(90-c2+bet1))*r2
+            # coords cp R1
+            xr1 = xom + np.sin(np.deg2rad(90-c2+bet1))*r1
+            yr1 = yom + np.cos(np.deg2rad(90-c2+bet1))*r1
+            # coords F1
+            xf1 = xr1 - np.sin(np.deg2rad(90-c2+bet1+alp1))*r1
+            yf1 = yr1 - np.cos(np.deg2rad(90-c2+bet1+alp1))*r1
+
         # coords cp torso
         xrom = xom + np.cos(np.deg2rad(90-c1-alp1))*rg
         yrom = yom - np.sin(np.deg2rad(90-c1-alp1))*rg
@@ -301,57 +313,6 @@ class RobotRepr(object):
         # coords of F3
         xf3 = xr3 - np.cos(np.deg2rad(-alp2 - gam + 180-c1-alp1))*r3
         yf3 = yr3 + np.sin(np.deg2rad(-alp2 - gam + 180-c1-alp1))*r3
-        # coords cp R2
-        xr2 = xom + np.cos(np.deg2rad(c1+alp1))*r2
-        yr2 = yom + np.sin(np.deg2rad(c1+alp1))*r2
-        # coords F2
-        xf2 = xr2 + np.sin(np.deg2rad(bet1 - (90-c1-alp1)))*r2
-        yf2 = yr2 - np.cos(np.deg2rad(bet1 - (90-c1-alp1)))*r2
-
-        return ((xom, yom), (xum, yum), (xf1, yf1),
-                (xf2, yf2), (xf3, yf3), (xf4, yf4))
-
-    def calc_coords_F2(self, X):
-        """ X = [c1, l1, lg, l4]"""
-        xf2, yf2 = self.coords['F2']
-        eps, l1, l2, lg, l3, l4, alp1, bet1, gam, alp2, bet2 = X
-        c2 = eps + bet1 - gam*.5
-        r1 = calc_rad(l1, alp1)
-        rg = calc_rad(lg, gam)
-        r4 = calc_rad(l4, bet2)
-        r3 = calc_rad(l3, alp2)
-        r2 = calc_rad(l2, bet1)
-
-        # coords cp upper right leg
-        xr2 = xf2 - np.sin(np.deg2rad(c2-90))*r2
-        yr2 = yf2 + np.cos(np.deg2rad(c2-90))*r2
-        # coords upper torso
-        xom = xr2 - np.sin(np.deg2rad(90-c2+bet1))*r2
-        yom = yr2 - np.cos(np.deg2rad(90-c2+bet1))*r2
-        # coords cp torso
-        xrom = xom + np.cos(np.deg2rad(90-c2+bet1))*rg
-        yrom = yom - np.sin(np.deg2rad(90-c2+bet1))*rg
-        # coords lower torso
-        xum = xrom - np.cos(np.deg2rad(gam - (90-c2+bet1)))*rg
-        yum = yrom - np.sin(np.deg2rad(gam - (90-c2+bet1)))*rg
-        # coords cp lower right foot
-        xr4 = xum + np.sin(np.deg2rad(gam - (90-c2+bet1)))*r4
-        yr4 = yum - np.cos(np.deg2rad(gam - (90-c2+bet1)))*r4
-        # coords of F4
-        xf4 = xr4 + np.sin(np.deg2rad(bet2 - (gam - (90-c2+bet1))))*r4
-        yf4 = yr4 + np.cos(np.deg2rad(bet2 - (gam - (90-c2+bet1))))*r4
-        # coords cp R3
-        xr3 = xum + np.sin(np.deg2rad(gam - (90-c2+bet1)))*r3
-        yr3 = yum - np.cos(np.deg2rad(gam - (90-c2+bet1)))*r3
-        # coords of F3
-        xf3 = xr3 - np.cos(np.deg2rad(-alp2 - gam + 180-c2+bet1))*r3
-        yf3 = yr3 + np.sin(np.deg2rad(-alp2 - gam + 180-c2+bet1))*r3
-        # coords cp R1
-        xr1 = xom + np.sin(np.deg2rad(90-c2+bet1))*r1
-        yr1 = yom + np.cos(np.deg2rad(90-c2+bet1))*r1
-        # coords F1
-        xf1 = xr1 - np.sin(np.deg2rad(90-c2+bet1+alp1))*r1
-        yf1 = yr1 - np.cos(np.deg2rad(90-c2+bet1+alp1))*r1
 
         return ((xom, yom), (xum, yum), (xf1, yf1),
                 (xf2, yf2), (xf3, yf3), (xf4, yf4))
@@ -400,10 +361,10 @@ if __name__ == "__main__":
     import matplotlib
     matplotlib.use("Agg")
 
-    save = True
+    save = False
 
     robrepr = RobotRepr()
-    robrepr.meta['eps'] = 359
+    robrepr.meta['eps'] = 90
     robrepr.set_pose((.1, .1, .1, .1, .1, True, False, False, False))
 
     (x, y), fp, nfp = robrepr.get_repr()

@@ -11,7 +11,9 @@
 	foot/.style={fill=gray},
 	lettering/.style={red!80},
 	distarrow/.style={|<->|, blue!50},
-	distlettering/.style={blue!60}
+	distlettering/.style={blue!60},
+	vec/.style={-latex, lightgray},
+	vechead/.style={purple}
 ]
 
 \def\rfoot{.1}
@@ -158,6 +160,14 @@
 \draw (Rg)circle(\rradi)++(\ci+\alpi+\gamh-90:\fontdistdist)node{$RG$};
 \draw (R3)circle(\rradi)++(\ciii-\alpiih:\fontdistdist)node{$R3$};
 \draw (R4)circle(\rradi)++(\civ+\betiih:\fontdistdist)node{$R4$};
+
+
+
+%% Vectors
+\draw[vec](O)--(F1)node[vechead, near start, above]{$\bm{r}_1$};
+\draw[vec](O)--(F2)node[vechead, pos=.3, above]{$\bm{r}_2$};
+\draw[vec](O)--(F3)node[vechead, pos=.5, left]{$\bm{r}_3$};
+\draw[vec](O)--(F4)node[vechead, pos=.2, right]{$\bm{r}_4$};
 
 
 

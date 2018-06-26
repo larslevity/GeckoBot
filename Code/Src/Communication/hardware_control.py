@@ -15,6 +15,7 @@ import Adafruit_BBIO.GPIO as GPIO
 import Adafruit_BBIO.ADC as ADC
 
 from termcolor import colored
+from Src.Management import reference as ref
 
 TSamplingUI = .1
 p7_ptrn = 0.0
@@ -72,6 +73,10 @@ class HUIThread(threading.Thread):
         self.lastinfmode = time.time()
         self.refzero = False
         self.rootLogger = rootLogger
+        self.ptrn_idx = 0
+        self.last_process_time = time.time()
+        self.process_time = 0
+        self.state = cargo.state
 
         self.rootLogger.info('Initialize HUI Thread ...')
         ADC.setup()
@@ -160,15 +165,16 @@ class HUIThread(threading.Thread):
         state, change = self.check_state()
         if change:
             self.reset_events()
+            self.reset_confirmations()
         self.set_leds()
-        if state == 'USER_CONTROL':
-            self.process_pwm_ref()
-        elif state == 'USER_REFERENCE':
+        if state == 'USER_REFERENCE':
             self.process_pressure_ref()
-        elif state == 'REFERENCE_TRACKING':
+        elif state == 'PATTERN_REF':
             self.process_pattern_ref()
         elif state == 'IMU_CONTROL':
             self.process_imu_control()
+        elif state == 'USER_CONTROL':
+            self.process_pwm_ref()
 #        self.print_state()
 
     def process_imu_control(self):
@@ -197,11 +203,27 @@ class HUIThread(threading.Thread):
 #        self.check_p28()
 
     def process_pattern_ref(self):
-        self.change_state('REFERENCE_TRACKING')
+        self.change_state('USER_REFERENCE')
         self.set_pattern()
         self.set_walking()
-        # self.set_infmode()
         self.set_userpattern()
+        if self.cargo.wcomm.confirm:
+            self.cargo.wcomm.is_active = True
+            if self.last_process_time + self.process_time < time.time():
+                self.process_time = self.generate_pattern_ref()
+                self.last_process_time = time.time()
+        # self.set_infmode()
+
+    def generate_pattern_ref(self):
+        pattern = self.cargo.wcomm.pattern
+        idx = self.ptrn_idx
+        idx = idx+1 if idx<len(pattern)-1 else 0
+        dvtask, pvtask, process_time = ref.generate_walking_ref(pattern, idx)
+        self.cargo.dvalve_task = dvtask
+        self.cargo.ref_task = pvtask
+        self.ptrn_idx = idx
+        return process_time
+
 
     def check_state(self):
         new_state = None
@@ -210,7 +232,7 @@ class HUIThread(threading.Thread):
         elif GPIO.event_detected(PRESSUREREFMODE):
             new_state = 'USER_REFERENCE'
         elif GPIO.event_detected(PATTERNREFMODE):
-            new_state = 'REFERENCE_TRACKING'
+            new_state = 'PATTERN_REF'
 
         change = False
         if new_state:
@@ -229,27 +251,28 @@ class HUIThread(threading.Thread):
                     for led in self.leds:
                         GPIO.output(led, GPIO.LOW)
                     time.sleep(.05)
-        return (new_state if change else self.cargo.state, change)
+        self.state = new_state if change else self.state
+        return (self.state, change)
 
     def set_leds(self):
-        actual_state = self.cargo.actual_state
+        my_state = self.state
         for pin, state in [(PWMLED, "USER_CONTROL"),
                            (PRESSURELED, "USER_REFERENCE"),
-                           (PATTERNLED, "REFERENCE_TRACKING")]:
-            GPIO.output(pin, GPIO.HIGH if actual_state == state else GPIO.LOW)
-        if actual_state == 'REFERENCE_TRACKING':
+                           (PATTERNLED, "PATTERN_REF")]:
+            GPIO.output(pin, GPIO.HIGH if my_state == state else GPIO.LOW)
+        if my_state == 'PATTERN_REF':
             for pin, state in [(WALKINGCONFIRMLED, self.cargo.wcomm.is_active),
                                # (INFINITYLED, self.cargo.wcomm.infmode)
                                (INFINITYLED, self.cargo.wcomm.user_pattern)
                                ]:
                 GPIO.output(pin, GPIO.HIGH if state else GPIO.LOW)
-        elif actual_state == "USER_REFERENCE":
+        elif my_state == "USER_REFERENCE":
             GPIO.output(INFINITYLED, GPIO.HIGH if self.refzero else GPIO.LOW)
             GPIO.output(WALKINGCONFIRMLED, GPIO.LOW)
-        elif actual_state == "USER_CONTROL":
+        elif my_state == "USER_CONTROL":
             GPIO.output(INFINITYLED, GPIO.LOW)
             GPIO.output(WALKINGCONFIRMLED, GPIO.LOW)
-        elif actual_state == "IMU_CONTROL":
+        elif my_state == "IMU_CONTROL":
             GPIO.output(INFINITYLED, GPIO.LOW)
             GPIO.output(WALKINGCONFIRMLED, GPIO.LOW)
 
@@ -351,6 +374,11 @@ class HUIThread(threading.Thread):
     def reset_events(self):
         for btn in BTNS:
             GPIO.event_detected(btn)
+
+    def reset_confirmations(self):
+        self.refzero = False
+        self.cargo.wcomm.confirm = False
+        self.cargo.wcomm.is_active = False
 
     def print_state(self):
         state_str = ('Current State: \n\n' +

@@ -144,7 +144,7 @@ fileName = 'testlog'
 logFormatter = logging.Formatter(
     "%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
 rootLogger = logging.getLogger()
-rootLogger.setLevel(logging.INFO)
+rootLogger.setLevel(logging.ERROR)
 
 
 fileHandler = logging.FileHandler("{0}/{1}.log".format(logPath, fileName))
@@ -408,11 +408,11 @@ def imu_set_ref(cargo):
         acc1 = cargo.rec_IMU[str(imu_idx[valve.name][1])]
         rot_angle = imu_idx[valve.name][2]
 
-        sys_out, delta = IMUcalc.calc_angle(acc0, acc1, rot_angle)
+        sys_out = IMUcalc.calc_angle(acc0, acc1, rot_angle)
         ctr_out = controller.output(ref, sys_out)
         pressure = cargo.rec[valve.name]
         pressure_bound = pressure_check(
-                pressure, 2*cargo.maxpressure, 1.5*cargo.maxpressure)
+                pressure, 1.5*cargo.maxpressure, 1*cargo.maxpressure)
         ctr_out_ = cutoff(
                 ctr_out+pressure_bound, -cargo.maxctrout, cargo.maxctrout)
 

@@ -203,7 +203,8 @@ class HUIThread(threading.Thread):
 #        self.check_p28()
 
     def process_pattern_ref(self):
-        self.change_state('USER_REFERENCE')
+#        self.change_state('USER_REFERENCE')
+        self.change_state('IMU_CONTROL')
         self.set_pattern()
         self.set_walking()
         self.set_userpattern()

@@ -107,14 +107,14 @@ class DPressureSens(object):
 
         self.pmin = 0.0
         self.pmax = 150.0
-        self.outmin = (2**14-1)*.1
-        self.outmax = (2**14-1)*.9
+        self.outmin = int((2**14-1)*.1)
+        self.outmax = int((2**14-1)*.9)
+        self.clb = (self.pmax-self.pmin)/(self.outmax - self.outmin)
+        self.barfact = 1/14.5038
 
     def calc_pressure(self, msb, lsb):
         output = msb*256 + lsb
-        pressure = (output-self.outmin)*(self.pmax-self.pmin)/(
-            self.outmax - self.outmin) + self.pmin
-        pressure = pressure/14.5038  # [bar]
+        pressure = ((output-self.outmin)*self.clb + self.pmin)*self.barfact
         return pressure
 
     def get_value(self):

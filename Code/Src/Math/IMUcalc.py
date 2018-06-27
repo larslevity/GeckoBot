@@ -65,10 +65,12 @@ def calc_angle(vec1, vec2, rotate_angle=0., delta_out=False):
 
     return alpha_IMU if not delta_out else (alpha_IMU, delta)
 
+
 def normalize(vec):
     x, y, z = vec
     l = np.sqrt(x**2 + y**2 + z**2)
     return x/l, y/l, z/l
+
 
 def rotate(vec, theta):
     c, s = np.cos(theta), np.sin(theta)

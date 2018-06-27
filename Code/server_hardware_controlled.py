@@ -378,7 +378,7 @@ def pressure_check(pressure, pressuremax, cutoff):
     return out
 
 
-def cutoff(x, minx, maxx):
+def cutoff(x, minx=-MAX_PRESSURE, maxx=MAX_PRESSURE):
     if x < minx:
         out = minx
     elif x > maxx:
@@ -402,19 +402,19 @@ def imu_set_ref(cargo):
     imu_idx = {'0': [0, 1, -90], '1': [1, 2, -90], '2': [1, 4, 180],
                '3': [4, 1, 180], '4': [4, 3, -90], '5': [5, 4, -90]}
 #    s = ''
+    imu_rec = cargo.rec_IMU
     for valve, controller in zip(cargo.valve, cargo.imu_ctr):
         ref = cargo.ref_task[valve.name]*90.
-        acc0 = cargo.rec_IMU[str(imu_idx[valve.name][0])]
-        acc1 = cargo.rec_IMU[str(imu_idx[valve.name][1])]
-        rot_angle = imu_idx[valve.name][2]
+        idx0, idx1, rot_angle = imu_idx[valve.name]
+        acc0 = imu_rec[str(idx0)]
+        acc1 = imu_rec[str(idx1)]
 
         sys_out = IMUcalc.calc_angle(acc0, acc1, rot_angle)
         ctr_out = controller.output(ref, sys_out)
         pressure = cargo.rec[valve.name]
         pressure_bound = pressure_check(
                 pressure, 1.5*cargo.maxpressure, 1*cargo.maxpressure)
-        ctr_out_ = cutoff(
-                ctr_out+pressure_bound, -cargo.maxctrout, cargo.maxctrout)
+        ctr_out_ = cutoff(ctr_out+pressure_bound)
 
 #        ss = 'Channel[{}]\nangle: \t {}\tref: \t {}\tprss: \t {}\tpbound:\t {}\tdelta: \t {}\n'.format(
 #                valve.name, round(sys_out*100)/100., ref, round(pressure*100)/100.,
@@ -429,7 +429,7 @@ def imu_set_ref(cargo):
                     ctr_out_ = -MAX_CTROUT
             elif ref < other_ref or (ref == other_ref and ref > 0):
                 ctr_out_ = -MAX_CTROUT
-             
+
         valve.set_pwm(ctrlib.sys_input(ctr_out_))
         cargo.rec_r['r{}'.format(valve.name)] = ref
         cargo.rec_u['u{}'.format(valve.name)] = ctr_out

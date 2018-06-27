@@ -307,6 +307,99 @@ Robert C Nelson seems to be the only one, who has an idea whats going on...
 \end{footnotesize}
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\subsection{Set i2c bus to fast mode (400kHz)}
+\begin{itemize}
+\item Backup the original .dtb
+
+\begin{lstlisting}
+root@beaglebone: /boot/dtbs/4.4.54-ti-r93# cp am335x-boneblack-overlay.dtb am335x-boneblack-overlay.dtb.orig
+\end{lstlisting}
+
+\item Generate the source device tree (.dts) from the binary block device tree (.dtb) 
+\begin{lstlisting}
+root@beaglebone: /boot/dtbs/4.4.54-ti-r93# dtc -I dtb -O dts -o am335x-boneblack-overlay.dts am335x-boneblack-overlay.dtb
+\end{lstlisting}
+
+\item There are 3 diffrent i2c-buses in the .dts:
+\begin{itemize}
+	\item i2c0: 0x44E0B000 (Not available on header)
+	\item i2c1: 0x4802A000 (Not enabled by default)
+	\item i2c2: 0x4819C000 (The actual one for configured i2c-1 in Linux, although the register name/expansion port is i2c2)
+\end{itemize}
+We want to increase the speed of the i2c2 bus. 
+Therefore modify the source device tree with nano:
+\begin{lstlisting}
+i2c@4819c000 {
+compatible = "ti,omap4-i2c";
+#address-cells = <0x1>;
+#size-cells = <0x0>;
+ti,hwmods = "i2c3";
+reg = <0x4819c000 0x1000>;
+interrupts = <0x1e>;
+status = "okay";
+pinctrl-names = "default";
+pinctrl-0 = <0x35>;
+
+#clock-frequency = <0x186a0>;
+clock-frequency = <0x61a80>;
+
+linux,phandle = <0xa1>;
+phandle = <0xa1>;
+\end{lstlisting}
+The \texttt{clock-frequency = <0x186a0>} is the frequency, \texttt{0x186a0 = 100000 = 100KHz\texttt{ here is the default i2c-1 (Expansion port i2c2) frequency for stock beaglebone black image.
+\texttt{0x61a80 = 400000 = 400kHz} is the highest frequency possible for i2c-devices.
+This we gonna use. 
+
+\item Generate the .dtb from this modified .dts:
+\begin{lstlisting}
+root@beaglebone: /boot/dtbs/4.4.54-ti-r93# dtc -I dts -O dtb -o am335x-boneblack-overlay.dtb am335x-boneblack-overlay.dts
+\end{lstlisting}
+
+\item reboot and check:
+\begin{lstlisting}
+root@beaglebone:# dmesg | grep i2c
+\end{lstlisting}
+
+
+\end{itemize}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 \subsection{Installing Software on BBB}
 In order to run the \texttt{GeckoBot} software on the BBB install following packages:
 \begin{itemize}

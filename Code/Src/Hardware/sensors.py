@@ -1,6 +1,12 @@
 # pylint: skip-file
 
-"""Sensor classes to interface with hardware"""
+"""Sensor classes to interface with hardware
+To increase the speed of I2C:
+
+https://randymxj.com/?p=538
+https://groups.google.com/forum/#!topic/beagleboard/vbuM-4oShS8
+"""
+
 try:
     import Adafruit_BBIO.ADC as ADC
 except ImportError:

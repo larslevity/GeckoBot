@@ -330,27 +330,26 @@ Robert C Nelson seems to be the only one, who has an idea whats going on...
 
 
 
-\subsection{Set i2c bus to fast mode (400kHz)}
+\subsection{Set I2C Bus to FastMode (400kHz)}
 \begin{itemize}
-\item Backup the original .dtb
-
+\item Backup the original \texttt{.dtb}:
 \begin{lstlisting}
 root@beaglebone: /boot/dtbs/4.4.54-ti-r93# cp am335x-boneblack-overlay.dtb am335x-boneblack-overlay.dtb.orig
 \end{lstlisting}
 
-\item Generate the source device tree (.dts) from the binary block device tree (.dtb) 
+\item Generate source device tree (\texttt{.dts}) from  binary block device tree (\texttt{.dtb}) with device tree compiler (\texttt{dtc}):
 \begin{lstlisting}
 root@beaglebone: /boot/dtbs/4.4.54-ti-r93# dtc -I dtb -O dts -o am335x-boneblack-overlay.dts am335x-boneblack-overlay.dtb
 \end{lstlisting}
 
-\item There are 3 diffrent i2c-buses in the .dts:
+\item There are 3 diffrent i2c-buses in the \texttt{.dts}:
 \begin{itemize}
-	\item i2c0: 0x44E0B000 (Not available on header)
+	\item i2c0: 0x44E0B000 (Not available as Pins)
 	\item i2c1: 0x4802A000 (Not enabled by default)
-	\item i2c2: 0x4819C000 (The actual one for configured i2c-1 in Linux, although the register name/expansion port is i2c2)
+	\item i2c2: 0x4819C000 (The actual one for configured i2c-1 in Linux-Debian, although the register name/expansion port is i2c2)
 \end{itemize}
-We want to increase the speed of the i2c2 bus. 
-Therefore modify the source device tree with nano:
+We want to increase the speed of the \texttt{i2c2} bus. 
+Therefore modify the \texttt{.dts} with nano:
 \begin{lstlisting}
 i2c@4819c000 {
 compatible = "ti,omap4-i2c";
@@ -369,11 +368,11 @@ clock-frequency = <0x61a80>;
 linux,phandle = <0xa1>;
 phandle = <0xa1>;
 \end{lstlisting}
-The \texttt{clock-frequency = <0x186a0>} is the frequency, \texttt{0x186a0 = 100000 = 100KHz\texttt{ here is the default i2c-1 (Expansion port i2c2) frequency for stock beaglebone black image.
+The \texttt{clock-frequency = <0x186a0>} is the frequency, \texttt{0x186a0 = 100000 = 100kHz} here is the default i2c-1 (Expansion port i2c2) frequency for stock beaglebone black image.
 \texttt{0x61a80 = 400000 = 400kHz} is the highest frequency possible for i2c-devices.
 This we gonna use. 
 
-\item Generate the .dtb from this modified .dts:
+\item Generate the \texttt{.dtb} from this modified .dts:
 \begin{lstlisting}
 root@beaglebone: /boot/dtbs/4.4.54-ti-r93# dtc -I dts -O dtb -o am335x-boneblack-overlay.dtb am335x-boneblack-overlay.dts
 \end{lstlisting}
@@ -382,6 +381,13 @@ root@beaglebone: /boot/dtbs/4.4.54-ti-r93# dtc -I dts -O dtb -o am335x-boneblack
 \begin{lstlisting}
 root@beaglebone:# dmesg | grep i2c
 \end{lstlisting}
+Something like
+\begin{lstlisting}
+... 
+omap/i2c@4819c000 is enabled at 400kHz
+...
+\end{lstlisting}
+should be the output.
 
 
 \end{itemize}

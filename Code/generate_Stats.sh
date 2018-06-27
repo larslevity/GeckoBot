@@ -1,3 +1,3 @@
 # bin # -sh
 
-python -m cProfile -o log.txt server_hardware_controlled.py
+python -m cProfile -o statistics.pstats server_hardware_controlled.py

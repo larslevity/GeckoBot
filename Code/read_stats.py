@@ -9,5 +9,5 @@ Profiler stats.
 
 import pstats
 
-p = pstats.Stats('log.txt')
-p.strip_dirs().sort_stats('tottime').print_stats()
+p = pstats.Stats('statistics.pstats')
+p.strip_dirs().sort_stats('tottime').print_stats(50)

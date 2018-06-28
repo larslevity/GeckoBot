@@ -1,0 +1,136 @@
+\documentclass[10pt, border=10pt]{standalone}
+\input{../tikzpic_packages.tex}
+
+\def\pneumaticcolor{blue!20}
+
+\begin{document}
+\begin{circuitikz}[
+european resistors,
+help/.style={inner sep=0pt},
+pbtns/.style={red, fill=red!30},
+pbtns2/.style={red, fill=red!40},
+switc/.style={orange, fill=orange!40},
+pulldown/.style={blue, fill=blue!20},
+poti/.style={blue, fill=blue!30},
+bbb/.style={gray!60, fill=gray!40},
+head/.style={midway, above=.5cm, align=center}
+]
+
+\def\yhigh{10}
+\def\ylow{-3}
+
+\def\xbbbr{1}
+\def\xbbbl{-5}
+
+
+\def\ypbtns{5}
+\def\yswitch{7}
+\def\yled{2}
+\def\ypoti{7.5}
+
+
+\def\headerdist{.5}
+\def\cabledist{.8}
+\def\leddist{1.2}
+\def\potidist{.9}
+
+
+%% PULLDOWNS
+\pgfmathsetmacro{\x}{10*\cabledist}
+\pgfmathsetmacro{\y}{\yled-5*\headerdist-(\yled-5*\headerdist-\ylow)*.5}
+\draw[pulldown] (\xbbbr+.4,\y-.75)rectangle++(\x,1.5)node[head, above=.75cm]{R \\ (Pull down)};
+
+
+
+%% BBB
+\draw[bbb] (\xbbbl-.2, \ypoti + .7)rectangle (\xbbbr+.2, \ylow+.5);
+\path (\xbbbl,\ylow+.5)--(\xbbbr,\ylow+.5)node[midway, above]{BBB};
+
+
+%% PUSH BTNS
+\pgfmathsetmacro{\x}{3*\cabledist}
+\pgfmathsetmacro{\xx}{2*\cabledist}
+\pgfmathsetmacro{\y}{\ypbtns+(\yhigh-\ypbtns)*.5}
+\draw[pbtns] (\xbbbr+.4,\y-.5)rectangle++(\x,1)node[head]{Push \\ Buttons \\ (Mode)};
+\draw[pbtns2] (\xbbbr+.4+\x,\y-.5)rectangle++(\xx,1)node[head]{Push \\ Buttons \\ (Fun)};
+
+\foreach \i in {1,...,5}{
+	\pgfmathsetmacro{\ydist}{\i*\headerdist}
+	\pgfmathsetmacro{\xdist}{\i*\cabledist}
+	\draw (\xbbbr,\ypbtns-\ydist)node[left]{GPIO-IN PBTN \i}
+		--(\xbbbr + \xdist, \ypbtns-\ydist)node[help](connect){$\bullet$}
+		--(\xbbbr + \xdist, \ypbtns)
+		to[push button] (\xbbbr + \xdist, \yhigh)node[help]{$\bullet$};
+	\pgfmathsetmacro{\ypbtnBAR}{\ypbtns - 11*\headerdist}
+	\draw (connect) -- (\xbbbr + \xdist, \ypbtnBAR)
+		to[R] (\xbbbr + \xdist, \ylow) node[help]{$\bullet$};
+}
+
+
+
+%% SWITCH
+\pgfmathsetmacro{\xs}{6*\cabledist}
+\pgfmathsetmacro{\x}{4*\cabledist}
+\pgfmathsetmacro{\y}{\yswitch+(\yhigh-\yswitch)*.5}
+\draw[switc] (\xbbbr+.3+\xs,\y-.5)rectangle++(\x,1)node[head]{Switches \\ (Ref DValve)};
+
+\foreach \i in {1,...,4}{
+	\pgfmathsetmacro{\ydist}{\i*\headerdist}
+	\pgfmathsetmacro{\xdist}{\i*\cabledist + 6*\cabledist}
+	\draw (\xbbbr,\yswitch-\ydist)node[left]{GPIO-IN SWITCH \i}
+		--(\xbbbr + \xdist, \yswitch-\ydist)node[help](connect){$\bullet$}
+		--(\xbbbr + \xdist, \yswitch)
+		to[switch] (\xbbbr + \xdist, \yhigh)node[help](33){$\bullet$};
+	\pgfmathsetmacro{\yswitchBAR}{\yswitch - 15*\headerdist}
+	\draw (connect) -- (\xbbbr + \xdist, \yswitchBAR)
+		to[R] (\xbbbr + \xdist, \ylow)node[help]{$\bullet$};
+}
+
+
+%% LED
+\pgfmathsetmacro{\xs}{11*\cabledist+.35}
+\pgfmathsetmacro{\x}{3*\leddist}
+\pgfmathsetmacro{\xx}{2*\leddist}
+\pgfmathsetmacro{\y}{\yled-5*\headerdist-(\yled-5*\headerdist-\ylow)*.5}
+\draw[pbtns] (\xbbbr+.3+\xs,\y-.5)rectangle++(\x,1)node[head]{LED \\ (Mode indicator)};
+\draw[pbtns2] (\xbbbr+.3+\xs +\x,\y-.5)rectangle++(\xx,1)node[head]{LED \\ (Fun indicator)};
+
+\foreach \i in {1,...,5}{
+	\pgfmathsetmacro{\ydist}{\i*\headerdist}
+	\pgfmathsetmacro{\xdist}{\i*\leddist + 11*\cabledist}
+	\pgfmathsetmacro{\yledBAR}{\yled - 5*\headerdist}
+	\draw (\xbbbr,\yled-\ydist)node[left]{GPIO-OUT LED \i}
+		--(\xbbbr + \xdist, \yled-\ydist)node[help](connect){$\bullet$}
+		--(\xbbbr + \xdist, \yledBAR)
+		to[leDo] (\xbbbr + \xdist, \ylow)node[help](GND){$\bullet$};
+}
+
+
+%% POTIS
+\pgfmathsetmacro{\x}{8*\potidist}
+\pgfmathsetmacro{\y}{18*\headerdist}
+\draw[poti] (\xbbbl-.4,\ypoti)rectangle++(-\x,-\y)node[head, above=3cm]{Potentiometer \\ (Ref PValve)};
+
+\foreach \i in {1,...,8}{
+	\pgfmathsetmacro{\ydist}{\i*\headerdist*2}
+	\pgfmathsetmacro{\xdist}{\i*\potidist}
+	\draw (\xbbbl,\ypoti-\ydist)node[right]{AIN \i}
+		--(\xbbbl - \xdist +.5, \ypoti-\ydist)++(-.5,0)coordinate(poti);
+	\draw (poti)++(0,2) to[pR] ($(poti)+(0,-2)$) 
+		-- (\xbbbl - \xdist, \ylow)node[help](GND2){$\bullet$};
+	\draw (poti)++(0,2) -- (\xbbbl - \xdist, \yhigh)node[help](ADC){$\bullet$};
+}
+
+%% LEVELS
+\draw (ADC)++(-.2,0)--(\xbbbl+1.2, \yhigh);
+\draw (33)++(.2,0)--(\xbbbr-1.2, \yhigh);
+\draw (GND)++(.2,0)--($(GND2)+(-.2,0)$);
+
+\draw (\xbbbl+1, \ypoti + .5)node[below]{ADC$^+$}--(\xbbbl+1, \yhigh)node[help]{$\bullet$};
+\draw (\xbbbr-1, \ypoti + .5)node[below]{3.3V$^+$}--(\xbbbr-1, \yhigh)node[help]{$\bullet$};
+\draw (\xbbbr-1, \ylow + .7)node[above]{GND$^-$}--(\xbbbr-1, \ylow)node[help]{$\bullet$};
+
+
+
+\end{circuitikz}
+\end{document}

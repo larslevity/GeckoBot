@@ -1,5 +1,5 @@
 \documentclass[10pt, border=10pt]{standalone}
-\input{../tikzpic_packages.tex}
+\input{../../tikzpic_packages.tex}
 
 \def\pneumaticcolor{blue!20}
 
@@ -97,7 +97,7 @@ stats/.style={draw=none}
 	16/gpio/LED Fun 1,
 	17/gpio/LED Mode 3,
 	18/gpio/LED Fun 1,
-	46/stats/from 28.6.2018
+	46/stats/from \today
 	}{
 	\ifodd\pin
 		\draw[\fun](\pin)rectangle++(-\w,\h)node[fun]{\txt};

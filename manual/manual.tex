@@ -344,39 +344,91 @@ root@beaglebone:~Git/GeckoBot/Code/# python server_hardware_controlled.py
 
 
 
-
+\clearpage
 
 \section{Pin Layout}
 
+Figure~\ref{fig:BBBpins} shows all available pins and there functions of the Beaglebone Board Black and which of these pins are used and for what purpose.
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=.95\textwidth]{Images/beaglebone-black-pinout.jpg}
+\includegraphics[width=.8\textwidth]{Images/beaglebone-black-pinout.jpg} \\
+\includegraphics[width=.9\textwidth]{Images/PinLayout/PinLayout.pdf}
 \caption{Pin layout of BBB}
+\label{fig:BBBpins}
 \end{center}
 \end{figure}
 
-The following pins were used, where Fx means foot x and y means leg or belly y:
 
-\begin{table}[h!]
+\section{Wiring the Hardware}
+
+\subsection{The User Interface}
+
+Figure~\ref{fig:hui_circuit} shows the circuit of the User Interface. 
+It consists of:
+\begin{itemize}
+	\item 5 Push-Buttons (3 of them are used as reference for different operating modes, and 2 are used to enable/disable different functions inside these operating modes)
+	\item 5 light emitting diodes, which indicates the actual status of programme, i.e. the operating mode.
+	\item 8 potentiometer, which are used to read the reference signal for the proportional valves.
+	\item 4 switches, which are used to read the reference signal for the discrete valves.
+	\item 9 pull-down resistors, which pull the reference signal for discrete valves and operating modes down again, after activation.
+\end{itemize}
+
+\begin{figure}[h!]
 \begin{center}
-\caption{Used pins (Outdated)}
-\begin{tabular}{cccccccc}
-\toprule
-P8-7 	& P8-8 	& P8-9 		& P8-10 & P8-13 	& P8-19 	&		& 		\\
-%\midrule
-F1		& F2	& F3		& F4	& 2			& 1 		&		& 		\\
-\midrule
-P9-1 	& P9-5 	& P9-14 	& P9-16 & P9-19 	& P9-20		& P9-21	& P9-22 \\
-%\midrule
-VDD		& GND	& 6			& 5		& I2C-SCL	& I2C-SDA 	& 4		& 3 	\\
-\bottomrule
-\end{tabular}
+\includegraphics[width=.98\textwidth]{Images/circuit_HUI/circuit_HUI.pdf}
+\caption{User Interface Wiring}
+\label{fig:hui_circuit}
 \end{center}
-\end{table}
+\end{figure}
+
+
+\subsection{Proportional Valves}
+
+To generate the control signal for the proportional valves, \texttt{pwm} is used.
+Since the pwm-signal oscillating and its level is 3.3V, it must be lowpass-filtered and amplified.
+Therefore the following circuit is used:
+
+\includegraphics[scale=1]{Images/Mpye/mpye_simplified_scheme.pdf}
+\begin{tabular}{lr}
+R & 510 $\Omega$ \\
+R1 & 11 k$\Omega$ \\
+R2 & 22 k$\Omega$ \\
+C & 220 $\mu$F
+\end{tabular}
+
+For the proportional valves, the used cable (status: 28.6.18) has the following color scheme (accordingly to the data sheet\cite[p. 9]{MPYE_DATASHEET}):
+
+
+\includegraphics[scale=1]{Images/Mpye/anschluss_mpye_PIN.pdf}
+\includegraphics[height=3cm]{Images/Mpye/PinOut.PNG}
+
+
+\subsection{Discrete Valves}	
+The discrete valves are controlled directly via a GPIO.
+The signal controls a mosfet \cite{IRF540_DATASHEET}.
+A ready-to-use Arduino module is available:
+
+\includegraphics[height=3cm]{Images/Excel/mosfet.PNG}
+
+
+
+\subsection{Pressure Sensors}
+
+The following table is from \cite[p. 30]{SSC_DATASHEET}. 
+It shows the PinOut of the used pressure Sens.
+The figure below shows the numbering scheme of the pressure sensors \cite[p. 19]{SSC_DATASHEET}.
+
+\includegraphics[width=.9\textwidth]{Images/PressureSensor/PinOut.PNG}
+
+\includegraphics[width=.9\textwidth]{Images/PressureSensor/PinNumbering.PNG}
 
 
 
 
+
+
+
+\clearpage
 \section{Auxilary}
 
 \subsection{Formatting SD Card with debian}
@@ -447,6 +499,9 @@ sudo sh -c "echo 'BB-ADC' > /sys/devices/platform/bone_capemgr/slots"
 \end{itemize}
 
 
+
+\bibliography{bib}
+\bibliographystyle{plain}
 
 
 \end{document}

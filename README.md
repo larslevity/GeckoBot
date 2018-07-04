@@ -15,7 +15,7 @@ But in principle, all similar robots can also be operated with it
 
 ## Kinematic Model of the Robot
 
-This also provides a kinematic model of the robot that is capable of predicting how the robot will deform under a given pressure.
+This repository also provides a kinematic model of the robot that is capable of predicting how the robot will deform under a given pressure.
 With the help of this model, new gait patterns can be tested much more easily.
 The following figure shows the output of the model for the gait pattern of a curve.
 

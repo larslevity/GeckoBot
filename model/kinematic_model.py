@@ -49,6 +49,9 @@ class RobotRepr(object):
     def set_pose(self, pose):
         """ pose = (alp1, bet1, gam, alp2, bet2, F1, F2, F3, F4) """
         alp1, bet1, gam, alp2, bet2, F1, F2, F3, F4 = pose
+        for a in [alp1, bet1, gam, alp2, bet2]:
+            if a == 0:
+                a = .01
         self.ref['alp1'] = alp1
         self.ref['alp2'] = alp2
         self.ref['gam'] = gam
@@ -60,6 +63,23 @@ class RobotRepr(object):
         self.state['F4'] = F4
         _, objective = self.calc_pose()
         return objective
+
+    def set_initial_pose(self, alp1, bet1, gam, alp2, bet2, eps):
+        for a in [alp1, bet1, gam, alp2, bet2]:
+            if a == 0:
+                a = .01
+        self.meta['eps'] = eps
+        self.ref['alp1'] = alp1
+        self.ref['alp2'] = alp2
+        self.ref['gam'] = gam
+        self.ref['bet1'] = bet1
+        self.ref['bet2'] = bet2
+        self.state['F1'] = True
+        self.state['F2'] = False
+        self.state['F3'] = False
+        self.state['F4'] = False
+        self.coords['F1'] = (0, 0)
+        self.calc_pose()
 
     def get_coords(self):
         print '\n'
@@ -78,6 +98,7 @@ class RobotRepr(object):
         return alpha, ell, eps, F1
 
     def get_repr(self):
+        eps = self.meta['eps']
         c1 = self.meta['C1']
         l1 = self.meta['l1']
         l2 = self.meta['l2']
@@ -138,7 +159,7 @@ class RobotRepr(object):
                 nfp[0].append(xf[idx])
                 nfp[1].append(yf[idx])
 
-        return (x, y), fp, nfp
+        return (x, y), fp, nfp, eps
 
     def calc_pose(self):
         len_leg = self.len_leg
@@ -195,7 +216,7 @@ class RobotRepr(object):
         def constraint1(X):
             """ feet should be at the right position """
             _, _, (xf1, yf1), (xf2, yf2), (xf3, yf3), (xf4, yf4) = \
-                self.calc_coords_F1(X)
+                self.calc_coords(X)
             xf = [xf1, xf2, xf3, xf4]
             yf = [yf1, yf2, yf3, yf4]
             feet = ['F1', 'F2', 'F3', 'F4']

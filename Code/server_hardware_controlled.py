@@ -195,20 +195,6 @@ def init_hardware():
         (list of actuators.DValve): list of software repr of initialized
             discrete valves
     """
-    rootLogger.info("Initialize Pressure Sensors ...")
-    sens = []
-    sets = [{'name': '0', 'id': 4},
-            {'name': '1', 'id': 5},
-            {'name': '2', 'id': 2},
-            {'name': '3', 'id': 3},
-            {'name': '4', 'id': 0},
-            {'name': '5', 'id': 1},
-            {'name': '6', 'id': 7},
-            {'name': '7', 'id': 6}]
-    for s in sets:
-        sens.append(sensors.DPressureSens(name=s['name'], mplx_id=s['id'],
-                                          maxpressure=MAX_PRESSURE))
-
     rootLogger.info("Initialize IMUs ...")
     # mplx address for IMU is 0x71
     IMU = []
@@ -223,6 +209,21 @@ def init_hardware():
             IMU.append(sensors.MPU_9150(name=s['name'], mplx_id=s['id']))
     except IOError:  # not connected
          IMU = False
+    rootLogger.info("IMU detected?: {}".format(not(not(IMU))))
+
+    rootLogger.info("Initialize Pressure Sensors ...")
+    sens = []
+    sets = [{'name': '0', 'id': 4},
+            {'name': '1', 'id': 5},
+            {'name': '2', 'id': 2},
+            {'name': '3', 'id': 3},
+            {'name': '4', 'id': 0},
+            {'name': '5', 'id': 1},
+            {'name': '6', 'id': 7},
+            {'name': '7', 'id': 6}]
+    for s in sets:
+        sens.append(sensors.DPressureSens(name=s['name'], mplx_id=s['id'],
+                                          maxpressure=MAX_PRESSURE))
 
     rootLogger.info('Initialize Valves ...')
     valve = []
@@ -460,9 +461,9 @@ def read_sens(cargo):
             cargo.rec[sensor.name] = sensor.get_value()
         except IOError as e:
             if e.errno == errno.EREMOTEIO:
-                rootLogger.exception(
+                rootLogger.info(
                     'cant read i2c device.' +
-                    'Continue anyway ...Fail in [{}]'.format(sensor.name))
+                    ' Continue anyway ... Fail in [{}]'.format(sensor.name))
             else:
                 rootLogger.exception('Sensor [{}]'.format(sensor.name))
                 rootLogger.error(e, exc_info=True)
@@ -501,9 +502,9 @@ def imu_control(cargo):
 
     cargo = init_output(cargo)
     while cargo.state == 'IMU_CONTROL':
+        cargo = read_sens(cargo)
         if cargo.IMU:
             set_dvalve(cargo)
-            cargo = read_sens(cargo)
             cargo = read_imu(cargo)
             cargo = imu_set_ref(cargo)
 
@@ -707,9 +708,8 @@ class Cargo(object):
         self.rec_IMU = {}
         self.maxpressure = MAX_PRESSURE
         self.maxctrout = MAX_CTROUT
-        read_sens(self)
-#        for sensor in sens:
-#            self.rec[sensor.name] = sensor.get_value()
+        for sensor in sens:
+            self.rec[sensor.name] = 0.0
         if IMU:
             for imu in IMU:
                 self.rec_IMU[imu.name] = imu.get_acceleration()

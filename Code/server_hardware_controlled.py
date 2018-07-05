@@ -705,8 +705,9 @@ class Cargo(object):
         self.rec_IMU = {}
         self.maxpressure = MAX_PRESSURE
         self.maxctrout = MAX_CTROUT
-        for sensor in sens:
-            self.rec[sensor.name] = sensor.get_value()
+        read_sens(self)
+#        for sensor in sens:
+#            self.rec[sensor.name] = sensor.get_value()
         if IMU:
             for imu in IMU:
                 self.rec_IMU[imu.name] = imu.get_acceleration()

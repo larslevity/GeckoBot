@@ -14,8 +14,8 @@ def gnerate_ptrn_symmetric(X, n_cycles):
     ptrn = []
     for n in range(n_cycles):
         p = X
-        ptrn.append([[p[0], p[1], p[2], p[3], p[4]], [1, 0, 0, 1]])
-        ptrn.append([[p[1], p[0], -p[2], p[4], p[3]], [0, 1, 1, 0]])
+        ptrn.append([[p[0], p[1], p[2], p[3], p[4]], [0, 1, 1, 0]])
+        ptrn.append([[p[1], p[0], -p[2], p[4], p[3]], [1, 0, 0, 1]])
     return ptrn
 
 
@@ -62,7 +62,7 @@ def gnerate_ptrn_3fixed_3(X, n_cycles):
 
 
 def optimize_gait_3fixed(n_cycles, initial_pose, method='COBYLA',
-                         x0=[90, .1, -90, 90, .1]):
+                         x0=[90, .1, -90, 90, .1], f=None):
     obj_history = []
     bleg = (0.1, 120)
     btor = (-120, 120)
@@ -71,7 +71,10 @@ def optimize_gait_3fixed(n_cycles, initial_pose, method='COBYLA',
 
     def objective_3fixed(X):
         ptrn = gnerate_ptrn_3fixed_1(X, n_cycles)
-        xfinal, rfinal, _, _ = model.predict_pose(ptrn, initial_pose)
+        if f:
+            xfinal, rfinal, _, _ = model.predict_pose(ptrn, initial_pose, f=f)
+        else:
+            xfinal, rfinal, _, _ = model.predict_pose(ptrn, initial_pose)
         xfp, yfp = rfinal
         obj = -np.sqrt((sum(yfp))**2 + (sum(xfp))**2)
         obj_history.append(obj)
@@ -85,7 +88,7 @@ def optimize_gait_3fixed(n_cycles, initial_pose, method='COBYLA',
 
 
 def optimize_gait_straight(n_cycles, initial_pose, method='COBYLA',
-                           x0=[90, .1, -90, 90, .1]):
+                           x0=[90, .1, -90, 90, .1], f=None):
     obj_history = []
     bleg = (0.1, 120)
     btor = (-120, 120)
@@ -94,12 +97,15 @@ def optimize_gait_straight(n_cycles, initial_pose, method='COBYLA',
 
     def objective_straight(X):
         ptrn = gnerate_ptrn_symmetric(X, n_cycles)
-        xfinal, rfinal, _, _ = model.predict_pose(ptrn, initial_pose)
+        if f:
+            xfinal, rfinal, _, _ = model.predict_pose(ptrn, initial_pose, f=f)
+        else:
+            xfinal, rfinal, _, _ = model.predict_pose(ptrn, initial_pose)
         xfp, yfp = rfinal
         obj = sum(yfp)
         obj_history.append(obj)
         print 'step', len(obj_history), '\t', obj
-        return -obj
+        return obj
 
     solution = minimize(objective_straight, X0, method=method, bounds=bnds)
     X = solution.x
@@ -166,23 +172,47 @@ if __name__ == '__main__':
     Powell | 1587 | 14.09
     """
 
+    f_len = 100.     # factor on length objective
+    f_ori = .0001  # .0003     # factor on orientation objective
+    f_ang = 10     # factor on angle objective
+    f = [f_len, f_ori, f_ang]
     methods = ['Powell', 'COBYLA', 'CG', 'TNC', 'SLSQP']
-    x0 = [10, .1, -10, 10, .1]
-    init_pose = [[.1, 90, 90, .1, 90], 90, (0, 3)]
+    x0 = [90, .1, -90, 90, .1]
+    init_pose = [[90, .01, -90, 90, .01], 90, (0, 0)]
     method = methods[1]
     n_cycles = 5
-#    opt_ptrn, obj_hist, opt_obj = optimize_gait_straight(n_cycles, init_pose, 
-#                                                         method, x0=x0)
-#    opt_ptrn, obj_hist, opt_obj = optimize_gait_curve(n_cycles, init_pose, 
+    opt_ptrn, obj_hist, opt_obj = optimize_gait_straight(n_cycles, init_pose,
+                                                         method, x0=x0, f=f)
+    opt_ptrn = opt_ptrn[:2]
+#    opt_ptrn, obj_hist, opt_obj = optimize_gait_curve(n_cycles, init_pose,
 #                                                      method, x0=x0)
-    opt_ptrn, obj_hist, opt_obj = optimize_gait_3fixed(n_cycles, init_pose,
-                                                       method, x0=x0)
-    opt_ptrn = opt_ptrn[:4]
+#    opt_ptrn, obj_hist, opt_obj = optimize_gait_3fixed(n_cycles, init_pose,
+#                                                       method, x0=x0)
+#    opt_ptrn = opt_ptrn[:4]
 
-#    opt_ptrn = [[[92.85, -3.54, -92.29, 87.07, -2.70], [1, 0, 0, 1]],
-#                [[-7.55, -11.88, -10.39, -16.22, 3.09], [0, 1, 1, 0]],
-#                [[90.34, 1.32, -90.01, 91.28, -0.60], [1, 0, 0, 1]],
-#                [[-3.12, 3.31, -5.64, 2.08, 2.45], [0, 1, 1, 0]]]
+    filled_ptrn = model.fill_ptrn(opt_ptrn, n_cycles=2, res=2)
+    prop_str = '{} | {} | {} | {} | {}'.format(
+            method, len(obj_hist), round(opt_obj, 2), n_cycles, f_ori)
+
+    x, r, data, cst = model.predict_pose(filled_ptrn, init_pose, stats=1, f=f)
+    model.plot_gait(*data, name='Plot: ' + prop_str)
+
+    plt.figure('cost: ' + prop_str)
+    plt.title('cost: ' + prop_str)
+    plt.plot(cst)
+
+    plt.figure('opt_hist: ' + prop_str)
+    plt.title('opt_hist: ' + prop_str)
+    plt.plot(obj_hist)
+
+    print x0
+    print prop_str
+    print '\n', opt_ptrn, '\n'
+
+    fig = plt.figure('Animation: ' + prop_str)
+    plt.title('Animation: ' + prop_str)
+    lin = model.animate_gait(fig, *data)
+    plt.show()
 
 
 # _______________________________________________________________
@@ -193,7 +223,7 @@ if __name__ == '__main__':
 #    opt_ptrn = [[[39, 22, -110, 25, 13], [1, 0, 0, 1]],  # opt sym sol
 #                [[22, 39, 110, 13, 25], [0, 1, 1, 0]]]
 
-
+# _______________________________________________________________
 #    Straight opt pattrns:
 #    opt_ptrn = [[[35, 12, -97, 40, 12], [1, 0, 0, 1]],  # 1 cycle
 #                [[12, 35, 97, 12, 40], [0, 1, 1, 0]]]
@@ -203,6 +233,21 @@ if __name__ == '__main__':
 
 #    opt_ptrn = [[[34, 10, -98, 41, 14], [1, 0, 0, 1]],  # 3 cycle **
 #                [[10, 34, 98, 14, 41], [0, 1, 1, 0]]]
+
+#    opt_ptrn = [[[0.1, 18, -85, 0.1, 22], [1, 0, 0, 1]],  # 3 cycle ***
+#                [[18, 0.1, 85, 22, 0.1], [0, 1, 1, 0]]]
+
+# _______________________________________________________________
+#    Straight opt pattrns (different f_ori weights):
+#    opt_ptrn = [[[.01, 25, -85, .01, 21], [0, 1, 1, 0]],  # 3 cycle f_ori=.1
+#                [[25, .01, 85, 21, .01], [1, 0, 0, 1]]]
+
+#    opt_ptrn = [[[86, 4, -110, 83, 4], [0, 1, 1, 0]],  # 5 cycle f_ori=.01
+#                [[4, 86, 110, 4, 83], [1, 0, 0, 1]]]
+
+#    opt_ptrn = [[[90, 1, -90, 91, .01], [0, 1, 1, 0]],  # 5 cycle f_ori=10
+#                [[1, 90, 110, .01, 91], [1, 0, 0, 1]]]
+
 
 # _______________________________________________________________
 #    Curve opt pattrns
@@ -225,21 +270,3 @@ if __name__ == '__main__':
 
 #    opt_ptrn = [[[1, 0.01, -7, 0.01, 0.01], [1, 0, 0, 1]],  # 3 cycle *****
 #                [[114, 109, -101, 146, 82], [0, 1, 1, 0]]]
-
-    filled_ptrn = model.fill_ptrn(opt_ptrn, n_cycles=2)
-
-    x, r, data, cst = model.predict_pose(filled_ptrn, init_pose, stats=1, debug=1)
-    model.plot_gait(*data)
-
-    plt.figure()
-    plt.plot(cst)
-
-    print x0
-    print method, '\t| ', len(obj_hist), '\t| ', round(opt_obj, 4),  '\t| ', n_cycles
-    print '\n', opt_ptrn, '\n'
-
-
-
-    fig = plt.figure()
-    lin = model.animate_gait(fig, *data)
-    plt.show()

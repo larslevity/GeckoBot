@@ -11,9 +11,9 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
 
-f_len = 100.     # factor on length objective
-f_ori = 0.001  # .0003     # factor on orientation objective
-f_ang = 10     # factor on angle objective
+f_l = 100.     # factor on length objective
+f_o = 0.001  # .0003     # factor on orientation objective
+f_a = 10     # factor on angle objective
 
 blow = .9       # lower stretching bound
 bup = 1.1       # upper stretching bound
@@ -29,16 +29,19 @@ n_foot = 4
 n_limbs = 5
 
 
-def predict_pose(pattern, initial_pose, stats=False, debug=False):
+def predict_pose(pattern, initial_pose, stats=False, debug=False,
+                 f=[f_l, f_o, f_a]):
+    f_len, f_ori, f_ang = f
     alpha, eps, F1 = initial_pose
     ell_nominal = (len_leg, len_leg, len_tor, len_leg, len_leg)
     xlast, rlast = _set_initial_pose(alpha, ell_nominal, eps, F1)
 
-    data, data_fp, data_nfp, costs = [], [], [], []
+    data, data_fp, data_nfp, data_x, costs = [], [], [], [], []
     (x, y), (fpx, fpy), (nfpx, nfpy) = get_repr(xlast, rlast, (1, 0, 0, 0))
     data.append((x, y))
     data_fp.append((fpx, fpy))
     data_nfp.append((nfpx, nfpy))
+    data_x.append(xlast)
 
     for idx, reference in enumerate(pattern):
         alpref_, f = reference
@@ -117,8 +120,9 @@ def predict_pose(pattern, initial_pose, stats=False, debug=False):
             data.append((xa, ya))
             data_fp.append((fpx, fpy))
             data_nfp.append((nfpx, nfpy))
+            data_x.append(x)
 
-    return x, r, (data, data_fp, data_nfp), costs
+    return x, r, (data, data_fp, data_nfp, data_x), costs
 
 
 def _set_initial_pose(alpha, ell, eps, F1):
@@ -299,7 +303,13 @@ def fill_ptrn(opt_ptrn, res=5, n_cycles=1):
     return flat_list(ptrn_looped)
 
 
-def animate_gait(fig1, data, data_fp, data_nfp, inv=500):
+def loop_ptrn(opt_ptrn, n_cycles=1):
+    ptrn_looped = [opt_ptrn for i in range(n_cycles)]
+#    return ptrn_looped
+    return flat_list(ptrn_looped)
+
+
+def animate_gait(fig1, data, data_fp, data_nfp, data_x, inv=500):
 
     def update_line(num, data, line, data_fp, line_fp, data_nfp, line_nfp):
         x, y = data[num]
@@ -329,9 +339,9 @@ def animate_gait(fig1, data, data_fp, data_nfp, inv=500):
     return line_ani
 
 
-def plot_gait(data, data_fp, data_nfp):
-    plt.figure()
-    plt.title('Plot')
+def plot_gait(data, data_fp, data_nfp, data_x, name='Plot'):
+    plt.figure(name)
+    plt.title(name)
     for idx in range(len(data)):
         (x, y) = data[idx]
         (fpx, fpy) = data_fp[idx]
@@ -352,24 +362,102 @@ def save_animation(line_ani, name='gait.mp4', conv='avconv'):
     line_ani.save(name, writer=writer)
 
 
+def tikz_interface(data, data_fp, data_nfp, data_x, name='Pics/py/gait.tex'):
+    header = """
+\\documentclass[10pt]{standalone}
+\\input{../tikzpic_packages.tex}
+\\begin{document}
+\\begin{tikzpicture}
+\\tikzset{
+    part/.style={thick, color=\\col},
+    foot/.style={fill=white},
+    footfixed/.style={fill=\\col}}
+\\def\\rfoot{.1}
+        """
+
+    text_file = open(name, "w")
+    text_file.write(header)
+
+    for idx, x in enumerate(data_x):
+        xf, yf = data[idx]
+        F1 = (xf[0], yf[0])
+        alp, ell, eps = x[0:n_limbs], x[n_limbs:2*n_limbs], x[-1]
+        c1, c2, c3, c4 = _calc_phi(alp, eps)
+        l1, l2, lg, l3, l4 = ell
+        alp1, bet1, gam, alp2, bet2 = alp
+        r1, r2, rg, r3, r4 = [_calc_rad(ell[i], alp[i]) for i in range(5)]
+        fpx, fpy = data_fp[idx]
+        nfpx, nfpy = data_nfp[idx]
+        col = (.2 + (float(idx)/len(data_x))*.8)*100
+
+        elem = """
+\\def\\col{black!%i}
+\\def\\alpi{%f}
+\\def\\beti{%f}
+\\def\\gam{%f}
+\\def\\alpii{%f}
+\\def\\betii{%f}
+\\def\\gamh{%f}
+
+\\def\\eps{%f}
+\\def\\ci{%f}
+\\def\\cii{%f}
+\\def\\ciii{%f}
+\\def\\civ{%f}
+
+\\def\\ri{%f}
+\\def\\rii{%f}
+\\def\\rg{%f}
+\\def\\riii{%f}
+\\def\\riv{%f}
+
+\\path (%f, %f)coordinate(F1);
+
+\\draw[part] (F1)arc(180+\\ci:180+\\ci+\\alpi:\\ri)coordinate(OM);
+\\draw[part] (OM)arc(180+\\ci+\\alpi:180+\\ci+\\alpi+\\beti:\\rii)coordinate(F2);
+\\draw[part] (OM)arc(90+\\ci+\\alpi:90+\\ci+\\alpi+\\gam:\\rg)coordinate(UM);
+\\draw[part] (UM)arc(\\gam+\\ci+\\alpi:\\gam+\\ci+\\alpi+\\alpii:\\riii)coordinate(F3);
+\\draw[part] (UM)arc(\\gam+\\ci+\\alpi:\\gam+\\ci+\\alpi-\\betii:\\riv)coordinate(F4);
+
+""" % (col, alp1, bet1, gam, alp2, bet2, gam*.5, eps, c1, c2, c3, c4,
+               r1, r2, rg, r3, r4, F1[0], F1[1])
+        text_file.write(elem)
+        for x, y in zip(fpx, fpy):
+            print idx, x, y
+            s = "\\draw[footfixed] (%f, %f)circle(\\rfoot);\n" % (x, y)
+            text_file.write(s)
+        for x, y in zip(nfpx, nfpy):
+            s = "\\draw[foot] (%f, %f)circle(\\rfoot);\n" % (x, y)
+            text_file.write(s)
+    footer = """
+\\end{tikzpicture}
+\\end{document}
+        """
+    text_file.write(footer)
+    text_file.close()
+
+
 if __name__ == "__main__":
     """
     To save the animation you need the libav-tool to be installed:
     sudo apt-get install libav-tools
     """
 
-    init_pose = [(.1, .1, .1, .1, .1), 90, (0, 2)]
-    ref = [[[90, 0.01, 90, 90, 0.01], [1, 1, 1, 0]],
-           [[90, 0.01, 90, 90, 0.01], [0, 1, 1, 0]],
-           [[90, 0.01, 90, 90, 0.01], [0, 1, 0, 1]]
+    init_pose = [(5, 4, 2, 3, 4), 90, (0, 2)]
+    ref = [[[90, 1, 90, 90, 1], [1, 1, 1, 0]],
+           [[90, 1, 90, 90, 1], [0, 1, 1, 0]],
+           [[90, 1, 90, 90, 1], [0, 1, 0, 1]]
            ]
 
-    x, r, data = predict_pose(ref, init_pose, True, True)
+    x, r, data, cst = predict_pose(ref, init_pose, True, True)
     plot_gait(*data)
 
     if 0:
         fig_ani = plt.figure()
         plt.title('Gecko-robot model animation')
         line_ani = animate_gait(fig_ani, *data)
+
+    if 1:
+        tikz_interface(*data)
 
     plt.show()

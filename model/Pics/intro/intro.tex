@@ -7,7 +7,7 @@
 \begin{tikzpicture}[
 	partII/.style={gray, thick},
 	partIII/.style={thick, dashed, gray},
-	part/.style={thick},
+	part/.style={thick, color=\col},
 	anglearrow/.style={latex-latex, red!70},
 	helpline/.style={gray},
 	foot/.style={fill=gray},
@@ -118,6 +118,7 @@
 \pgfmathsetmacro{\riii}{\liii/\alpii*180/\pi}
 \pgfmathsetmacro{\riv}{\liv/\betii*180/\pi}
 
+\def\col{black!100}
 
 %% F1
 \draw[part] (F1)arc(180+\ci:180+\ci+\alpi:\ri)coordinate(OM);

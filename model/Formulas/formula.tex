@@ -18,7 +18,7 @@
 
 \usepackage{multicol}
 
-
+\newcommand{\mbeq}{\overset{!}{=}}
 
 \begin{document}
 
@@ -42,27 +42,39 @@ Although the bending angles of all limbs have changed, the condition that all fe
 \label{fig:example}
 \end{figure}
 
+
+\section{Predicting the pose for a given reference input}
 In order to let the robot take a pose
 %, i.\,e., a position and orientation, 
 the user has nine degrees of freedom at his disposal: 
-the correspondending pressures $p_i$ for the five bending angles $\alpha_i$ of the limbs $i=1,\dots,5$ and the state of the fixation actuators $f_j \in \{0,1\}$ of the feet $j=1,\dots,4$.
-Accordingly, a reference input can be described by
-\begin{equation}
-\bm{ref} = \left[~ p_1~p_2~p_3~p_4~p_5~f_1~f_2~f_3~f_4~ \right]^\top.
-\end{equation}
-
-For the unloaded state, a calibration function can be formulated for each limb, which maps the pressure on the bending angle.
-Under load, this function no longer needs to be valid.
+the correspondending pressures for the five bending angles $\alpha_i$ of the limbs $i=1,\dots,5$ and the state of the fixation actuators $f_j \in \{0,1\}$ of the feet $j=1,\dots,4$.
+For the unloaded state, a calibration function can be formulated for each limb, which maps the input pressure on the bending angle (under load, this function no longer needs to be valid).
+But the input pressure can be seen as an reference for the bending angle.
+Accordingly, a reference input $\bm{r}$ can be described by
 
 \begin{equation}
-\alpha_{\textnormal{clb},i} = \textnormal{map}_i(p_i)
+\bm{\alpha}_{\textnormal{ref}} = \left[~ \alpha_{\textnormal{ref},1}~\alpha_{\textnormal{ref},2}~\alpha_{\textnormal{ref},3}~\alpha_{\textnormal{ref},4}~\alpha_{\textnormal{ref},5}~\right]^\top
 \end{equation}
+
+\begin{equation}
+\bm{f} = \left[~f_1~f_2~f_3~f_4~\right]^\top
+\end{equation}
+
+
+\begin{equation}
+\bm{r} = \left[~\bm{\alpha_{\textnormal{ref}}}^\top~\bm{f}^\top~\right]^\top.
+\end{equation}
+
+%
+%\begin{equation}
+%\alpha_{\textnormal{clb},i} = \textnormal{map}_i(p_i)
+%\end{equation}
 
 However, this information is not sufficient to describe the robot's actual pose.
 %The exact position and orientation of at least one foot must be known.
 Experiments have shown that the bending angle of a limb can vary significantly  at the same pressure level due to the softness of the used material. 
 The length of a limb can also differ.
-In order to describe the pose of the robot, the bending angles $\bm{\alpha}$: 
+In order to describe the pose of the robot, the actual bending angles $\bm{\alpha}$: 
 \begin{equation}
 \bm{\alpha} = \left[ \alpha_1~\alpha_2~\alpha_3~\alpha_4~\alpha_5 \right]^\top,
 \end{equation}
@@ -76,14 +88,13 @@ These quantities are defined as the variable to be optimized:
 \bm{x} = \left[~\bm{\alpha}^\top~\bm{\ell}^\top~\varepsilon~\right]^\top.
 \end{equation}
 
-Furthermore, the position of (at least) one fixed foot ($\bm{r}_{j} \in \mathbb{R}^{2 \times 1}$) must be known.
-Then, the pose of the robot $\bm{\rho}$, i.\,e. the positions of all feet, can be determined under the assumption of a constant curvature by using the equations \eqref{eq:F1_start}--\eqref{eq:F1_end} if the front left foot is fixed, or the equations \eqref{eq:F2_start}--\eqref{eq:F2_end} if the front right foot is fixed.
-The pose can therefore be described as a function of $\bm{x}$ and the position of a fixed foot:
-
+Furthermore, the position of (at least) one fixed foot ($f_j \mbeq 1$) must be known.
+Then, the pose of the robot $\bm{\rho}$ can be determined under the assumption of a constant curvature by drawing arcs with the corresponding lengths and angles.
+A pose can therefore be described in generally as a function of $\bm{x}$ and the position 
+$\bm{P}=[\bm{p}_1~\bm{p}_2~\bm{p}_3~\bm{p}_4]^\top \in \mathbb{R}^{4 \times 2}$ and state $\bm{f}$ of all feet:
 \begin{equation}
-\bm{\rho} = \textnormal{fun}\left(\bm{x},~\bm{r}_{j} \right).
+\bm{\rho} = \left[\bm{x},~\bm{P},~\bm{f} \right].
 \end{equation}
-
 
 \begin{figure}
 \centering\includegraphics[scale=1]{../Pics/model/model.pdf}
@@ -91,35 +102,42 @@ The pose can therefore be described as a function of $\bm{x}$ and the position o
 \label{fig:model}
 \end{figure}
 
-Here, the pose seems to be independent of the fixed feet.
-But the dependency lies in the bending angles and the actual lengths of the limbs. 
-These must be determined in such a way that the positions of the fixed feet do not change.
-To describe this mathematically, a new index $t$ is introduced, which assigns the quantities to a specific time step.
-The new positions of the fixed feet $\bm{r}_{j,t+1}$ are assumed to be the positions from the previous pose $\bm{r}_{j,t}$.
-This can be used to define the constraint for the new pose.
+For a given feasible initial pose, the next pose must be determined so that all fixed feet do not move.
+This can be achieved within a certain margin by deviating the bending angle from the reference angle and deviating the actual length from the nominal length.
+To describe this mathematically, a new index $k$ is introduced, which assigns the quantities to a specific time step.
+The new positions of the fixed feet $\bm{P}_{k}$ are assumed to be the positions from the previous pose $\bm{P}_{k-1}$.
+This can be used to define the constraint for the next pose.
 All newly fixed feet must have the same position as in the previous step:
-%
-%So, the new pose is strongly dependent on where the newly fixed feet were in the prior pose.
-
-\newcommand{\mbeq}{\overset{!}{=}}
 \begin{equation}
-\textnormal{if}~f_{j,t+1}:~~\big|\bm{r}_{j,t+1} - \bm{r}_{j,t}\big|_2 \mbeq 0,
+\big|\big|\textnormal{diag}(\bm{f}_k)(\bm{P}_{k} - \bm{P}_{k-1})\big|\big|_2 \mbeq 0,
 \label{eq:constraint}
 \end{equation}
 
-Please note that if this condition is met, at least one foot per time step always remains motionless.
-Thus, at least one foot position of the new pose is determined from the beginning and thus dependent on the previous pose.
-As a result, all poses of a gait are dependent on the initial position.
+
+%\begin{equation}
+%\bm{p}_k \left(\bm{x},~\bm{p}_{k-1},~\bm{f}_k \right).
+%\end{equation}
+
+%Please note that if this condition is met, at least one foot per time step always remains motionless.
+%Thus, at least one foot position of the new pose is determined from the beginning and thus dependent on the previous pose.
+%As a result, all poses of a gait are dependent on the initial position.
 %\begin{equation}
 %\bm{\rho}_t = \textnormal{fun}\left(\bm{x}_t,~\bm{r}_{j,0} \right).
 %\end{equation}
 
-
-
 It has already been mentioned that the bending angles $\bm{\alpha}$ and the lengths of the limbs $\bm{\ell}$ are quite variable. 
-The orientation angles of the fixation actuators $\varphi_j$ also have a certain margin.
-By defining $\bm{\ell}_n = \left[ \ell_{1,n}~\ell_{2,n}~\ell_{3,n}~\ell_{4,n}~\ell_{5,n} \right]^\top$ as the vector containing the nominal length of each limb,
-this can be formulated as a objective function:
+By defining 
+\begin{equation}
+\bm{\ell}_n = \left[ \ell_{n,1}~\ell_{n,2}~\ell_{n,3}~\ell_{n,4}~\ell_{n,5} \right]^\top
+\end{equation}
+as the vector containing the nominal length of each limb, it is possible to quantify the length deviation.
+The orientation angles of the fixation actuators $\bm{\varphi}$ also have a certain margin.
+The value of the orientation angles can be calculated as a function of $\bm{\alpha}$ and $\varepsilon$ (well, basically as a function of $\bm{x}$):
+\begin{equation}
+\bm{\varphi}(\bm{\alpha}, \varepsilon) = \eqref{eq:phi_calc},
+\end{equation}
+where the exact formula is given in the appendix~\ref{eq:phi_calc}.
+Now a objective function can be formulated which quantifies the deviations of length, angle and orientation:
 %\begin{equation}
 %obj(\bm{x}) = w_{len}\sqrt{\sum_i \left( \ell_{n,i} - \ell_i \right)^2} 
 %+ w_{ang} \sqrt{\sum_i \left( \varphi_i - \alpha_i \right)^2}
@@ -128,19 +146,24 @@ this can be formulated as a objective function:
 %\end{equation}
 
 \begin{equation}
-obj(\bm{x}_t) = 
-  w_{\textnormal{len}}\big| \bm{\ell}_t - \bm{\ell}_n \big|_2
-+ w_{\textnormal{ang}}\big| \bm{\alpha}_t - \bm{\alpha}_{\textnormal{clb},t} \big|_2
-+ w_{\textnormal{ori}}\sqrt{\sum_j \textnormal{if}~f_{j,t+1}:~\left( \varphi_{j,t+1} - \varphi_{j, t} \right)^2}
+obj(\bm{x}_{k}) = %, \bm{\varphi}_{k-1}) = 
+  w_{\textnormal{len}}\big| \bm{\ell}_{k} - \bm{\ell}_n \big|_2
++ w_{\textnormal{ang}}\big| \bm{\alpha}_{k} - \bm{\alpha}_{\textnormal{ref},k} \big|_2
++ w_{\textnormal{ori}} \big| \textnormal{diag}(\bm{f}_k) ( \bm{\varphi}_{k} - \bm{\varphi}_{k-1}) \big|_2 .
 \label{eq:objective_function}
 \end{equation}
-where the weighting factor $w_{\textnormal{len}}$ describes the elasticity of the limbs and $w_{\textnormal{ang}}$ the bending stiffness of the limbs.
+The weighting factors can be interpreted physically.
+To do so, the weighting factor $w_{\textnormal{len}}$ describes the elasticity of the limbs and $w_{\textnormal{ang}}$ the bending stiffness of the limbs.
 The term weighted by $w_{\textnormal{ori}}$ describes the difference between the orientation of the newly fixed feet compared to the orientation in the previous time step.
 This can be seen as a dimension for the torsional stiffness of the fixation actuators.
 The new pose can now be determined by solving the non-linear optimization problem:
 
 \begin{equation}
-\min_{\bm{x}_t \in \mathcal{X}} ~ obj(\bm{x}_t)~~ s.\,t.~ \textnormal{if}~f_{j,t}:~~\big|\bm{r}_{j,t+1} - \bm{r}_{j,t}\big|_2 = 0
+\begin{split}
+&\min_{\bm{x}_k \in \mathcal{X}} ~ obj(\bm{x}_k) \\
+&subjected~to~~~
+\big|\big|\textnormal{diag}(\bm{f}_k)(\bm{P}_{k} - \bm{P}_{k-1})\big|\big|_2 = 0.
+\end{split}
 \end{equation}
 Here  $\mathcal{X}$ describes the set of allowed values.
 Each quantity inside $\bm{x}$ has bounds, which are given in the following table:
@@ -149,16 +172,75 @@ Each quantity inside $\bm{x}$ has bounds, which are given in the following table
 \begin{tabular}{c|c|c|c}
 var & $\bm{\alpha}$ & $\bm{\ell}$ & $\varepsilon$ \\ 
 \hline
-bounds & $\left[ \bm{\alpha_{\textnormal{clb}}}-b_{\textnormal{ang}},~\bm{\alpha_{\textnormal{clb}}}+b_{\textnormal{ang}} \right]$ &
+bounds & $\left[ \bm{\alpha_{\textnormal{ref}}}-b_{\textnormal{ang}},~\bm{\alpha_{\textnormal{ref}}}+b_{\textnormal{ang}} \right]$ &
 $\left[ (1-b_\textnormal{len})\bm{\ell}_n,~(1+b_\textnormal{len})\bm{\ell}_n \right]$ &
 $\left[ 0^\circ,~ 360^\circ \right]$
 \end{tabular}
 \end{center}
 These bounds can be tuned with the scalars $b_{\textnormal{ang}}$ and $b_{\textnormal{len}}$.
-For solving the problem, for example the \texttt{SLSQP}-Algorithm provided by the python package \texttt{scipy} can be used.
+For solving the problem, for example the \texttt{SLSQP}-Algorithm provided by the python package \texttt{scipy.optimize} can be used.
+Note that the evaluation of the objective function~\eqref{eq:objective_function} is quite cheap. 
+The expensive part is the evaluation of the constraint function~\eqref{eq:constraint}, since the calculation of all feet positions for a given $\bm{x}$ is opulent and outlined in the appendix~\eqref{eq:F1_start}.
+
+In summary, it is possible to set up a function that can predict the next pose of the robot, depending on the reference input and the previous pose:
+\begin{equation}
+\bm{\rho}_k = \textnormal{fun}\left( \bm{r}, \bm{\rho}_{k-1} \right)
+\end{equation}
+This function can be tuned by the parameters given in the following table:
+\begin{center}
+\begin{tabular}{l|l}
+param & description \\
+\hline
+$b_{\textnormal{ang}}$ & allowed absolute deviation of the bending angle to the reference angle \\
+$b_{\textnormal{len}}$ & allowed percentage deviation of the length to the nominal length \\
+$w_{\textnormal{len}}$ & costs of the length deviation \\
+$w_{\textnormal{ang}}$ & costs of the bending angle deviation\\
+$w_{\textnormal{ori}}$ & costs of the orientation angle deviation\\
+\end{tabular}
+\end{center}
 
 
-\clearpage
+
+\section{Finding optimal gait patterns}
+
+%Der vorgesttele Algorithmus kann nun dazu verwendet werden neue Laufmuster zu finden.
+%Da er die Möglichkeit bietet vorherzusagen, welche Pose der Roboter bei gegebenem Referenz Input einnehmen wird, ist er durch rekursive Anwendung in der Lage alle zugehörigen Posen des Roboters zu einer Sequenz von Referenz Inputs zu prädiktieren.
+%
+%Ein Laufmuster besteht aus einer ebensolchen Sequenz aus Posen, die in Dauerschleife eingenommen werden.
+%Um nun eine optimale Abfolge von Referenz Inputs zu finden, muss erst einmal definiert werden, was optimal ist.
+%Dies kommt ganz darauf an, welche Art von Laufmuster gesucht wird. 
+%im Folgenden werden zwei Beispiele vorgestellt.
+
+The presented algorithm can now be used to find new gait patterns.
+Since it provides the ability to predict the robot's pose for a given reference input, it is able to predict all associated poses to a sequence of reference inputs by recursive application.
+
+A gait pattern consists of a sequence of poses taken in a continuous loop.
+To find an optimal sequence of reference inputs, it is first necessary to define what is optimal.
+This depends entirely on the type of running pattern you are looking for. 
+Two examples are presented below.
+
+\subsection{Straight Gait}
+
+Soll der Roboter geradeaus Laufen, so ist es optimal die Distanz von Startpunkt und Endpunkt möglichst zu maximieren.
+
+\begin{equation}
+\bm{x} = \begin{bmatrix}
+\bm{r}_1^\top \\ \bm{r}_2^\top
+\end{bmatrix}
+=
+\begin{bmatrix}
+\alpha_{\textnormal{ref},1}& \alpha_{\textnormal{ref},2}&\alpha_{\textnormal{ref},3}&\alpha_{\textnormal{ref},4}&\alpha_{\textnormal{ref},5}&1&0&0&1 \\
+\alpha_{\textnormal{ref},2}& \alpha_{\textnormal{ref},1}&-\alpha_{\textnormal{ref},3}&\alpha_{\textnormal{ref},5}&\alpha_{\textnormal{ref},4}&0&1&1&0 \\
+\end{bmatrix}
+\end{equation}
+
+
+\subsection{Gait Pattern for a curve}
+
+
+\appendix
+\section{Appendix}
+
 \begin{multicols}{2}
 
 Coordinates for $F1$ fixed:
@@ -168,20 +250,18 @@ r_i = \frac{360 ~ \ell_i}{2 \pi ~ \alpha_i},~~ \textnormal{for}~ i \in [1,2,3,4,
 \end{equation}
 
 \begin{equation}
-c_2 = c_1 + \alpha_1 + \beta_1
+\bm{\varphi} = \begin{bmatrix}
+\varepsilon - \alpha_1 - \frac{1}{2}\alpha_3 \\
+\varphi_1 + \alpha_1 + \alpha_2 \\
+180^\circ + \alpha_3 - \alpha_2 + \alpha_4 + \varphi_2 \\
+180^\circ + \alpha_3 - \alpha_1 + \alpha_5 + \varphi_1 \\
+\end{bmatrix}
+\label{eq:phi_calc}
+\end{equation}
+
+
+\begin{equation}
 \label{eq:F1_start}
-\end{equation}
-
-\begin{equation}
-c_3 = 180 + \gamma + \alpha_2 + c_1 + \alpha_1
-\end{equation}
-
-\begin{equation}
-c_4 = 180 + \gamma + \alpha_1 - \beta_2 + c_1
-\end{equation}
-
-
-\begin{equation}
 R1 =  \begin{bmatrix} 
 F1_x +\cos(c_1)~r_1 \\ 
 F1_y + \sin(c_1)~r_1\end{bmatrix}
@@ -243,23 +323,9 @@ R2_y - \cos(c_2 - 90)~r_2 \end{bmatrix}
 \label{eq:F1_end}
 \end{equation}
 
-\columnbreak
 
 
 Coordinates for $F2$ fixed:
-
-\begin{equation}
-c_1 = c_2 - \alpha_1 - \beta_1
-\label{eq:F2_start}
-\end{equation}
-
-\begin{equation}
-c_3 = 180 + \gamma - \beta_1 + \alpha_2 + c_2
-\end{equation}
-
-\begin{equation}
-c_4 = 180 + \gamma - \beta_2 + c_2 - \beta_1
-\end{equation}
 
 
 \begin{equation}

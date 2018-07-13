@@ -292,11 +292,11 @@ def fill_ptrn(opt_ptrn, res=5, n_cycles=1):
     filled_ptrn = []
     for i in range(n_poses):
         ip = i+1 if i+1 < n_poses else 0
+        filled_ptrn.append([c[i], f[i]])
         for r in range(res):
             w = r/(res-1.)
             pose = [round(c[i][p] + (c[ip][p]-c[i][p])*w, 2) for p in range(5)]
-            filled_ptrn.append([pose, f[i]])
-        filled_ptrn.append([c[ip], f[i]])
+            filled_ptrn.append([pose, f[ip]])
 
     ptrn_looped = [filled_ptrn for i in range(n_cycles)]
 #    return ptrn_looped
@@ -363,20 +363,56 @@ def save_animation(line_ani, name='gait.mp4', conv='avconv'):
 
 
 def tikz_interface(data, data_fp, data_nfp, data_x, name='Pics/py/gait.tex'):
+    xf, yf = data[0]
+    x = data_x[0]
     header = """
 \\documentclass[10pt]{standalone}
 \\input{../tikzpic_packages.tex}
 \\begin{document}
 \\begin{tikzpicture}
 \\tikzset{
-    part/.style={thick, color=\\col},
+    part/.style={line width = 1mm, color=\\col},
     foot/.style={fill=white},
-    footfixed/.style={fill=\\col}}
+    footfixed/.style={fill=\\col},
+    grid line/.style={white},
+    start line/.style={help lines}}
 \\def\\rfoot{.1}
-        """
+"""
+
+    header_straight = """
+\\foreach \\y in {0,1,2,3,4,5,6,7,8}{
+    \\draw[grid line] (%f, %f)++(-.2,-2+\\y)--++(2,0);
+}
+\\foreach \\x in {0,1,2}{
+    \\draw[grid line] (%f, %f)++(-.2+\\x,-2)--++(0,8);
+}
+\\draw[start line] (%f, %f)++(-.2,0)--++(2,0);
+""" % (xf[0], yf[0], xf[0], yf[0], xf[0], yf[0])
+    initial_x_coord = xf[0]
+
+    alp, ell, eps = x[0:n_limbs], x[n_limbs:2*n_limbs], x[-1]
+    alp1, bet1, gam, alp2, bet2 = alp
+    c1, c2, c3, c4 = _calc_phi(alp, eps)
+    r1, r2, rg, r3, r4 = [_calc_rad(ell[i], alp[i]) for i in range(5)]
+    header_curve = """
+\\def\\col{black!33}
+\\def\\eps{%f}
+\\def\\ci{%f}
+\\def\\alpi{%f}
+\\def\\gamh{%f}
+\\def\\ri{%f}
+\\def\\rg{%f}
+
+\\path (%f, %f)coordinate(F1);
+\\path (F1)arc(180+\\ci:180+\\ci+\\alpi:\\ri)coordinate(OM);
+\\path (OM)arc(90+\\ci+\\alpi:90+\\ci+\\alpi+\\gamh:\\rg)coordinate(M);
+\draw[\\col, -latex] (M)--++(\\eps:1);
+""" % (eps, c1, alp1, gam*.5, r1, rg, xf[0], yf[0])
 
     text_file = open(name, "w")
     text_file.write(header)
+#    text_file.write(header_straight)
+    text_file.write(header_curve)
 
     for idx, x in enumerate(data_x):
         xf, yf = data[idx]
@@ -429,10 +465,30 @@ def tikz_interface(data, data_fp, data_nfp, data_x, name='Pics/py/gait.tex'):
         for x, y in zip(nfpx, nfpy):
             s = "\\draw[foot] (%f, %f)circle(\\rfoot);\n" % (x, y)
             text_file.write(s)
+    footer_straight = """
+\\draw[start line] (%f, %f)++(-.2,0)--++(2,0);
+        """ % (initial_x_coord, F1[1])
+
+    footer_curve = """
+\\def\\eps{%f}
+\\def\\ci{%f}
+\\def\\alpi{%f}
+\\def\\gamh{%f}
+\\def\\ri{%f}
+\\def\\rg{%f}
+
+\\path (%f, %f)coordinate(F1);
+\\path (F1)arc(180+\\ci:180+\\ci+\\alpi:\\ri)coordinate(OM);
+\\path (OM)arc(90+\\ci+\\alpi:90+\\ci+\\alpi+\\gamh:\\rg)coordinate(M);
+\draw[\\col, -latex] (M)--++(\\eps:1);
+""" % (eps, c1, alp1, gam*.5, r1, rg, xf[0], yf[0])
+
     footer = """
 \\end{tikzpicture}
 \\end{document}
-        """
+"""
+#    text_file.write(footer_straight)
+    text_file.write(footer_curve)
     text_file.write(footer)
     text_file.close()
 

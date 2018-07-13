@@ -4,11 +4,21 @@
 \begin{document}
 \begin{tikzpicture}
 \tikzset{
-    part/.style={thick, color=\col},
+    part/.style={line width = 1mm, color=\col},
     foot/.style={fill=white},
-    footfixed/.style={fill=\col}}
+    footfixed/.style={fill=\col},
+    grid line/.style={white},
+    start line/.style={help lines}}
 \def\rfoot{.1}
-        
+
+\foreach \y in {0,1,2,3,4,5,6,7,8}{
+    \draw[grid line] (0.000000, 0.000000)++(-.2,-2+\y)--++(2,0);
+}
+\foreach \x in {0,1,2}{
+    \draw[grid line] (0.000000, 0.000000)++(-.2+\x,-2)--++(0,8);
+}
+\draw[start line] (0.000000, 0.000000)++(-.2,0)--++(2,0);
+
 \def\col{black!20}
 \def\alpi{1.000000}
 \def\beti{18.000000}
@@ -173,6 +183,8 @@
 \draw[footfixed] (-0.002638, 3.177030)circle(\rfoot);
 \draw[foot] (0.090455, 5.872652)circle(\rfoot);
 \draw[foot] (1.469979, 4.613929)circle(\rfoot);
+
+\draw[start line] (0.000000, 5.872652)++(-.2,0)--++(2,0);
 
 \end{tikzpicture}
 \end{document}

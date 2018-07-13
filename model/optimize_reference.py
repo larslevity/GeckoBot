@@ -14,8 +14,8 @@ def gnerate_ptrn_symmetric(X, n_cycles):
     ptrn = []
     for n in range(n_cycles):
         p = X
-        ptrn.append([[p[0], p[1], p[2], p[3], p[4]], [0, 1, 1, 0]])
-        ptrn.append([[p[1], p[0], -p[2], p[4], p[3]], [1, 0, 0, 1]])
+        ptrn.append([[p[0], p[1], p[2], p[3], p[4]], [1, 0, 0, 1]])
+        ptrn.append([[p[1], p[0], -p[2], p[4], p[3]], [0, 1, 1, 0]])
     return ptrn
 
 
@@ -87,7 +87,7 @@ def optimize_gait_3fixed(n_cycles, initial_pose, method='COBYLA',
     return ptrn, obj_history, objective_3fixed(X)
 
 
-def optimize_gait_straight(n_cycles, initial_pose, method='COBYLA',
+def optimize_gait_straight(n_cycles, method='COBYLA',
                            x0=[90, .1, -90, 90, .1], f=None):
     obj_history = []
     bleg = (0.1, 120)
@@ -96,15 +96,23 @@ def optimize_gait_straight(n_cycles, initial_pose, method='COBYLA',
     X0 = x0
 
     def objective_straight(X):
+        initial_pose = [X, 90, (0, 0)]
         ptrn = gnerate_ptrn_symmetric(X, n_cycles)
         if f:
-            xfinal, rfinal, _, _ = model.predict_pose(ptrn, initial_pose, f=f)
+            xfinal, rfinal, data_sim, _ = model.predict_pose(ptrn,
+                                                             initial_pose,
+                                                             stats=1, f=f)
         else:
-            xfinal, rfinal, _, _ = model.predict_pose(ptrn, initial_pose)
+            xfinal, rfinal, data_sim, _ = model.predict_pose(ptrn,
+                                                             initial_pose)
+        _, data_fp, data_nfp, _ = data_sim
+        _, yfp0 = data_fp[0]
+        _, ynfp0 = data_nfp[0]
         xfp, yfp = rfinal
-        obj = sum(yfp)
+        obj = -(sum(yfp)-sum(yfp0+ynfp0))
         obj_history.append(obj)
         print 'step', len(obj_history), '\t', obj
+        # , '\n', yfp, '\n', yfp0+ynfp0, '\n\n'
         return obj
 
     solution = minimize(objective_straight, X0, method=method, bounds=bnds)
@@ -113,20 +121,20 @@ def optimize_gait_straight(n_cycles, initial_pose, method='COBYLA',
     return ptrn, obj_history, objective_straight(X)
 
 
-def optimize_gait_curve(n_cycles, initial_pose, method='COBYLA',
-                        x0=[90, .1, -90, 90, .1]):
+def optimize_gait_curve(n_cycles, method='COBYLA',
+                        x0=[90, .1, -90, 90, .1], f=None):
     obj_history = []
     bleg = (0.01, 120)
     btor = (-120, 120)
-    bnds, X0 = [], []
     bnds = [bleg, bleg, btor, bleg, bleg, bleg, bleg, btor, bleg, bleg]
     X0 = model.flat_list([x0, x0])
 
     def objective_curve(X):
+        initial_pose = [X[:5], 90, (0, 0)]
         ptrn = gnerate_ptrn(X, n_cycles)
-        xfinal, rfinal, _, _ = model.predict_pose(ptrn, initial_pose)
+        xfinal, rfinal, _, _ = model.predict_pose(ptrn, initial_pose, f=f)
         eps = xfinal[-1]
-        obj = eps
+        obj = -eps
         obj_history.append(obj)
         print 'step', len(obj_history), '\t', obj
         return obj
@@ -178,14 +186,15 @@ if __name__ == '__main__':
     f = [f_len, f_ori, f_ang]
     methods = ['Powell', 'COBYLA', 'CG', 'TNC', 'SLSQP']
     x0 = [90, .1, -90, 90, .1]
-    init_pose = [[90, .01, -90, 90, .01], 90, (0, 0)]
     method = methods[1]
-    n_cycles = 5
-    opt_ptrn, obj_hist, opt_obj = optimize_gait_straight(n_cycles, init_pose,
-                                                         method, x0=x0, f=f)
+    n_cycles = 2
+#    opt_ptrn, obj_hist, opt_obj = optimize_gait_straight(n_cycles,
+#                                                         method, x0=x0, f=f)
+    opt_ptrn, obj_hist, opt_obj = optimize_gait_curve(n_cycles, method=method,
+                                                      x0=x0, f=f)
     opt_ptrn = opt_ptrn[:2]
-#    opt_ptrn, obj_hist, opt_obj = optimize_gait_curve(n_cycles, init_pose,
-#                                                      method, x0=x0)
+    init_pose = [opt_ptrn[0][0], 90, (0, 0)]
+
 #    opt_ptrn, obj_hist, opt_obj = optimize_gait_3fixed(n_cycles, init_pose,
 #                                                       method, x0=x0)
 #    opt_ptrn = opt_ptrn[:4]

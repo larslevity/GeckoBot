@@ -332,7 +332,7 @@ def main():
     automat.add_state('PAUSE', pause_state)
     automat.add_state('IMU_CONTROL', imu_control)
     automat.add_state('ERROR', error_state)
-    automat.add_state('REFERENCE_TRACKING', reference_tracking)
+#    automat.add_state('REFERENCE_TRACKING', reference_tracking)
     automat.add_state('USER_CONTROL', user_control)
     automat.add_state('USER_REFERENCE', user_reference)
     automat.add_state('EXIT', exit_cleaner)
@@ -571,85 +571,85 @@ def user_reference(cargo):
         new_state = cargo.state
     return (new_state, cargo)
 
-
-def reference_tracking(cargo):
-    """ Track the reference from data.buffer """
-    rootLogger.info("Arriving in REFERENCE_TRACKING State: ")
-    cargo.actual_state = 'REFERENCE_TRACKING'
-
-    cargo = init_output(cargo)
-
-    while cargo.state == 'REFERENCE_TRACKING':
-        idx = 0
-        while (cargo.wcomm.confirm and
-               cargo.state == 'REFERENCE_TRACKING' and
-               (idx < cargo.wcomm.idx_threshold or
-                cargo.wcomm.infmode)):
-            cargo.wcomm.is_active = True
-            rootLogger.info('walking is active')
-            if idx == 0:
-                rootLogger.info('Do Initial Pattern')
-                cargo = process_pattern(cargo, initial=True)
-            rootLogger.info('Do Pattern of round {}'.format(idx))
-            cargo = process_pattern(cargo)
-            rootLogger.info('wcomm finished round {}'.format(idx))
-            idx += 1
-        cargo.wcomm.confirm = False
-        if cargo.wcomm.is_active:
-            rootLogger.info('Do Final Pattern')
-            cargo = process_pattern(cargo, final=True)
-            rootLogger.info('walking is not active')
-        cargo.wcomm.is_active = False
-        # clean
-        time.sleep(cargo.sampling_time)
-        new_state = cargo.state
-        cargo = init_output(cargo)
-        for dvalve in cargo.dvalve:
-            dvalve.set_state(False)
-    new_state = cargo.state
-    return (new_state, cargo)
-
-
-def process_pattern(cargo, initial=False, final=False):
-    """ Play the given pattern only once.
-
-        Args:
-            pattern(list): A list of lists of references
-
-        Example:
-            WCommander.process_pattern([[ref11, ref12, ..., ref1N, tmin1],
-                                        [ref21, ref22, ..., ref2N, tmin2],
-                                        ...
-                                        [refM1, refM2, ..., refMN, tminM]])
-    """
-    if initial:
-        pattern = initial_pattern(cargo.wcomm.pattern)
-    elif final:
-        pattern = final_pattern(cargo.wcomm.pattern)
-    else:
-        pattern = cargo.wcomm.pattern
-    n_valves = len(cargo.valve)
-    n_dvalves = len(pattern[0]) - 1 - n_valves
-
-    for idx, pos in enumerate(pattern):
-        # read the refs
-        local_min_process_time = pos[-1]
-        dpos = pos[-n_dvalves-1:-1]
-        for jdx, dp in enumerate(dpos):
-            cargo.dvalve_task[str(jdx)] = dp
-        set_dvalve(cargo)
-
-        # hold the thing for local_min_process_time
-        tstart = time.time()
-        while time.time() - tstart < local_min_process_time:
-            cargo = read_sens(cargo)
-            for valve in cargo.valve:
-                cargo.ref_task[valve.name] = \
-                    cargo.wcomm.pattern[idx][:n_valves][int(valve.name)]
-            cargo = set_ref(cargo)
-            # meta
-            time.sleep(cargo.sampling_time)
-    return cargo
+#
+#def reference_tracking(cargo):
+#    """ Track the reference from data.buffer """
+#    rootLogger.info("Arriving in REFERENCE_TRACKING State: ")
+#    cargo.actual_state = 'REFERENCE_TRACKING'
+#
+#    cargo = init_output(cargo)
+#
+#    while cargo.state == 'REFERENCE_TRACKING':
+#        idx = 0
+#        while (cargo.wcomm.confirm and
+#               cargo.state == 'REFERENCE_TRACKING' and
+#               (idx < cargo.wcomm.idx_threshold or
+#                cargo.wcomm.infmode)):
+#            cargo.wcomm.is_active = True
+#            rootLogger.info('walking is active')
+#            if idx == 0:
+#                rootLogger.info('Do Initial Pattern')
+#                cargo = process_pattern(cargo, initial=True)
+#            rootLogger.info('Do Pattern of round {}'.format(idx))
+#            cargo = process_pattern(cargo)
+#            rootLogger.info('wcomm finished round {}'.format(idx))
+#            idx += 1
+#        cargo.wcomm.confirm = False
+#        if cargo.wcomm.is_active:
+#            rootLogger.info('Do Final Pattern')
+#            cargo = process_pattern(cargo, final=True)
+#            rootLogger.info('walking is not active')
+#        cargo.wcomm.is_active = False
+#        # clean
+#        time.sleep(cargo.sampling_time)
+#        new_state = cargo.state
+#        cargo = init_output(cargo)
+#        for dvalve in cargo.dvalve:
+#            dvalve.set_state(False)
+#    new_state = cargo.state
+#    return (new_state, cargo)
+#
+#
+#def process_pattern(cargo, initial=False, final=False):
+#    """ Play the given pattern only once.
+#
+#        Args:
+#            pattern(list): A list of lists of references
+#
+#        Example:
+#            WCommander.process_pattern([[ref11, ref12, ..., ref1N, tmin1],
+#                                        [ref21, ref22, ..., ref2N, tmin2],
+#                                        ...
+#                                        [refM1, refM2, ..., refMN, tminM]])
+#    """
+#    if initial:
+#        pattern = initial_pattern(cargo.wcomm.pattern)
+#    elif final:
+#        pattern = final_pattern(cargo.wcomm.pattern)
+#    else:
+#        pattern = cargo.wcomm.pattern
+#    n_valves = len(cargo.valve)
+#    n_dvalves = len(pattern[0]) - 1 - n_valves
+#
+#    for idx, pos in enumerate(pattern):
+#        # read the refs
+#        local_min_process_time = pos[-1]
+#        dpos = pos[-n_dvalves-1:-1]
+#        for jdx, dp in enumerate(dpos):
+#            cargo.dvalve_task[str(jdx)] = dp
+#        set_dvalve(cargo)
+#
+#        # hold the thing for local_min_process_time
+#        tstart = time.time()
+#        while time.time() - tstart < local_min_process_time:
+#            cargo = read_sens(cargo)
+#            for valve in cargo.valve:
+#                cargo.ref_task[valve.name] = \
+#                    cargo.wcomm.pattern[idx][:n_valves][int(valve.name)]
+#            cargo = set_ref(cargo)
+#            # meta
+#            time.sleep(cargo.sampling_time)
+#    return cargo
 
 
 def error_state(cargo):

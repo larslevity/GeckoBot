@@ -70,7 +70,8 @@ class HUIThread(threading.Thread):
         threading.Thread.__init__(self)
         self.cargo = cargo
         self.lastconfirm = time.time()
-        self.lastinfmode = time.time()
+        self.lastmode2 = time.time()
+        self.mode2 = False
         self.refzero = False
         self.rootLogger = rootLogger
         self.ptrn_idx = 0
@@ -95,8 +96,6 @@ class HUIThread(threading.Thread):
 
         for pin in DISCRETEPRESSUREREF:
             GPIO.setup(pin, GPIO.IN)
-#        for pin in CONTINUOUSPRESSUREREF:
-#            GPIO.setup(pin, GPIO.IN)
 
         GPIO.add_event_detect(PWMREFMODE, GPIO.RISING)
         GPIO.add_event_detect(PRESSUREREFMODE, GPIO.RISING)
@@ -148,7 +147,7 @@ class HUIThread(threading.Thread):
 
         # check pattern btns
         if GPIO.event_detected(INFINITYMODE):
-            print('Infmode btn pushed')
+            print('Mode2 btn pushed')
         if GPIO.event_detected(WALKINGCONFIRM):
             print('WALKING START btn pushed')
 
@@ -168,43 +167,34 @@ class HUIThread(threading.Thread):
             self.reset_confirmations()
         self.set_leds()
         if state == 'USER_REFERENCE':
-            self.process_pressure_ref()
+            self.process_user_ref()
         elif state == 'PATTERN_REF':
             self.process_pattern_ref()
-        elif state == 'IMU_CONTROL':
-            self.process_imu_control()
         elif state == 'USER_CONTROL':
             self.process_pwm_ref()
 #        self.print_state()
 
-    def process_imu_control(self):
-        self.change_state('IMU_CONTROL')
-        self.set_dvalve()
-        self.set_ref()
-#        self.set_ctr_gain()
-
-    def process_pressure_ref(self):
-        self.change_state('USER_REFERENCE')
+    def process_user_ref(self):
+        self.set_mode2() 
+        if not self.mode2:
+            self.change_state('USER_REFERENCE')
+        else:
+            self.change_state('IMU_CONTROL')
         self.set_refzero()
         self.set_ref()
         self.set_dvalve()
-
-    def check_p28(self):
-        if GPIO.event_detected(INFINITYMODE):
-            self.cargo.pwm_task['7'] = 80.
-            time.sleep(1)
-            self.cargo.pwm_task['7'] = 0.
 
     def process_pwm_ref(self):
         self.change_state('USER_CONTROL')
         self.set_valve()
         self.set_dvalve()
-#        # DEBUG
-#        self.check_p28()
 
     def process_pattern_ref(self):
-#        self.change_state('USER_REFERENCE')
-        self.change_state('IMU_CONTROL')
+        self.set_mode2() 
+        if not self.mode2:
+            self.change_state('USER_REFERENCE')
+        else:
+            self.change_state('IMU_CONTROL')
         self.set_pattern()
         self.set_walking()
         self.set_userpattern()
@@ -213,7 +203,6 @@ class HUIThread(threading.Thread):
             if self.last_process_time + self.process_time < time.time():
                 self.process_time = self.generate_pattern_ref()
                 self.last_process_time = time.time()
-        # self.set_infmode()
 
     def generate_pattern_ref(self):
         pattern = self.cargo.wcomm.pattern
@@ -237,12 +226,7 @@ class HUIThread(threading.Thread):
 
         change = False
         if new_state:
-            potis = []
-            for idx, pin in enumerate(CONTINUOUSPRESSUREREF):
-                val = ADC.read(pin)
-                val = ADC.read(pin)
-                potis.append(round(val*100))
-            if sum(potis) == 0:
+            if self.all_potis_zero():
                 change = True
             else:
                 for i in range(3):
@@ -263,7 +247,6 @@ class HUIThread(threading.Thread):
             GPIO.output(pin, GPIO.HIGH if my_state == state else GPIO.LOW)
         if my_state == 'PATTERN_REF':
             for pin, state in [(WALKINGCONFIRMLED, self.cargo.wcomm.is_active),
-                               # (INFINITYLED, self.cargo.wcomm.infmode)
                                (INFINITYLED, self.cargo.wcomm.user_pattern)
                                ]:
                 GPIO.output(pin, GPIO.HIGH if state else GPIO.LOW)
@@ -295,18 +278,6 @@ class HUIThread(threading.Thread):
                 _ = ADC.read(pin)
                 self.cargo.ref_task[str(idx)] = round(ADC.read(pin)*100)/100.
 
-    def set_pattern(self):
-        if self.cargo.wcomm.user_pattern:
-            pref = []
-            for idx, pin in enumerate(CONTINUOUSPRESSUREREF):
-                _ = ADC.read(pin)
-                pref.append(round(ADC.read(pin)*100)/100.)
-            pref.append(p7_ptrn)
-            pattern = generate_pattern(*pref)
-            self.cargo.wcomm.pattern = pattern
-#        else:
-#            self.cargo.wcomm.pattern = self.cargo.wcomm.ptrndic['default']
-
     def set_dvalve(self):
         for idx, pin in enumerate(DISCRETEPRESSUREREF):
             self.cargo.dvalve_task[str(idx)] = (
@@ -321,53 +292,74 @@ class HUIThread(threading.Thread):
                         'Walking was turned {}'.format(not confirm))
                 self.lastconfirm = time.time()
 
-    def set_infmode(self):
+    def set_mode2(self):
         if GPIO.event_detected(INFINITYMODE):
-            if time.time()-self.lastinfmode > 1:
-                state = self.cargo.wcomm.infmode
-                self.cargo.wcomm.infmode = not state
-                self.rootLogger.info('Infmode was turned {}'.format(not state))
-                self.lastinfmode = time.time()
+            if time.time()-self.lastmode2 > 1:
+                state = self.mode2
+                self.mode2 = not state
+                self.rootLogger.info('Mode2 was turned {}'.format(not state))
+                self.lastmode2 = time.time()
 
-    def set_ctr_gain(self):
-        if GPIO.event_detected(INFINITYMODE):
-            if time.time()-self.lastinfmode > 1:
-                P, I, D = self.tune_imu_ctr()
-                self.rootLogger.info('ctr_gain was set to {}'.format([P, I, D]))
-                self.lastinfmode = time.time()
-
-    def tune_imu_ctr(self):
-        PIDimu = [1.05/90., 0.03*20., 0.01]
-
-        gain = []
-        for idx, pin in enumerate(CONTINUOUSPRESSUREREF[1:4]):
-            _ = ADC.read(pin)
-            gain.append(round(ADC.read(pin)*100)/100.)
-
-        P, I, D = (PIDimu[0]+gain[0]*.3, PIDimu[0]+gain[2]*1,
-                   PIDimu[2]+gain[2]*.3)
-        self.cargo.imu_ctr[0].set_gain([P, I, D])
-        return P, I, D
+#    def set_ctr_gain(self):
+#        if GPIO.event_detected(INFINITYMODE):
+#            if time.time()-self.lastinfmode > 1:
+#                P, I, D = self.tune_imu_ctr()
+#                self.rootLogger.info('ctr_gain was set to {}'.format([P, I, D]))
+#                self.lastinfmode = time.time()
+#
+#    def tune_imu_ctr(self):
+#        PIDimu = [1.05/90., 0.03*20., 0.01]
+#
+#        gain = []
+#        for idx, pin in enumerate(CONTINUOUSPRESSUREREF[1:4]):
+#            _ = ADC.read(pin)
+#            gain.append(round(ADC.read(pin)*100)/100.)
+#
+#        P, I, D = (PIDimu[0]+gain[0]*.3, PIDimu[0]+gain[2]*1,
+#                   PIDimu[2]+gain[2]*.3)
+#        self.cargo.imu_ctr[0].set_gain([P, I, D])
+#        return P, I, D
 
     def set_refzero(self):
         if GPIO.event_detected(INFINITYMODE):
-            if time.time()-self.lastinfmode > 1:
+            if time.time()-self.lastmode2 > 1:
                 state = self.refzero
                 self.refzero = not state
                 self.rootLogger.info('RefZero was turned {}'.format(not state))
-                self.lastinfmode = time.time()
+                self.lastmode2 = time.time()
 
     def set_userpattern(self):
-        if GPIO.event_detected(INFINITYMODE):
-            if time.time()-self.lastinfmode > 1:
-                state = self.cargo.wcomm.user_pattern
-                self.cargo.wcomm.user_pattern = not state
-                self.rootLogger.info(
-                        'user_pattern was turned {}'.format(not state))
-                self.lastinfmode = time.time()
-                if state:  # user_pattern was True -> now its False
-                    self.cargo.wcomm.pattern = \
-                        self.cargo.wcomm.ptrndic['default']
+        if self.all_potis_zero():
+            if self.cargo.wcomm.user_pattern:
+                self.cargo.wcomm.user_pattern = False
+                self.cargo.wcomm.pattern = self.cargo.wcomm.ptrndic['default']
+                self.rootLogger.info('user_pattern was turned False')
+        else:
+            self.cargo.wcomm.user_pattern = True
+            self.rootLogger.info('user_pattern was turned True')
+
+    def set_pattern(self):
+        if self.cargo.wcomm.user_pattern:
+            pref = []
+            for idx, pin in enumerate(CONTINUOUSPRESSUREREF):
+                _ = ADC.read(pin)
+                pref.append(round(ADC.read(pin)*100)/100.)
+            pref.append(p7_ptrn)
+            pattern = generate_pattern(*pref)
+            self.cargo.wcomm.pattern = pattern
+#        else:
+#            self.cargo.wcomm.pattern = self.cargo.wcomm.ptrndic['default']
+
+    def all_potis_zero(self):
+        zero = False
+        potis = []
+        for idx, pin in enumerate(CONTINUOUSPRESSUREREF):
+            val = ADC.read(pin)
+            val = ADC.read(pin)
+            potis.append(round(val*100))
+        if sum(potis) == 0:
+            zero = True
+        return zero
 
     def kill(self):
         self.cargo.state = 'EXIT'

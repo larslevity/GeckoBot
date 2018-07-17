@@ -70,7 +70,9 @@ class HUIThread(threading.Thread):
         threading.Thread.__init__(self)
         self.cargo = cargo
         self.lastconfirm = time.time()
+        self.lastmode1 = time.time()
         self.lastmode2 = time.time()
+        self.mode1 = False
         self.mode2 = False
         self.refzero = False
         self.rootLogger = rootLogger
@@ -247,12 +249,12 @@ class HUIThread(threading.Thread):
             GPIO.output(pin, GPIO.HIGH if my_state == state else GPIO.LOW)
         if my_state == 'PATTERN_REF':
             for pin, state in [(WALKINGCONFIRMLED, self.cargo.wcomm.is_active),
-                               (INFINITYLED, self.cargo.wcomm.user_pattern)
+                               (INFINITYLED, self.mode2)
                                ]:
                 GPIO.output(pin, GPIO.HIGH if state else GPIO.LOW)
         elif my_state == "USER_REFERENCE":
-            GPIO.output(INFINITYLED, GPIO.HIGH if self.refzero else GPIO.LOW)
-            GPIO.output(WALKINGCONFIRMLED, GPIO.LOW)
+            GPIO.output(INFINITYLED, GPIO.HIGH if self.mode2 else GPIO.LOW)
+            GPIO.output(WALKINGCONFIRMLED, GPIO.HIGH if self.refzero else GPIO.LOW)
         elif my_state == "USER_CONTROL":
             GPIO.output(INFINITYLED, GPIO.LOW)
             GPIO.output(WALKINGCONFIRMLED, GPIO.LOW)
@@ -321,12 +323,12 @@ class HUIThread(threading.Thread):
 #        return P, I, D
 
     def set_refzero(self):
-        if GPIO.event_detected(INFINITYMODE):
-            if time.time()-self.lastmode2 > 1:
+        if GPIO.event_detected(WALKINGCONFIRM):
+            if time.time()-self.lastmode1 > 1:
                 state = self.refzero
                 self.refzero = not state
                 self.rootLogger.info('RefZero was turned {}'.format(not state))
-                self.lastmode2 = time.time()
+                self.lastmode1 = time.time()
 
     def set_userpattern(self):
         if self.all_potis_zero():
@@ -371,6 +373,8 @@ class HUIThread(threading.Thread):
 
     def reset_confirmations(self):
         self.refzero = False
+        self.mode2 = False
+        self.mode1 = False
         self.cargo.wcomm.confirm = False
         self.cargo.wcomm.is_active = False
 

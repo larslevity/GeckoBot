@@ -335,8 +335,9 @@ class HUIThread(threading.Thread):
                 self.cargo.wcomm.pattern = self.cargo.wcomm.ptrndic['default']
                 self.rootLogger.info('user_pattern was turned False')
         else:
-            self.cargo.wcomm.user_pattern = True
-            self.rootLogger.info('user_pattern was turned True')
+            if not self.cargo.wcomm.user_pattern:
+                self.cargo.wcomm.user_pattern = True
+                self.rootLogger.info('user_pattern was turned True')
 
     def set_pattern(self):
         if self.cargo.wcomm.user_pattern:

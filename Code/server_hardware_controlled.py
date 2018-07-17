@@ -177,7 +177,7 @@ TSAMPLING = 0.001     # [sec]
 PID = [1.05, 0.03, 0.01]    # [1]
 PIDimu = [0.0117, 1.012, 0.31]
 
-START_STATE = 'IMU_CONTROL'
+START_STATE = 'PAUSE'
 
 
 def init_hardware():

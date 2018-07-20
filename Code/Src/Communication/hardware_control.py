@@ -72,12 +72,12 @@ def generate_pattern_curve(p0, p1, p2, p3, p4, p5, p6, p7,
     t_fix = .66
     t_dfx = .25
     data = [
-        [p0, p1, p2, p3, p4, p5, p6, p7, False, True, True, False, t_move],
+        [p0, p1, p2, p3, p4, p5, p6, p7, True, False, False, True, t_move],
         [p0, p1, p2, p3, p4, p5, p6, p7, True, True, True, True, t_fix],
-        [p0, p1, p2, p3, p4, p5, p6, p7, True, False, False, True, t_dfx],
-        [p02, p12, p22, p32, p42, p52, p62, p72, True, False, False, True, t_move],
+        [p0, p1, p2, p3, p4, p5, p6, p7, False, True, True, False, t_dfx],
+        [p02, p12, p22, p32, p42, p52, p62, p72, False, True, True, False, t_move],
         [p02, p12, p22, p32, p42, p52, p62, p72, True, True, True, True, t_fix],
-        [p02, p12, p22, p32, p42, p52, p62, p72, False, True, True, False, t_dfx]
+        [p02, p12, p22, p32, p42, p52, p62, p72, True, False, False, True, t_dfx]
     ]
     return data
 

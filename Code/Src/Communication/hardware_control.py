@@ -16,6 +16,8 @@ import Adafruit_BBIO.ADC as ADC
 
 from termcolor import colored
 from Src.Management import reference as ref
+from Src.Visual.PiCamera import client
+
 
 TSamplingUI = .1
 p7_ptrn = 0.0
@@ -80,6 +82,9 @@ class HUIThread(threading.Thread):
         self.last_process_time = time.time()
         self.process_time = 0
         self.state = cargo.state
+        
+        self.picam = client.ClientSocket()
+        self.img_idx = 0
 
         self.rootLogger.info('Initialize HUI Thread ...')
         ADC.setup()
@@ -205,6 +210,9 @@ class HUIThread(threading.Thread):
             if self.last_process_time + self.process_time < time.time():
                 self.process_time = self.generate_pattern_ref()
                 self.last_process_time = time.time()
+                if self.process_time == 0.25:   # fix mode just fineshed
+                    self.picam.get_image('img_{}_{}'.format(self.img_idx.zfill(3), self.ptrn_idx))
+                    self.img_idx += 1
 
     def generate_pattern_ref(self):
         pattern = self.cargo.wcomm.pattern
@@ -331,6 +339,8 @@ class HUIThread(threading.Thread):
                 self.lastmode1 = time.time()
 
     def set_userpattern(self):
+        """ switch between manual pattern or hard coded pattern
+        """
         if self.all_potis_zero():
             if self.cargo.wcomm.user_pattern:
                 self.cargo.wcomm.user_pattern = False
@@ -342,6 +352,7 @@ class HUIThread(threading.Thread):
                 self.rootLogger.info('user_pattern was turned True')
 
     def set_pattern(self):
+        """ if manual pattern is activated, this fun sets the refs for it """
         if self.cargo.wcomm.user_pattern:
             pref = []
             for idx, pin in enumerate(CONTINUOUSPRESSUREREF):
@@ -365,6 +376,7 @@ class HUIThread(threading.Thread):
         return zero
 
     def kill(self):
+        self.picam.close()
         self.cargo.state = 'EXIT'
 
     def reset_events(self):

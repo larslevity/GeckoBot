@@ -10,7 +10,11 @@ import io
 import socket
 import struct
 import time
-from PIL import Image
+try:
+    from PIL import Image
+except ImportError:
+    print 'Cannot import PIL'
+
 
 class ClientSocket(object):
     def __init__(self):
@@ -22,9 +26,11 @@ class ClientSocket(object):
         # Make a file-like object out of the connection
         self.connection = self.client_socket.makefile('wb')
 
+    def make_image(self, filename='test'):
+        self.client_socket.sendall('m{}'.format(filename))
 
     def get_image(self, filename='test'):
-        self.client_socket.sendall('makeImage')
+        self.client_socket.sendall('getImage')
         try:
             # Read the length of the image as a 32-bit unsigned int. If the
             # length is zero, quit the loop

@@ -227,7 +227,7 @@ class HUIThread(threading.Thread):
                 self.process_time = self.generate_pattern_ref()
                 self.last_process_time = time.time()
                 if self.process_time == 0.25:   # fix mode just fineshed
-                    self.picam.get_image('img_{}_{}'.format(self.img_idx.zfill(3), self.ptrn_idx))
+                    self.picam.make_image('img_{}_{}'.format(str(self.img_idx).zfill(3), self.ptrn_idx))
                     self.img_idx += 1
 
     def generate_pattern_ref(self):

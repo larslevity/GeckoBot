@@ -47,6 +47,9 @@ try:
             task = conn.recv(4096)
             if task == 'Exit':
                 break
+            if task[0] == 'm':  # make photo and save to PI
+                filename = task[1:]
+                camera.capture(filename)
             # Reset the stream for the next capture
             stream.seek(0)
             stream.truncate()

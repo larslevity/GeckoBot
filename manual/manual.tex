@@ -47,6 +47,87 @@
 
 
 
+\section{Quickstart}
+
+\subsection{Power on the Board}
+
+\begin{itemize}
+\item Check if all Potentionmeter are in zero position (turned left)
+\item Check if all small black switches are OFF (switched up)
+\item Check if 24V Switch is OFF (up)
+\item Check if pressure source is zero (throttle valve turned left, manometer shows 0 bar)
+\item Check if I2C Interface is connected to robot or pull-up circuit board (red face on red face!)
+\item Power on main switch
+
+
+
+\end{itemize}
+
+\subsection{Log into BBB}
+
+\begin{itemize}
+
+\item 	You will need a computer with LAN access in the AmP network, and a terminal with ssh capabilities. Putty on Windows. Or standard Terminal on Linux.
+
+\item For Windows (Putty):
+\begin{tabular}{cc}
+Hostname & Port \\
+134.28.136.51 & 22 \\
+\end{tabular}
+
+\item Linux:
+\begin{lstlisting}
+bianca@bianca:~ ssh root@134.28.136.51
+\end{lstlisting}
+
+\item login: root \qquad password: root
+
+\end{itemize}
+
+
+\subsection{Running the Code}
+To run the geckobot code:
+\begin{itemize}
+\item on BBB as \texttt{su}
+\begin{lstlisting}
+root@beaglebone:~# cd Git/GeckoBot/Code
+root@beaglebone:~Git/GeckoBot/Code/# python server_hardware_controlled.py
+\end{lstlisting}
+
+\item In case there is an error related to the device tree, just run the code again.
+
+\end{itemize}
+
+
+
+
+\subsection{Enable Power}
+
+\begin{itemize}
+
+\item 24V Switch ON (down)
+\item Pressure Source 1.2 bar (turn throttle valve right until manometer shows the 1.2bar)
+\item Plug in Vacuum Source if needed.
+
+\end{itemize}
+
+
+
+\subsection{When your session is over}
+
+\begin{itemize}
+
+\item Pressure Source to 0bar
+\item 24V Switch OFF (up)
+\item All Potentiometer to zero
+\item All small black Switches OFF (up)
+
+
+
+\end{itemize}
+
+
+
 
 \section{Setting Up the BBB}
 
@@ -430,15 +511,7 @@ root@beaglebone:~/Git/# git clone https://github.com/larslevity/GeckoBot.git
 
 
 
-\subsection{Running the Code}
-To run the geckobot code:
-\begin{itemize}
-\item on BBB as \texttt{su}
-\begin{lstlisting}
-root@beaglebone:~# cd Git/GeckoBot/Code
-root@beaglebone:~Git/GeckoBot/Code/# python server_hardware_controlled.py
-\end{lstlisting}
-\end{itemize}
+
 
 
 

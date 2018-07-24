@@ -82,8 +82,11 @@ class HUIThread(threading.Thread):
         self.last_process_time = time.time()
         self.process_time = 0
         self.state = cargo.state
-
-        self.picam = client.ClientSocket(ip='134.28.136.49')
+        try:
+            self.picam = client.ClientSocket(ip='134.28.136.49')
+        except:
+            self.picam = None
+            self.rootLogger.info('There is no PiCam to connect with')
         self.img_idx = 0
 
         self.rootLogger.info('Initialize HUI Thread ...')
@@ -313,7 +316,7 @@ class HUIThread(threading.Thread):
                 self.refzero = not state
                 self.rootLogger.info('RefZero was turned {}'.format(not state))
                 self.lastmode1 = time.time()
-                if state:   # it was zero ref -> now its user ref
+                if state and self.picam:   # it was zero ref -> now its user ref
                     self.picam.make_video('vid_{}.h264'.format(str(self.img_idx).zfill(3)))
                     self.img_idx += 1
 

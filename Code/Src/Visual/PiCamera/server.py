@@ -32,12 +32,12 @@ if STREAM:
             # Start a preview and let the camera warm up for 2 seconds
             camera.start_preview()
             time.sleep(2)
-    
+
             # Note the start time and construct a stream to hold image data
             # temporarily (we could write it directly to connection but in this
             # case we want to find out the size of each capture first to keep
             # our protocol simple)
-    
+
             stream = io.BytesIO()
             for foo in camera.capture_continuous(stream, 'jpeg'):
                 # Write the length of the capture to the stream and flush to
@@ -66,12 +66,18 @@ else:
             # Start a preview and let the camera warm up for 2 seconds
             camera.start_preview()
             time.sleep(2)
-    
+
             while True:
                 task = conn.recv(4096)
                 if task[0] == 'm':
                     filename = task[1:]
                     camera.capture(filename)
+                if task[0] == 'v':
+                    filename = task[1:]
+                    camera.resolution = (640, 480)
+                    camera.start_recording('my_video.h264')
+                    camera.wait_recording(2)
+                    camera.stop_recording()
     finally:
         connection.close()
         server_socket.close()

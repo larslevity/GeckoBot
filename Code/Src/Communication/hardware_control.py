@@ -82,8 +82,8 @@ class HUIThread(threading.Thread):
         self.last_process_time = time.time()
         self.process_time = 0
         self.state = cargo.state
-        
-        self.picam = client.ClientSocket()
+
+        self.picam = client.ClientSocket(ip='134.28.136.49')
         self.img_idx = 0
 
         self.rootLogger.info('Initialize HUI Thread ...')
@@ -182,7 +182,7 @@ class HUIThread(threading.Thread):
         self.print_state()
 
     def process_user_ref(self):
-        self.set_mode2() 
+        self.set_mode2()
         if not self.mode2:
             self.change_state('USER_REFERENCE')
         else:
@@ -197,7 +197,7 @@ class HUIThread(threading.Thread):
         self.set_dvalve()
 
     def process_pattern_ref(self):
-        self.set_mode2() 
+        self.set_mode2()
         if not self.mode2:
             self.change_state('USER_REFERENCE')
         else:
@@ -210,20 +210,16 @@ class HUIThread(threading.Thread):
             if self.last_process_time + self.process_time < time.time():
                 self.process_time = self.generate_pattern_ref()
                 self.last_process_time = time.time()
-                if self.process_time == 0.25:   # fix mode just fineshed
-                    self.picam.make_image('img_{}_{}.jpg'.format(str(self.img_idx).zfill(3), self.ptrn_idx))
-                    self.img_idx += 1
 
     def generate_pattern_ref(self):
         pattern = self.cargo.wcomm.pattern
         idx = self.ptrn_idx
-        idx = idx+1 if idx<len(pattern)-1 else 0
+        idx = idx+1 if idx < len(pattern)-1 else 0
         dvtask, pvtask, process_time = ref.generate_walking_ref(pattern, idx)
         self.cargo.dvalve_task = dvtask
         self.cargo.ref_task = pvtask
         self.ptrn_idx = idx
         return process_time
-
 
     def check_state(self):
         new_state = None
@@ -310,26 +306,6 @@ class HUIThread(threading.Thread):
                 self.rootLogger.info('Mode2 was turned {}'.format(not state))
                 self.lastmode2 = time.time()
 
-#    def set_ctr_gain(self):
-#        if GPIO.event_detected(INFINITYMODE):
-#            if time.time()-self.lastinfmode > 1:
-#                P, I, D = self.tune_imu_ctr()
-#                self.rootLogger.info('ctr_gain was set to {}'.format([P, I, D]))
-#                self.lastinfmode = time.time()
-#
-#    def tune_imu_ctr(self):
-#        PIDimu = [1.05/90., 0.03*20., 0.01]
-#
-#        gain = []
-#        for idx, pin in enumerate(CONTINUOUSPRESSUREREF[1:4]):
-#            _ = ADC.read(pin)
-#            gain.append(round(ADC.read(pin)*100)/100.)
-#
-#        P, I, D = (PIDimu[0]+gain[0]*.3, PIDimu[0]+gain[2]*1,
-#                   PIDimu[2]+gain[2]*.3)
-#        self.cargo.imu_ctr[0].set_gain([P, I, D])
-#        return P, I, D
-
     def set_refzero(self):
         if GPIO.event_detected(WALKINGCONFIRM):
             if time.time()-self.lastmode1 > 1:
@@ -337,6 +313,9 @@ class HUIThread(threading.Thread):
                 self.refzero = not state
                 self.rootLogger.info('RefZero was turned {}'.format(not state))
                 self.lastmode1 = time.time()
+                if state:   # it was zero ref -> now its user ref
+                    self.picam.make_video('vid_{}.h264'.format(str(self.img_idx).zfill(3)))
+                    self.img_idx += 1
 
     def set_userpattern(self):
         """ switch between manual pattern or hard coded pattern

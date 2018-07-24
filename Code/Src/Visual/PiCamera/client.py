@@ -17,17 +17,20 @@ except ImportError:
 
 
 class ClientSocket(object):
-    def __init__(self):
+    def __init__(self, ip='134.28.136.118'):
         # Connect a client socket to my_server:8000 (change my_server to the
         # hostname of your server)
         self.client_socket = socket.socket()
-        self.client_socket.connect(('134.28.136.118', 8000))
-        
+        self.client_socket.connect((ip, 8000))
+
         # Make a file-like object out of the connection
         self.connection = self.client_socket.makefile('wb')
 
     def make_image(self, filename='test'):
         self.client_socket.sendall('m{}'.format(filename))
+
+    def make_video(self, filename):
+        self.client_socket.sendall('v{}'.format(filename))
 
     def get_image(self, filename='test'):
         self.client_socket.sendall('getImage')

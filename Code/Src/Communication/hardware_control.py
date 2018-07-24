@@ -182,7 +182,7 @@ class HUIThread(threading.Thread):
             self.process_pattern_ref()
         elif state == 'USER_CONTROL':
             self.process_pwm_ref()
-        self.print_state()
+#        self.print_state()
 
     def process_user_ref(self):
         self.set_mode2()

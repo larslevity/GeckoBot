@@ -37,8 +37,8 @@
 
 \setlength{\parindent}{0pt}
 
-\author{Lars Schiller}
-\title{GeckoBot Code Manual}
+\author{Lars Schiller (AmP)}
+\title{GeckoBot ControlBoard Manual}
 
 \begin{document}
 
@@ -46,7 +46,7 @@
 \tableofcontents
 
 
-
+\clearpage
 \section{Quickstart}
 
 \subsection{Power on the Board}
@@ -101,6 +101,7 @@ root@beaglebone:~Git/GeckoBot/Code/# python server_hardware_controlled.py
 
 
 
+
 \subsection{Enable Power}
 
 \begin{itemize}
@@ -129,6 +130,7 @@ root@beaglebone:~Git/GeckoBot/Code/# python server_hardware_controlled.py
 
 
 
+\clearpage
 \section{Setting Up the BBB}
 
 
@@ -605,12 +607,12 @@ The figure below shows the numbering scheme of the pressure sensors \cite[p. 19]
 
 
 \subsection{IP-Addresses in AmP}
-\begin{tabular}{c|ccccccc}
+\begin{tabular}{l|ccccccc}
 Subnet 		& 255 &.& 255 &.& 255 &.& 0 \\
 Gateway 	& 134 &.& 28  &.& 136 &.& 1 \\
 DNS	 	& 134 &.& 28  &.& 202 &.& 14 \\
-alt. DNS 	& 134 &.& 28  &.& 205 &.& 14 \\
-
+alt. DNS 	& 134 &.& 28  &.& 205 &.& 14 \\ \hline
+\\
 Main	 	& 134 &.& 28  &.& 136 &.& 30 \\
 BBB CBoard 	& 134 &.& 28  &.& 136 &.& 51 \\
 VR - Mond 	& 134 &.& 28  &.& 136 &.& 129 \\

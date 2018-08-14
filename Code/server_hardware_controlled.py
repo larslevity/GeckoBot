@@ -175,8 +175,8 @@ ptrn_v3_0_straight_a = \
     HUI.generate_pattern(.68, 0.56, 0.99, 0.99, 0.67, 0.79, 0.0, 0.0)
 
 ptrn_v3_0_straight_b = HUI.generate_pattern_curve(
-        .65, 0.2, 0.00, 0.99, 0.2, 0.75, 0.0, 0.0,
-        .2, 0.54, 0.99, 0.00, 0.64, 0.2, 0.0, 0.0)
+        .65, 0.2, 0.00, 0.99, 0.75, 0.2, 0.0, 0.0,
+        .2, 0.54, 0.99, 0.00, 0.2, 0.64, 0.0, 0.0)
 
 ptrn_v3_0_straight_c = HUI.generate_pattern_curve(
         .2, 0.4, 0.00, 0.99, 0.25, 0.3, 0.0, 0.0,
@@ -205,7 +205,7 @@ ptrn_v3_pres = 1
 
 
 MAX_PRESSURE = ptrn_v3_pres
-DEFAULT_PATTERN = ptrn_v3_0_straight_a      # default pattern
+DEFAULT_PATTERN = ptrn_v3_0_straight_b      # default pattern
 
 MAX_CTROUT = 0.50     # [10V]
 TSAMPLING = 0.001     # [sec]

@@ -319,6 +319,7 @@ class HUIThread(threading.Thread):
                 if state and self.picam:   # it was zero ref -> now its user ref
                     self.picam.make_video('vid_{}.h264'.format(str(self.img_idx).zfill(3)))
                     self.img_idx += 1
+                    time.sleep(.5)
 
     def set_userpattern(self):
         """ switch between manual pattern or hard coded pattern

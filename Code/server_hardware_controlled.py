@@ -162,19 +162,50 @@ ptrn_v2_4 = HUI.generate_pattern(.64, 0.79, 0.99, 0.99, 0.75, 0.78, 0.0, 0.0)
 ptrn_v2_5 = HUI.generate_pattern(.92, 0.68, 0.93, 0.92, 0.90, 0.74, 0.0, 0.0)
 ptrn_v2_6 = HUI.generate_pattern(.77, 0.99, 0.97, 0.93, 0.70, 0.71, 0.0, 0.0)
 
-ptrn_v3_0 = HUI.generate_pattern(.63, 0.56, 0.99, 0.99, 0.55, 0.73, 0.0, 0.0)
-ptrn_v3_0_curve = HUI.generate_pattern_curve(
-        .71, 0.46, 0.00, 0.99, 0.72, 0.47, 0.0, 0.0,
-        .58, 0.00, 0.00, 0.00, 0.56, 0.00, 0.0, 0.0)
-
-ptrn_v3_pres = 1
-
 # MAX_PRESSURE = 0.85    # [bar] v2.2
 # MAX_PRESSURE = 0.93    # [bar] v2.3
 # MAX_PRESSURE = 0.85      # [bar] v2.4
 
+
+
+ptrn_v3_0 = HUI.generate_pattern(.63, 0.56, 0.99, 0.99, 0.55, 0.73, 0.0, 0.0)
+
+
+ptrn_v3_0_straight_a = \
+    HUI.generate_pattern(.68, 0.56, 0.99, 0.99, 0.67, 0.79, 0.0, 0.0)
+
+ptrn_v3_0_straight_b = HUI.generate_pattern_curve(
+        .65, 0.2, 0.00, 0.99, 0.2, 0.75, 0.0, 0.0,
+        .2, 0.54, 0.99, 0.00, 0.64, 0.2, 0.0, 0.0)
+
+ptrn_v3_0_straight_c = HUI.generate_pattern_curve(
+        .2, 0.4, 0.00, 0.99, 0.25, 0.3, 0.0, 0.0,
+        .4, 0.2, 0.99, 0.00, 0.3, 0.25, 0.0, 0.0)
+
+
+ptrn_v3_0_curve_orginal = HUI.generate_pattern_curve(
+        .71, 0.46, 0.00, 0.99, 0.72, 0.47, 0.0, 0.0,
+        .58, 0.00, 0.00, 0.00, 0.56, 0.00, 0.0, 0.0)
+
+ptrn_v3_0_curve_a = HUI.generate_pattern_curve(
+        .7, 0.55, 0.00, 0.99, 0.73, 0.5, 0.0, 0.0,
+        .39, 0.00, 0.00, 0.0, 0.56, 0.00, 0.0, 0.0)
+
+ptrn_v3_0_curve_b = HUI.generate_pattern_curve(
+        .7, 0.56, 0.00, 0.99, 0.78, 0.5, 0.0, 0.0,
+        .39, 0.00, 0.00, 0.0, 0.46, 0.00, 0.0, 0.0)
+
+ptrn_v3_0_curve_c = HUI.generate_pattern_curve(
+        .9, 0.65, 0.00, 0.99, 0.99, 0.74, 0.0, 0.0,
+        .0, 0.00, 0.00, 0.00, 0.00, 0.00, 0.0, 0.0)
+
+
+
+ptrn_v3_pres = 1
+
+
 MAX_PRESSURE = ptrn_v3_pres
-DEFAULT_PATTERN = ptrn_v3_0_curve      # default pattern
+DEFAULT_PATTERN = ptrn_v3_0_straight_a      # default pattern
 
 MAX_CTROUT = 0.50     # [10V]
 TSAMPLING = 0.001     # [sec]

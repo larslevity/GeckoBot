@@ -52,7 +52,7 @@
 \draw[foot] (0.000000, -0.990348)circle(\rfoot);
 \draw[foot] (1.601217, -1.703589)circle(\rfoot);
 
-\def\col{black!36}
+\def\col{black!33}
 \def\alpi{89.999999}
 \def\beti{0.999990}
 \def\gam{-90.000002}
@@ -85,7 +85,7 @@
 \draw[foot] (1.601217, 0.713241)circle(\rfoot);
 \draw[foot] (0.000001, -0.990348)circle(\rfoot);
 
-\def\col{black!52}
+\def\col{black!46}
 \def\alpi{1.000000}
 \def\beti{90.000000}
 \def\gam{90.000000}
@@ -118,7 +118,7 @@
 \draw[foot] (0.000000, 1.426483)circle(\rfoot);
 \draw[foot] (1.601217, -0.277107)circle(\rfoot);
 
-\def\col{black!68}
+\def\col{black!60}
 \def\alpi{90.000000}
 \def\beti{1.000000}
 \def\gam{-90.000000}
@@ -151,7 +151,7 @@
 \draw[foot] (1.601217, 2.139723)circle(\rfoot);
 \draw[foot] (-0.000000, 0.436135)circle(\rfoot);
 
-\def\col{black!84}
+\def\col{black!73}
 \def\alpi{1.000000}
 \def\beti{90.000000}
 \def\gam{90.000000}
@@ -184,8 +184,40 @@
 \draw[foot] (0.000002, 2.852966)circle(\rfoot);
 \draw[foot] (1.601216, 1.149375)circle(\rfoot);
 
-\draw[start line] (0.000000, 2.852966)++(-.2,0)--++(2,0);
+\def\col{black!86}
+\def\alpi{90.000000}
+\def\beti{1.000000}
+\def\gam{-90.000000}
+\def\alpii{90.000000}
+\def\betii{1.000000}
+\def\gamh{-45.000000}
 
+\def\eps{89.999927}
+\def\ci{44.999927}
+\def\cii{135.999927}
+\def\ciii{314.999926}
+\def\civ{223.999927}
+
+\def\ri{0.636620}
+\def\rii{57.295765}
+\def\rg{-0.700282}
+\def\riii{0.636620}
+\def\riv{57.295771}
+
+\path (0.000002, 2.852966)coordinate(F1);
+
+\draw[part] (F1)arc(180+\ci:180+\ci+\alpi:\ri)coordinate(OM);
+\draw[part] (OM)arc(180+\ci+\alpi:180+\ci+\alpi+\beti:\rii)coordinate(F2);
+\draw[part] (OM)arc(90+\ci+\alpi:90+\ci+\alpi+\gam:\rg)coordinate(UM);
+\draw[part] (UM)arc(\gam+\ci+\alpi:\gam+\ci+\alpi+\alpii:\riii)coordinate(F3);
+\draw[part] (UM)arc(\gam+\ci+\alpi:\gam+\ci+\alpi-\betii:\riv)coordinate(F4);
+
+\draw[footfixed] (0.000002, 2.852966)circle(\rfoot);
+\draw[footfixed] (1.601216, 1.149374)circle(\rfoot);
+\draw[foot] (1.601219, 3.566205)circle(\rfoot);
+\draw[foot] (0.000000, 1.862618)circle(\rfoot);
+
+\draw[start line] (0.000000, 2.852966)++(-.2,0)--++(2,0);
+        
 \end{tikzpicture}
 \end{document}
-        

@@ -362,7 +362,8 @@ def save_animation(line_ani, name='gait.mp4', conv='avconv'):
     line_ani.save(name, writer=writer)
 
 
-def tikz_interface(data, data_fp, data_nfp, data_x, name='Pics/py/gait.tex'):
+def tikz_interface(data, data_fp, data_nfp, data_x, name='Pics/py/gait.tex',
+                   typ='straight'):
     xf, yf = data[0]
     x = data_x[0]
     header = """
@@ -411,8 +412,10 @@ def tikz_interface(data, data_fp, data_nfp, data_x, name='Pics/py/gait.tex'):
 
     text_file = open(name, "w")
     text_file.write(header)
-#    text_file.write(header_straight)
-    text_file.write(header_curve)
+    if typ == "straight":
+        text_file.write(header_straight)
+    else:
+        text_file.write(header_curve)
 
     for idx, x in enumerate(data_x):
         xf, yf = data[idx]
@@ -487,8 +490,10 @@ def tikz_interface(data, data_fp, data_nfp, data_x, name='Pics/py/gait.tex'):
 \\end{tikzpicture}
 \\end{document}
 """
-#    text_file.write(footer_straight)
-    text_file.write(footer_curve)
+    if typ == 'straight':
+        text_file.write(footer_straight)
+    else:
+        text_file.write(footer_curve)
     text_file.write(footer)
     text_file.close()
 

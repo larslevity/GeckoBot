@@ -98,13 +98,13 @@ def print(*args, **kwargs):
 
 
 def generate_pattern(p0, p1, p2, p3, p4, p5, p6, p7):
-    t_move = 3.0
-    t_fix = .66
-    t_dfx = .25
-    p01 = 0.25
-    p11 = 0.25
-    p41 = 0.25
-    p51 = 0.25
+    t_move = .8
+    t_fix = .1
+    t_dfx = .1
+    p01 = 0.1
+    p11 = 0.1
+    p41 = 0.1
+    p51 = 0.1
     data = [
         [p01, p1, p2, 0.0, p41, p5, p6, 0.0, False, True, True, False, t_move],
         [0.0, p1, p2, 0.0, p41, p5, p6, 0.0, True, True, True, True, t_fix],
@@ -281,6 +281,7 @@ class HUIThread(threading.Thread):
             return (self.ui_state)
 
         def pattern_reference():
+            self.ptrn_idx = 0
             while not mode_changed():
                 change_state_in_main_thread(MODE[3]['main_state'][fun2()])
                 if is_userpattern():

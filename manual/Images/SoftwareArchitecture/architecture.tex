@@ -1,0 +1,32 @@
+\documentclass[10pt, border=10pt]{standalone}
+\input{../../tikzpic_packages.tex}
+
+
+\begin{document}
+\begin{tikzpicture}[
+	state/.style={draw, circle, fill=yellow!20, align=center, minimum width=2cm},
+	scale=1.5,
+	arrow/.style={-latex},
+	Data/.style={rectangle, draw, fill=gray!20, align=center}
+]
+\path (0,0) node[state](A){PWM \\ Feed \\ Through};
+
+\path (2,0) node[state](B){Pressure \\ Tracking};
+
+\path (4,0) node[state](C){Angle \\ Tracking};
+
+
+
+
+\path (0,-4) node[state](D){PWM \\ Ref};
+
+\path (2,-4) node[state](E){User \\ defined \\ Ref};
+
+\path (4,-4) node[state](F){Pattern/ \\ Walking \\ Mode};
+
+
+\path (2,-2) node[Data] (Data) {Shared Data \\ \tiny{i. e.: references, change state tasks}};
+
+
+\end{tikzpicture}
+\end{document}

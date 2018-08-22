@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon May 07 14:01:53 2018
+Created on Wed Aug 22 15:45:16 2018
 
-@author: AmP
+@author: Lars Schiller
 """
 
 from __future__ import print_function
@@ -21,21 +21,20 @@ from Src.Management import state_machine
 TSamplingUI = .1
 p7_ptrn = 0.0
 
-PWMREFMODE = "P9_23"
-PRESSUREREFMODE = "P9_27"
-PATTERNREFMODE = 'P9_30'  # "P9_25" doesnt work.
+MODE1 = "P9_23"
+MODE2 = "P9_27"
+MODE3 = 'P9_30'  # "P9_25" doesnt work.
 
-WALKINGCONFIRM = "P9_24"
-INFINITYMODE = "P9_26"
+FUN1 = "P9_24"
+FUN2 = "P9_26"
 
-BTNS = [PWMREFMODE, PRESSUREREFMODE, PATTERNREFMODE, WALKINGCONFIRM,
-        INFINITYMODE]
+BTNS = [MODE1, MODE2, MODE3, FUN1, FUN2]
 
-PWMLED = "P8_15"  # "P8_16"
-PRESSURELED = "P8_14"
-PATTERNLED = "P8_17"
-WALKINGCONFIRMLED = "P8_16"
-INFINITYLED = "P8_18"
+MODE1LED = "P8_15"  # "P8_16"
+MODE2LED = "P8_14"
+MODE3LED = "P8_17"
+FUN1LED = "P8_16"
+FUN2LED = "P8_18"
 
 DISCRETEPRESSUREREF = ["P9_11", "P9_17", "P9_15", "P9_13"]
 CONTINUOUSPRESSUREREF = ["P9_40", "P9_38", "P9_33", "P9_39", "P9_36",
@@ -66,16 +65,16 @@ def generate_pattern(p0, p1, p2, p3, p4, p5, p6, p7):
 
 
 class HUIThread(threading.Thread):
-    def __init__(self, cargo, rootLogger=None):
+    def __init__(self, shared_memory, rootLogger=None):
         """ """
         threading.Thread.__init__(self)
-        self.cargo = cargo
-        self.lastconfirm = time.time()
-        self.lastmode1 = time.time()
-        self.lastmode2 = time.time()
-        self.mode1 = False
-        self.mode2 = False
-        self.refzero = False
+        self.shared_memory = shared_memory
+        self.lastfun1 = time.time()
+        self.lastfun1 = time.time()
+        self.lastfun2 = time.time()
+        self.fun1 = False
+        self.fun2 = False
+
         self.rootLogger = rootLogger
         self.ptrn_idx = 0
         self.last_process_time = time.time()
@@ -85,29 +84,29 @@ class HUIThread(threading.Thread):
         self.rootLogger.info('Initialize HUI Thread ...')
         ADC.setup()
 
-        GPIO.setup(PWMREFMODE, GPIO.IN)
-        GPIO.setup(PRESSUREREFMODE, GPIO.IN)
-        GPIO.setup(PATTERNREFMODE, GPIO.IN)
-        GPIO.setup(WALKINGCONFIRM, GPIO.IN)
-        GPIO.setup(INFINITYMODE, GPIO.IN)
+        GPIO.setup(MODE1, GPIO.IN)
+        GPIO.setup(MODE2, GPIO.IN)
+        GPIO.setup(MODE3, GPIO.IN)
+        GPIO.setup(FUN1, GPIO.IN)
+        GPIO.setup(FUN2, GPIO.IN)
 
-        GPIO.setup(PWMLED, GPIO.OUT)
-        GPIO.setup(PRESSURELED, GPIO.OUT)
-        GPIO.setup(PATTERNLED, GPIO.OUT)
-        GPIO.setup(WALKINGCONFIRMLED, GPIO.OUT)
-        GPIO.setup(INFINITYLED, GPIO.OUT)
+        GPIO.setup(MODE1LED, GPIO.OUT)
+        GPIO.setup(MODE2LED, GPIO.OUT)
+        GPIO.setup(MODE3LED, GPIO.OUT)
+        GPIO.setup(FUN1LED, GPIO.OUT)
+        GPIO.setup(FUN2LED, GPIO.OUT)
 
         for pin in DISCRETEPRESSUREREF:
             GPIO.setup(pin, GPIO.IN)
 
-        GPIO.add_event_detect(PWMREFMODE, GPIO.RISING)
-        GPIO.add_event_detect(PRESSUREREFMODE, GPIO.RISING)
-        GPIO.add_event_detect(PATTERNREFMODE, GPIO.RISING)
-        GPIO.add_event_detect(WALKINGCONFIRM, GPIO.RISING)
-        GPIO.add_event_detect(INFINITYMODE, GPIO.RISING)
+        GPIO.add_event_detect(MODE1, GPIO.RISING)
+        GPIO.add_event_detect(MODE2, GPIO.RISING)
+        GPIO.add_event_detect(MODE3, GPIO.RISING)
+        GPIO.add_event_detect(FUN1, GPIO.RISING)
+        GPIO.add_event_detect(FUN2, GPIO.RISING)
 
-        self.leds = [PWMLED, PRESSURELED, PATTERNLED,
-                     WALKINGCONFIRMLED, INFINITYLED]
+        self.leds = [MODE1LED, MODE2LED, MODE3LED,
+                     FUN1LED, FUN2LED]
 
         for i in range(5):
             for led in self.leds:
@@ -149,9 +148,9 @@ class HUIThread(threading.Thread):
             print('DValve Ref', idx, ': ', True if GPIO.input(pin) else False)
 
         # check pattern btns
-        if GPIO.event_detected(INFINITYMODE):
+        if GPIO.event_detected(FUN2):
             print('Mode2 btn pushed')
-        if GPIO.event_detected(WALKINGCONFIRM):
+        if GPIO.event_detected(FUN1):
             print('WALKING START btn pushed')
 
         # check adc potis
@@ -179,7 +178,7 @@ class HUIThread(threading.Thread):
 
     def process_user_ref(self):
         self.set_mode2() 
-        if not self.mode2:
+        if not self.fun2:
             self.change_state('USER_REFERENCE')
         else:
             self.change_state('IMU_CONTROL')
@@ -194,7 +193,7 @@ class HUIThread(threading.Thread):
 
     def process_pattern_ref(self):
         self.set_mode2() 
-        if not self.mode2:
+        if not self.fun2:
             self.change_state('USER_REFERENCE')
         else:
             self.change_state('IMU_CONTROL')
@@ -220,11 +219,11 @@ class HUIThread(threading.Thread):
 
     def check_state(self):
         new_state = None
-        if GPIO.event_detected(PWMREFMODE):
+        if GPIO.event_detected(MODE1):
             new_state = 'USER_CONTROL'
-        elif GPIO.event_detected(PRESSUREREFMODE):
+        elif GPIO.event_detected(MODE2):
             new_state = 'USER_REFERENCE'
-        elif GPIO.event_detected(PATTERNREFMODE):
+        elif GPIO.event_detected(MODE3):
             new_state = 'PATTERN_REF'
 
         change = False
@@ -244,24 +243,24 @@ class HUIThread(threading.Thread):
 
     def set_leds(self):
         my_state = self.state
-        for pin, state in [(PWMLED, "USER_CONTROL"),
-                           (PRESSURELED, "USER_REFERENCE"),
-                           (PATTERNLED, "PATTERN_REF")]:
+        for pin, state in [(MODE1LED, "USER_CONTROL"),
+                           (MODE2LED, "USER_REFERENCE"),
+                           (MODE3LED, "PATTERN_REF")]:
             GPIO.output(pin, GPIO.HIGH if my_state == state else GPIO.LOW)
         if my_state == 'PATTERN_REF':
-            for pin, state in [(WALKINGCONFIRMLED, self.cargo.wcomm.is_active),
-                               (INFINITYLED, self.mode2)
+            for pin, state in [(FUN1LED, self.cargo.wcomm.is_active),
+                               (FUN2LED, self.fun2)
                                ]:
                 GPIO.output(pin, GPIO.HIGH if state else GPIO.LOW)
         elif my_state == "USER_REFERENCE":
-            GPIO.output(INFINITYLED, GPIO.HIGH if self.mode2 else GPIO.LOW)
-            GPIO.output(WALKINGCONFIRMLED, GPIO.HIGH if self.refzero else GPIO.LOW)
+            GPIO.output(FUN2LED, GPIO.HIGH if self.fun2 else GPIO.LOW)
+            GPIO.output(FUN1LED, GPIO.HIGH if self.fun1 else GPIO.LOW)
         elif my_state == "USER_CONTROL":
-            GPIO.output(INFINITYLED, GPIO.LOW)
-            GPIO.output(WALKINGCONFIRMLED, GPIO.LOW)
+            GPIO.output(FUN2LED, GPIO.LOW)
+            GPIO.output(FUN1LED, GPIO.LOW)
         elif my_state == "IMU_CONTROL":
-            GPIO.output(INFINITYLED, GPIO.LOW)
-            GPIO.output(WALKINGCONFIRMLED, GPIO.LOW)
+            GPIO.output(FUN2LED, GPIO.LOW)
+            GPIO.output(FUN1LED, GPIO.LOW)
 
     def change_state(self, state):
         self.cargo.state = state
@@ -275,7 +274,7 @@ class HUIThread(threading.Thread):
 
     def set_ref(self):
         for idx, pin in enumerate(CONTINUOUSPRESSUREREF):
-            if self.refzero:
+            if self.fun1:
                 self.cargo.ref_task[str(idx)] = 0.
             else:
                 _ = ADC.read(pin)
@@ -287,29 +286,29 @@ class HUIThread(threading.Thread):
                 True if GPIO.input(pin) else False)
 
     def set_walking(self):
-        if GPIO.event_detected(WALKINGCONFIRM):
-            if time.time()-self.lastconfirm > 1:
+        if GPIO.event_detected(FUN1):
+            if time.time()-self.lastfun1 > 1:
                 confirm = self.cargo.wcomm.confirm
                 self.cargo.wcomm.confirm = not confirm
                 self.rootLogger.info(
                         'Walking was turned {}'.format(not confirm))
-                self.lastconfirm = time.time()
+                self.lastfun1 = time.time()
 
     def set_mode2(self):
-        if GPIO.event_detected(INFINITYMODE):
-            if time.time()-self.lastmode2 > 1:
-                state = self.mode2
-                self.mode2 = not state
+        if GPIO.event_detected(FUN2):
+            if time.time()-self.lastfun2 > 1:
+                state = self.fun2
+                self.fun2 = not state
                 self.rootLogger.info('Mode2 was turned {}'.format(not state))
-                self.lastmode2 = time.time()
+                self.lastfun2 = time.time()
 
     def set_refzero(self):
-        if GPIO.event_detected(WALKINGCONFIRM):
-            if time.time()-self.lastmode1 > 1:
-                state = self.refzero
-                self.refzero = not state
+        if GPIO.event_detected(FUN1):
+            if time.time()-self.lastfun1 > 1:
+                state = self.fun1
+                self.fun1 = not state
                 self.rootLogger.info('RefZero was turned {}'.format(not state))
-                self.lastmode1 = time.time()
+                self.lastfun1 = time.time()
 
     def set_userpattern(self):
         if self.all_potis_zero():
@@ -353,9 +352,9 @@ class HUIThread(threading.Thread):
             GPIO.event_detected(btn)
 
     def reset_confirmations(self):
-        self.refzero = False
-        self.mode2 = False
-        self.mode1 = False
+        self.fun1 = False
+        self.fun2 = False
+        self.fun1 = False
         self.cargo.wcomm.confirm = False
         self.cargo.wcomm.is_active = False
 
@@ -385,7 +384,7 @@ class HUIThread(threading.Thread):
 
 
 #    def set_ctr_gain(self):
-#        if GPIO.event_detected(INFINITYMODE):
+#        if GPIO.event_detected(FUN2):
 #            if time.time()-self.lastinfmode > 1:
 #                P, I, D = self.tune_imu_ctr()
 #                self.rootLogger.info('ctr_gain was set to {}'.format([P, I, D]))

@@ -43,7 +43,7 @@ class StateMachine(object):
         """
         self.start_state = name.upper()
 
-    def run(self, cargo):
+    def run(self, cargo=None):
         """
         Run the Automaton.
 
@@ -60,7 +60,10 @@ class StateMachine(object):
                 "at least 1 state must be an end_state")
 
         while True:
-            (new_state, cargo) = handler(cargo)
+            if cargo:
+                (new_state, cargo) = handler(cargo)
+            else:
+                new_state = handler()
             if new_state.upper() in self.end_states:
                 print("reached ", new_state)
                 break

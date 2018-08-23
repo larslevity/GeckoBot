@@ -11,7 +11,7 @@ import numpy as np
 from Src.Hardware import sensors as sensors
 from Src.Hardware import actuators as actuators
 from Src.Management import state_machine
-from Src.Communication import hardware_control as HUI
+from Src.Communication import user_interface as HUI
 from Src.Math import IMUcalc
 from Src.Controller import controller as ctrlib
 
@@ -53,6 +53,8 @@ PID = [1.05, 0.03, 0.01]    # [1]
 PIDimu = [0.0117, 1.012, 0.31]
 
 START_STATE = 'PAUSE'
+PRINTSTATE = True
+
 '''
 Positions of IMUs:
 <       ^       >
@@ -105,8 +107,8 @@ def init_channels():
     for imu in imu_used:
         if imu not in imu_set and imu is not None:
             raise KeyError(
-                'IMU with name "{}" is used for angle calculation,'.format(imu)
-                + ' but is not in the set of connected IMUs')
+                'IMU with name "{}"'.format(imu) + ' is used for angle' +
+                'calculation, but is not in the set of connected IMUs')
     try:
         IMU = {}
         for name in IMUset:
@@ -162,8 +164,12 @@ def main():
 
             self.rec = {name: 0.0 for name in CHANNELset}
             self.rec_IMU = {name: 0.0 for name in IMUset}
+            self.rec_u = {name: 0.0 for name in CHANNELset}
 
-            self.rootLogger = rootLogger
+            self.pattern = DEFAULT_PATTERN
+            self.ptrndic = {'default': DEFAULT_PATTERN,
+                            'usr_ptrn': HUI.generate_pattern(
+                                0, 0, 0, 0, 0, 0, 0, 0)}
 
     rootLogger.info('Initialize Hardware ...')
     PSens, PValve, DValve, IMU, Ctr, ImuCtr = init_channels()
@@ -267,7 +273,9 @@ def main():
                                 ctr_out_ = -MAX_CTROUT
                         elif ref < other_ref or (ref == other_ref and ref > 0):
                             ctr_out_ = -MAX_CTROUT
-                    PValve[name].set_pwm(ctrlib.sys_input(ctr_out_))
+                    pwm = ctrlib.sys_input(ctr_out_)
+                    PValve[name].set_pwm(pwm)
+                    shared_memory.rec_u[name] = pwm
 
             time.sleep(shared_memory.sampling_time)
             new_state = shared_memory.task_state_of_mainthread
@@ -287,6 +295,7 @@ def main():
             for name in PValve:
                 pwm = shared_memory.pwm_task[name]
                 PValve[name].set_pwm(pwm)
+                shared_memory.rec_u[name] = pwm
             set_dvalve()
             # meta
             time.sleep(shared_memory.sampling_time)
@@ -308,7 +317,9 @@ def main():
                 ref = shared_memory.ref_task[name]
                 sys_out = shared_memory.rec[name]
                 ctr_out = Ctr[name].output(ref, sys_out)
-                PValve.set_pwm(ctrlib.sys_input(ctr_out))
+                pwm = ctrlib.sys_input(ctr_out)
+                PValve.set_pwm(pwm)
+                shared_memory.rec_u[name] = pwm
             set_dvalve()
             # meta
             time.sleep(shared_memory.sampling_time)
@@ -355,9 +366,13 @@ def main():
     automat.set_start(START_STATE)
 
     rootLogger.info('Starting Communication Thread ...')
-    communication_thread = HUI.HUIThread(shared_memory)
+    communication_thread = HUI.HUIThread(shared_memory, rootLogger)
     communication_thread.setDaemon(True)
     communication_thread.start()
+    if PRINTSTATE:
+        printer_thread = HUI.Printer(shared_memory)
+        printer_thread.setDaemon(True)
+        printer_thread.start()
     rootLogger.info('started UI Thread as daemon?: {}'.format(
             communication_thread.isDaemon()))
 

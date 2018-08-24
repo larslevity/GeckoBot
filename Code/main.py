@@ -128,7 +128,7 @@ def init_channels():
                 name=name, pwm_pin=CHANNELset[name]['pin'])
         Controller[name] = ctrlib.PidController(
                 CHANNELset[name]['ctr'], TSAMPLING, MAX_CTROUT)
-        if CHANNELset[name]['IMUs']:
+        if CHANNELset[name]['IMUs'][-1]:
             Imu_controller[name] = ctrlib.PidController(
                 CHANNELset[name]['ctrIMU'], TSAMPLING, MAX_CTROUT)
 
@@ -163,8 +163,9 @@ def main():
             self.pwm_task = {name: 20. for name in CHANNELset}
 
             self.rec = {name: 0.0 for name in CHANNELset}
-            self.rec_IMU = {name: 0.0 for name in IMUset}
+            self.rec_IMU = {name: None for name in IMUset}
             self.rec_u = {name: 0.0 for name in CHANNELset}
+            self.rec_angle = {name: None for name in CHANNELset}
 
             self.pattern = DEFAULT_PATTERN
             self.ptrndic = {'default': DEFAULT_PATTERN,
@@ -265,8 +266,8 @@ def main():
                             pressure, 1.5*MAX_PRESSURE, 1*MAX_PRESSURE)
                     ctr_out_ = cutoff(ctr_out+pressure_bound)
                     # for torso, set pwm to 0 if other ref is higher:
-                    if name in ['2', '3']:
-                        other = '2' if name == '3' else '3'
+                    if name in [2, 3]:
+                        other = 2 if name == 3 else 3
                         other_ref = shared_memory.ref_task[other]*90
                         if ref == 0 and ref == other_ref:
                             if pressure > .5:
@@ -276,6 +277,7 @@ def main():
                     pwm = ctrlib.sys_input(ctr_out_)
                     PValve[name].set_pwm(pwm)
                     shared_memory.rec_u[name] = pwm
+                    shared_memory.rec_angle[name] = round(sys_out, 2)
 
             time.sleep(shared_memory.sampling_time)
             new_state = shared_memory.task_state_of_mainthread
@@ -318,7 +320,7 @@ def main():
                 sys_out = shared_memory.rec[name]
                 ctr_out = Ctr[name].output(ref, sys_out)
                 pwm = ctrlib.sys_input(ctr_out)
-                PValve.set_pwm(pwm)
+                PValve[name].set_pwm(pwm)
                 shared_memory.rec_u[name] = pwm
             set_dvalve()
             # meta
@@ -330,6 +332,7 @@ def main():
         """ Clean everything up """
         rootLogger.info("cleaning ...")
         shared_memory.actual_state_of_mainthread = 'EXIT'
+        shared_memory.task_state_of_mainthread = 'EXIT'
 
         for name in PValve:
             PValve[name].set_pwm(0.)
@@ -346,7 +349,7 @@ def main():
         init_output()
 
         while shared_memory.task_state_of_mainthread == 'PAUSE':
-            shared_memory = read_sens()
+            shared_memory = read_sens(shared_memory)
             time.sleep(shared_memory.sampling_time)
             new_state = shared_memory.task_state_of_mainthread
         return (new_state, shared_memory)
@@ -356,7 +359,7 @@ def main():
     """ ---------------- ----- ------- ----------------------------- """
 
     rootLogger.info('Setting up the StateMachine ...')
-    automat = state_machine.StateMachine(shared_memory)
+    automat = state_machine.StateMachine()
     automat.add_state('PAUSE', pause_state)
     automat.add_state('ANGLE_REFERENCE', angle_reference)
     automat.add_state('FEED_THROUGH', feed_through)
@@ -369,19 +372,22 @@ def main():
     communication_thread = HUI.HUIThread(shared_memory, rootLogger)
     communication_thread.setDaemon(True)
     communication_thread.start()
+    rootLogger.info('started UI Thread as daemon?: {}'.format(
+            communication_thread.isDaemon()))
     if PRINTSTATE:
         printer_thread = HUI.Printer(shared_memory)
         printer_thread.setDaemon(True)
         printer_thread.start()
-    rootLogger.info('started UI Thread as daemon?: {}'.format(
-            communication_thread.isDaemon()))
+    
 
     try:
         rootLogger.info('Run the StateMachine ...')
-        automat.run()
+        automat.run(shared_memory)
     except KeyboardInterrupt:
         rootLogger.exception('keyboard interrupt detected...   killing UI')
         communication_thread.kill()
+        if PRINTSTATE:
+            printer_thread.kill()
     except Exception as err:
         rootLogger.exception(
             '\n----------caught exception! in Main Thread----------------\n')
@@ -390,8 +396,12 @@ def main():
         rootLogger.error(err, exc_info=True)
         rootLogger.info('\n ----------------------- killing UI --')
         communication_thread.kill()
+        if PRINTSTATE:
+            printer_thread.kill()
 
     communication_thread.join()
+    if PRINTSTATE:
+        printer_thread.join()
     rootLogger.info('All is done ...')
     sys.exit(0)
 

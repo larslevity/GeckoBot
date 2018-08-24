@@ -159,8 +159,8 @@ class HUIThread(threading.Thread):
 
         def change_state_in_main_thread(state):
             self.shared_memory.task_state_of_mainthread = state
-            while not self.shared_memory.actual_state_of_mainthread == state:
-                time.sleep(self.shared_memory.sampling_time)
+#            while not self.shared_memory.actual_state_of_mainthread == state:
+#                time.sleep(self.shared_memory.sampling_time)
 
         def mode_changed():
             new_state = None
@@ -170,10 +170,12 @@ class HUIThread(threading.Thread):
                 new_state = MODE[2]['ui_state']
             elif GPIO.event_detected(MODE3):
                 new_state = MODE[3]['ui_state']
+            elif self.ui_state == 'EXIT':
+                new_state = 'EXIT'
 
             change = False
             if new_state and time.time()-self.lastchange > 1:
-                if self.all_potis_zero() and new_state is not self.ui_state:
+                if all_potis_zero() and new_state is not self.ui_state or new_state == 'EXIT':
                     change = True
                     self.ui_state = new_state
                     self.rootLogger.info("UI goes to: {}".format(new_state))
@@ -288,8 +290,8 @@ class HUIThread(threading.Thread):
                     idx = self.ptrn_idx
                     idx = idx+1 if idx < len(pattern)-1 else 0
                     dvtsk, pvtsk, processtime = generate_pose_ref(pattern, idx)
-                    self.cargo.dvalve_task = dvtsk
-                    self.cargo.ref_task = pvtsk
+                    self.shared_memory.dvalve_task = dvtsk
+                    self.shared_memory.ref_task = pvtsk
 
                     self.ptrn_idx = idx
                     self.process_time = processtime
@@ -303,7 +305,7 @@ class HUIThread(threading.Thread):
         """ ---------------- RUN STATE MACHINE ------------------------- """
         """ ---------------- ----- ------- ----------------------------- """
 
-        automat = state_machine.StateMachine(self.shared_memory)
+        automat = state_machine.StateMachine()
         automat.add_state('PAUSE', pause_state)
         automat.add_state('PWM_FEED_THROUGH', pwm_feed_through)
         automat.add_state('USER_REFERENCE', user_reference)
@@ -342,9 +344,9 @@ def generate_pose_ref(pattern, idx):
     dpos = pos[-n_dvalves-1:-1]
     ppos = pos[:n_pvalves]
     for jdx, dp in enumerate(dpos):
-        dv_task[str(jdx)] = dp
+        dv_task[jdx] = dp
     for kdx, pp in enumerate(ppos):
-        pv_task[str(kdx)] = pp
+        pv_task[kdx] = pp
 
     return dv_task, pv_task, local_min_process_time
 
@@ -353,24 +355,32 @@ class Printer(threading.Thread):
     def __init__(self, shared_memory):
         threading.Thread.__init__(self)
         self.shared_memory = shared_memory
+        self.state = 'RUN'
 
     def print_state(self):
-        state_str = '\n'
+        state_str = '\n\t| Ref \t| State\n'
+        state_str = state_str + '-----------------------\n'
         for i in range(4):
-            s = 'F{} Ref/state: \t\t{}\t{}\n'.format(
+            s = '{}\t| {}\t| {}\n'.format(
                 i, True if GPIO.input(SWITCHES[i]) else False,
                 self.shared_memory.dvalve_task[i])
             state_str = state_str + s
+        state_str = state_str + '\n\t| Ref \t| p \t| PWM \t| Angle \n'
+        state_str = state_str + '-----------------------------------------\n'
         for i in range(8):
-            s = 'PWM Ref {}:\t\t{}\n'.format(i, self.shared_memory.pwm_task[i])
-            state_str = state_str + s
-        for i in range(8):
-            s = 'Pressure {} Ref/state/u/angle \t{}\t{}\t{}\t{}\n'.format(
-                i, self.shared_memory.ref_task[i], self.shared_memory.rec[i],
-                self.shared_memory.rec_u[i], self.shared_memory.rec_IMU[i])
+            rec_angle = self.shared_memory.rec_angle
+            angle = round(rec_angle[i], 2) if rec_angle[i] else None
+            s = '{}\t| {}\t| {}\t| {}\t| {}\n'.format(
+                i, self.shared_memory.ref_task[i], 
+                round(self.shared_memory.rec[i], 2),
+                round(self.shared_memory.rec_u[i], 2), angle)
             state_str = state_str + s
         print(state_str)
+        time.sleep(.1)
 
     def run(self):
-        while self.shared_memory.task_state_of_mainthread is not 'EXIT':
+        while self.state is not 'EXIT':
             self.print_state()
+
+    def kill(self):
+        self.state = 'EXIT'

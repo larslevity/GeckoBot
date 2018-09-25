@@ -1,0 +1,146 @@
+
+\documentclass[10pt]{standalone}
+\input{../tikzpic_packages.tex}
+\begin{document}
+\begin{tikzpicture}
+\tikzset{
+    part/.style={thick, color=\col},
+    foot/.style={fill=white},
+    footfixed/.style={fill=\col}}
+\def\rfoot{.1}
+        
+\def\col{black!20}
+\def\alpi{5.000000}
+\def\beti{4.000000}
+\def\gam{2.000000}
+\def\alpii{3.000000}
+\def\betii{4.000000}
+\def\gamh{1.000000}
+
+\def\eps{90.000000}
+\def\ci{84.000000}
+\def\cii{93.000000}
+\def\ciii{274.000000}
+\def\civ{267.000000}
+
+\def\ri{11.459156}
+\def\rii{14.323945}
+\def\rg{31.512679}
+\def\riii{19.098593}
+\def\riv{14.323945}
+
+\path (0.000000, 2.000000)coordinate(F1);
+
+\draw[part] (F1)arc(180+\ci:180+\ci+\alpi:\ri)coordinate(OM);
+\draw[part] (OM)arc(180+\ci+\alpi:180+\ci+\alpi+\beti:\rii)coordinate(F2);
+\draw[part] (OM)arc(90+\ci+\alpi:90+\ci+\alpi+\gam:\rg)coordinate(UM);
+\draw[part] (UM)arc(\gam+\ci+\alpi:\gam+\ci+\alpi+\alpii:\riii)coordinate(F3);
+\draw[part] (UM)arc(\gam+\ci+\alpi:\gam+\ci+\alpi-\betii:\riv)coordinate(F4);
+
+\draw[footfixed] (0.000000, 2.000000)circle(\rfoot);
+\draw[foot] (1.997463, 1.956420)circle(\rfoot);
+\draw[foot] (-0.001116, 0.795412)circle(\rfoot);
+\draw[foot] (1.997463, 0.821578)circle(\rfoot);
+
+\def\col{black!40}
+\def\alpi{22.366146}
+\def\beti{0.829909}
+\def\gam{-10.000000}
+\def\alpii{25.013043}
+\def\betii{0.977409}
+\def\gamh{-5.000000}
+
+\def\eps{88.636071}
+\def\ci{71.269925}
+\def\cii{94.465980}
+\def\ciii{288.649114}
+\def\civ{262.658662}
+
+\def\ri{2.366955}
+\def\rii{75.254369}
+\def\rg{-5.672282}
+\def\riii{2.061573}
+\def\riv{58.623938}
+
+\path (0.000000, 2.000000)coordinate(F1);
+
+\draw[part] (F1)arc(180+\ci:180+\ci+\alpi:\ri)coordinate(OM);
+\draw[part] (OM)arc(180+\ci+\alpi:180+\ci+\alpi+\beti:\rii)coordinate(F2);
+\draw[part] (OM)arc(90+\ci+\alpi:90+\ci+\alpi+\gam:\rg)coordinate(UM);
+\draw[part] (UM)arc(\gam+\ci+\alpi:\gam+\ci+\alpi+\alpii:\riii)coordinate(F3);
+\draw[part] (UM)arc(\gam+\ci+\alpi:\gam+\ci+\alpi-\betii:\riv)coordinate(F4);
+
+\draw[footfixed] (0.000000, 2.000000)circle(\rfoot);
+\draw[footfixed] (1.997463, 1.956420)circle(\rfoot);
+\draw[footfixed] (-0.001116, 0.795411)circle(\rfoot);
+\draw[foot] (1.879537, 0.771629)circle(\rfoot);
+
+\def\col{black!60}
+\def\alpi{90.000490}
+\def\beti{24.248155}
+\def\gam{55.890884}
+\def\alpii{77.952904}
+\def\betii{1.000001}
+\def\gamh{27.945442}
+
+\def\eps{68.979983}
+\def\ci{311.034051}
+\def\cii{65.282696}
+\def\ciii{354.878330}
+\def\civ{275.925424}
+
+\def\ri{0.636623}
+\def\rii{2.599182}
+\def\rg{1.240415}
+\def\riii{0.808506}
+\def\riv{57.294236}
+
+\path (1.185955, 3.509239)coordinate(F1);
+
+\draw[part] (F1)arc(180+\ci:180+\ci+\alpi:\ri)coordinate(OM);
+\draw[part] (OM)arc(180+\ci+\alpi:180+\ci+\alpi+\beti:\rii)coordinate(F2);
+\draw[part] (OM)arc(90+\ci+\alpi:90+\ci+\alpi+\gam:\rg)coordinate(UM);
+\draw[part] (UM)arc(\gam+\ci+\alpi:\gam+\ci+\alpi+\alpii:\riii)coordinate(F3);
+\draw[part] (UM)arc(\gam+\ci+\alpi:\gam+\ci+\alpi-\betii:\riv)coordinate(F4);
+
+\draw[footfixed] (1.997463, 1.956420)circle(\rfoot);
+\draw[footfixed] (-0.001116, 0.795412)circle(\rfoot);
+\draw[foot] (1.185955, 3.509239)circle(\rfoot);
+\draw[foot] (1.700355, 1.637748)circle(\rfoot);
+
+\def\col{black!80}
+\def\alpi{89.999998}
+\def\beti{14.030321}
+\def\gam{61.147234}
+\def\alpii{89.999555}
+\def\betii{14.021515}
+\def\gamh{30.573617}
+
+\def\eps{47.008882}
+\def\ci{286.435267}
+\def\cii{30.465586}
+\def\ciii{347.582055}
+\def\civ{243.560984}
+
+\def\ri{0.636605}
+\def\rii{3.675340}
+\def\rg{1.133786}
+\def\riii{0.636613}
+\def\riv{3.677648}
+
+\path (2.070674, 3.570731)coordinate(F1);
+
+\draw[part] (F1)arc(180+\ci:180+\ci+\alpi:\ri)coordinate(OM);
+\draw[part] (OM)arc(180+\ci+\alpi:180+\ci+\alpi+\beti:\rii)coordinate(F2);
+\draw[part] (OM)arc(90+\ci+\alpi:90+\ci+\alpi+\gam:\rg)coordinate(UM);
+\draw[part] (UM)arc(\gam+\ci+\alpi:\gam+\ci+\alpi+\alpii:\riii)coordinate(F3);
+\draw[part] (UM)arc(\gam+\ci+\alpi:\gam+\ci+\alpi-\betii:\riv)coordinate(F4);
+
+\draw[footfixed] (1.997463, 1.956420)circle(\rfoot);
+\draw[footfixed] (1.700355, 1.637748)circle(\rfoot);
+\draw[foot] (2.070674, 3.570731)circle(\rfoot);
+\draw[foot] (0.095105, 1.451542)circle(\rfoot);
+
+\end{tikzpicture}
+\end{document}
+        

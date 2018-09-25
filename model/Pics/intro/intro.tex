@@ -1,0 +1,218 @@
+
+\documentclass[10pt]{standalone}
+\input{../tikzpic_packages.tex}
+
+
+\begin{document}
+\begin{tikzpicture}[
+	partII/.style={gray, thick},
+	partIII/.style={thick, dashed, gray},
+	part/.style={thick, color=\col},
+	anglearrow/.style={latex-latex, red!70},
+	helpline/.style={gray},
+	foot/.style={fill=gray},
+	footIII/.style={gray, fill=lightgray},
+	lettering/.style={red!80},
+	distarrow/.style={|<->|, blue!50},
+	distlettering/.style={blue!60}
+]
+
+\def\rfoot{.1}
+\def\rradi{.05}
+
+\def\angledist{1}
+\def\fontdist{.7}
+\def\distdist{.2}
+\def\fontdistdist{.5}
+
+
+
+\path (0,0) coordinate(F1);
+
+
+
+%PARTIII
+\def\alpi{30}
+\def\beti{10}
+\def\gam{41.42}
+\def\alpii{30}
+\def\betii{10}
+\pgfmathsetmacro{\gamh}{\gam*.5}
+
+\def\lleg{3}
+
+\def\li{1.0}
+\def\lii{1.0}
+\def\ltor{1.1}
+\def\liii{1}
+\def\liv{1.}
+
+\def\eps{90}
+\pgfmathsetmacro{\ci}{55}
+\pgfmathsetmacro{\cii}{\ci+\alpi+\beti}
+\pgfmathsetmacro{\ciii}{180 + \gam + \ci + \alpi + \alpii}
+\pgfmathsetmacro{\civ}{180 + \gam + \ci + \alpi - \betii}
+
+
+\def\pi{3.14159}
+
+\pgfmathsetmacro{\ri}{1/\alpi*\li*180/\pi}
+\pgfmathsetmacro{\rii}{\lii/\beti*180/\pi}
+\pgfmathsetmacro{\rg}{\ltor/\gam*180/\pi}
+\pgfmathsetmacro{\riii}{\liii/\alpii*180/\pi}
+\pgfmathsetmacro{\riv}{\liv/\betii*180/\pi}
+
+
+%\path (0,0) coordinate(F1);
+%% F1
+\draw[partIII] (F1)arc(180+\ci:180+\ci+\alpi:\ri)coordinate(OM);
+
+%% F2
+\draw[partIII] (OM)arc(180+\ci+\alpi:180+\ci+\alpi+\beti:\rii)coordinate(F2);
+
+%% UM
+\draw[partIII] (OM)arc(90+\ci+\alpi:90+\ci+\alpi+\gam:\rg)coordinate(UM);
+
+%% F3
+\draw[partIII] (UM)arc(\gam+\ci+\alpi:\gam+\ci+\alpi+\alpii:\riii)coordinate(F3);
+
+%% F4
+\draw[partIII] (UM)arc(\gam+\ci+\alpi:\gam+\ci+\alpi-\betii:\riv)coordinate(F4);
+
+%\draw[footIII] (F1)circle(\rfoot);
+%\draw[footIII] (F2)circle(\rfoot);
+\draw[footIII] (F3)circle(\rfoot);
+\draw[footIII] (F4)circle(\rfoot);
+
+
+%% Ausgangsposition
+
+
+\def\alpi{30}
+\def\beti{10}
+\def\gam{10}
+\def\alpii{30}
+\def\betii{10}
+\pgfmathsetmacro{\gamh}{\gam*.5}
+
+\def\lleg{3}
+
+\def\li{1}
+\def\lii{1}
+\def\ltor{1.1}
+\def\liii{1}
+\def\liv{1}
+
+\def\eps{90}
+\pgfmathsetmacro{\ci}{\eps-\alpi-\gamh}
+\pgfmathsetmacro{\cii}{\ci+\alpi+\beti}
+\pgfmathsetmacro{\ciii}{180 + \gam + \ci + \alpi + \alpii}
+\pgfmathsetmacro{\civ}{180 + \gam + \ci + \alpi - \betii}
+
+
+\def\pi{3.14159}
+
+\pgfmathsetmacro{\ri}{\li/\alpi*180/\pi}
+\pgfmathsetmacro{\rii}{\lii/\beti*180/\pi}
+\pgfmathsetmacro{\rg}{\ltor/\gam*180/\pi}
+\pgfmathsetmacro{\riii}{\liii/\alpii*180/\pi}
+\pgfmathsetmacro{\riv}{\liv/\betii*180/\pi}
+
+\def\col{black!100}
+
+%% F1
+\draw[part] (F1)arc(180+\ci:180+\ci+\alpi:\ri)coordinate(OM);
+
+%% F2
+\draw[part] (OM)arc(180+\ci+\alpi:180+\ci+\alpi+\beti:\rii)coordinate(F2);
+
+%% UM
+\draw[part] (OM)arc(90+\ci+\alpi:90+\ci+\alpi+\gam:\rg)coordinate(UM);
+
+%% F3
+\draw[part] (UM)arc(\gam+\ci+\alpi:\gam+\ci+\alpi+\alpii:\riii)coordinate(F3);
+
+%% F4
+\draw[part] (UM)arc(\gam+\ci+\alpi:\gam+\ci+\alpi-\betii:\riv)coordinate(F4);
+
+
+
+%PARTII
+
+
+
+\def\alpi{1}
+\def\beti{48.73}
+\def\gam{41.42}
+\def\alpii{4.13}
+\def\betii{41.81}
+\pgfmathsetmacro{\gamh}{\gam*.5}
+
+\def\lleg{3}
+
+\def\li{1.01}
+\def\lii{1.01}
+\def\ltor{1.055}
+\def\liii{.99}
+\def\liv{1.02}
+
+\def\eps{88.7}
+\pgfmathsetmacro{\ci}{\eps-\alpi-\gamh}
+\pgfmathsetmacro{\cii}{\ci+\alpi+\beti}
+\pgfmathsetmacro{\ciii}{180 + \gam + \ci + \alpi + \alpii}
+\pgfmathsetmacro{\civ}{180 + \gam + \ci + \alpi - \betii}
+
+
+\def\pi{3.14159}
+
+\pgfmathsetmacro{\ri}{1/\alpi*\li*180/\pi}
+\pgfmathsetmacro{\rii}{\lii/\beti*180/\pi}
+\pgfmathsetmacro{\rg}{\ltor/\gam*180/\pi}
+\pgfmathsetmacro{\riii}{\liii/\alpii*180/\pi}
+\pgfmathsetmacro{\riv}{\liv/\betii*180/\pi}
+
+%
+%%% COS
+%\path (-8,-1) coordinate(O)node[below]{\{0\}};
+%\draw[-latex] (O)--++(1,0)node[below]{$x$};
+%\draw[-latex] (O)--++(0,1)node[left]{$y$};
+
+
+
+%\path (0,0) coordinate(F1);
+%% F1
+\draw[partII] (F1)arc(180+\ci:180+\ci+\alpi:\ri)coordinate(OM);
+
+%% F2
+\draw[partII] (OM)arc(180+\ci+\alpi:180+\ci+\alpi+\beti:\rii)coordinate(F2);
+
+%% UM
+\draw[partII] (OM)arc(90+\ci+\alpi:90+\ci+\alpi+\gam:\rg)coordinate(UM);
+
+%% F3
+\draw[partII] (UM)arc(\gam+\ci+\alpi:\gam+\ci+\alpi+\alpii:\riii)coordinate(F3);
+
+%% F4
+\draw[partII] (UM)arc(\gam+\ci+\alpi:\gam+\ci+\alpi-\betii:\riv)coordinate(F4);
+
+
+
+
+\draw[foot] (F1)circle(\rfoot);
+\draw[foot] (F2)circle(\rfoot);
+\draw[foot] (F3)circle(\rfoot);
+\draw[foot] (F4)circle(\rfoot);
+
+
+
+
+
+
+
+
+
+
+
+
+\end{tikzpicture}
+\end{document}

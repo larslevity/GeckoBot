@@ -1,0 +1,223 @@
+
+\documentclass[10pt]{standalone}
+\input{../tikzpic_packages.tex}
+\begin{document}
+\begin{tikzpicture}
+\tikzset{
+    part/.style={line width = 1mm, color=\col},
+    foot/.style={fill=white},
+    footfixed/.style={fill=\col},
+    grid line/.style={white},
+    start line/.style={help lines}}
+\def\rfoot{.1}
+
+\foreach \y in {0,1,2,3,4,5,6,7,8}{
+    \draw[grid line] (0.000000, 0.000000)++(-.2,-2+\y)--++(2,0);
+}
+\foreach \x in {0,1,2}{
+    \draw[grid line] (0.000000, 0.000000)++(-.2+\x,-2)--++(0,8);
+}
+\draw[start line] (0.000000, 0.000000)++(-.2,0)--++(2,0);
+
+\def\col{black!20}
+\def\alpi{86.000000}
+\def\beti{4.000000}
+\def\gam{-110.000000}
+\def\alpii{83.000000}
+\def\betii{4.000000}
+\def\gamh{-55.000000}
+
+\def\eps{90.000000}
+\def\ci{59.000000}
+\def\cii{149.000000}
+\def\ciii{298.000000}
+\def\civ{211.000000}
+
+\def\ri{0.666230}
+\def\rii{14.323945}
+\def\rg{-0.572958}
+\def\riii{0.690311}
+\def\riv{14.323945}
+
+\path (0.000000, 0.000000)coordinate(F1);
+
+\draw[part] (F1)arc(180+\ci:180+\ci+\alpi:\ri)coordinate(OM);
+\draw[part] (OM)arc(180+\ci+\alpi:180+\ci+\alpi+\beti:\rii)coordinate(F2);
+\draw[part] (OM)arc(90+\ci+\alpi:90+\ci+\alpi+\gam:\rg)coordinate(UM);
+\draw[part] (UM)arc(\gam+\ci+\alpi:\gam+\ci+\alpi+\alpii:\riii)coordinate(F3);
+\draw[part] (UM)arc(\gam+\ci+\alpi:\gam+\ci+\alpi-\betii:\riv)coordinate(F4);
+
+\draw[footfixed] (0.000000, 0.000000)circle(\rfoot);
+\draw[foot] (1.433406, 1.027437)circle(\rfoot);
+\draw[foot] (-0.000673, -0.536180)circle(\rfoot);
+\draw[foot] (1.433406, -1.588243)circle(\rfoot);
+
+\def\col{black!33}
+\def\alpi{86.000001}
+\def\beti{4.000000}
+\def\gam{-110.000000}
+\def\alpii{83.000000}
+\def\betii{4.000000}
+\def\gamh{-55.000000}
+
+\def\eps{90.000005}
+\def\ci{59.000005}
+\def\cii{149.000005}
+\def\ciii{298.000005}
+\def\civ{211.000005}
+
+\def\ri{0.666230}
+\def\rii{14.323945}
+\def\rg{-0.572958}
+\def\riii{0.690311}
+\def\riv{14.323945}
+
+\path (0.000000, 0.000000)coordinate(F1);
+
+\draw[part] (F1)arc(180+\ci:180+\ci+\alpi:\ri)coordinate(OM);
+\draw[part] (OM)arc(180+\ci+\alpi:180+\ci+\alpi+\beti:\rii)coordinate(F2);
+\draw[part] (OM)arc(90+\ci+\alpi:90+\ci+\alpi+\gam:\rg)coordinate(UM);
+\draw[part] (UM)arc(\gam+\ci+\alpi:\gam+\ci+\alpi+\alpii:\riii)coordinate(F3);
+\draw[part] (UM)arc(\gam+\ci+\alpi:\gam+\ci+\alpi-\betii:\riv)coordinate(F4);
+
+\draw[footfixed] (0.000000, 0.000000)circle(\rfoot);
+\draw[footfixed] (1.433406, -1.588242)circle(\rfoot);
+\draw[foot] (1.433406, 1.027437)circle(\rfoot);
+\draw[foot] (-0.000673, -0.536180)circle(\rfoot);
+
+\def\col{black!46}
+\def\alpi{4.000000}
+\def\beti{86.000000}
+\def\gam{110.000000}
+\def\alpii{4.000000}
+\def\betii{83.000000}
+\def\gamh{55.000000}
+
+\def\eps{89.588933}
+\def\ci{30.588933}
+\def\cii{120.588933}
+\def\ciii{328.588933}
+\def\civ{241.588933}
+
+\def\ri{14.323926}
+\def\rii{0.662811}
+\def\rg{0.569249}
+\def\riii{14.165572}
+\def\riv{0.690311}
+
+\path (0.011963, 2.064128)coordinate(F1);
+
+\draw[part] (F1)arc(180+\ci:180+\ci+\alpi:\ri)coordinate(OM);
+\draw[part] (OM)arc(180+\ci+\alpi:180+\ci+\alpi+\beti:\rii)coordinate(F2);
+\draw[part] (OM)arc(90+\ci+\alpi:90+\ci+\alpi+\gam:\rg)coordinate(UM);
+\draw[part] (UM)arc(\gam+\ci+\alpi:\gam+\ci+\alpi+\alpii:\riii)coordinate(F3);
+\draw[part] (UM)arc(\gam+\ci+\alpi:\gam+\ci+\alpi-\betii:\riv)coordinate(F4);
+
+\draw[footfixed] (1.433406, 1.027437)circle(\rfoot);
+\draw[footfixed] (-0.000673, -0.536180)circle(\rfoot);
+\draw[foot] (0.011963, 2.064128)circle(\rfoot);
+\draw[foot] (1.434830, 0.496339)circle(\rfoot);
+
+\def\col{black!60}
+\def\alpi{86.000000}
+\def\beti{4.000000}
+\def\gam{-110.000001}
+\def\alpii{83.000000}
+\def\betii{4.000000}
+\def\gamh{-55.000000}
+
+\def\eps{90.098955}
+\def\ci{59.098955}
+\def\cii{149.098956}
+\def\ciii{298.098955}
+\def\civ{211.098955}
+
+\def\ri{0.661948}
+\def\rii{14.323603}
+\def\rg{-0.568313}
+\def\riii{0.690318}
+\def\riv{14.125733}
+
+\path (0.011963, 2.064128)coordinate(F1);
+
+\draw[part] (F1)arc(180+\ci:180+\ci+\alpi:\ri)coordinate(OM);
+\draw[part] (OM)arc(180+\ci+\alpi:180+\ci+\alpi+\beti:\rii)coordinate(F2);
+\draw[part] (OM)arc(90+\ci+\alpi:90+\ci+\alpi+\gam:\rg)coordinate(UM);
+\draw[part] (UM)arc(\gam+\ci+\alpi:\gam+\ci+\alpi+\alpii:\riii)coordinate(F3);
+\draw[part] (UM)arc(\gam+\ci+\alpi:\gam+\ci+\alpi-\betii:\riv)coordinate(F4);
+
+\draw[footfixed] (0.011963, 2.064128)circle(\rfoot);
+\draw[footfixed] (1.434831, 0.496339)circle(\rfoot);
+\draw[foot] (1.437868, 3.092795)circle(\rfoot);
+\draw[foot] (0.006482, 1.534336)circle(\rfoot);
+
+\def\col{black!73}
+\def\alpi{4.000000}
+\def\beti{86.000000}
+\def\gam{110.000000}
+\def\alpii{4.000000}
+\def\betii{83.000000}
+\def\gamh{55.000000}
+
+\def\eps{89.563129}
+\def\ci{30.563129}
+\def\cii{120.563129}
+\def\ciii{328.563130}
+\def\civ{241.563130}
+
+\def\ri{14.324369}
+\def\rii{0.661719}
+\def\rg{0.568082}
+\def\riii{14.115453}
+\def\riv{0.690315}
+
+\path (0.018330, 4.129831)coordinate(F1);
+
+\draw[part] (F1)arc(180+\ci:180+\ci+\alpi:\ri)coordinate(OM);
+\draw[part] (OM)arc(180+\ci+\alpi:180+\ci+\alpi+\beti:\rii)coordinate(F2);
+\draw[part] (OM)arc(90+\ci+\alpi:90+\ci+\alpi+\gam:\rg)coordinate(UM);
+\draw[part] (UM)arc(\gam+\ci+\alpi:\gam+\ci+\alpi+\alpii:\riii)coordinate(F3);
+\draw[part] (UM)arc(\gam+\ci+\alpi:\gam+\ci+\alpi-\betii:\riv)coordinate(F4);
+
+\draw[footfixed] (1.437868, 3.092795)circle(\rfoot);
+\draw[footfixed] (0.006482, 1.534335)circle(\rfoot);
+\draw[foot] (0.018330, 4.129831)circle(\rfoot);
+\draw[foot] (1.440528, 2.563290)circle(\rfoot);
+
+\def\col{black!86}
+\def\alpi{86.000002}
+\def\beti{3.999999}
+\def\gam{-109.999999}
+\def\alpii{83.000001}
+\def\betii{4.000001}
+\def\gamh{-54.999999}
+
+\def\eps{90.104888}
+\def\ci{59.104885}
+\def\cii{149.104886}
+\def\ciii{298.104890}
+\def\civ{211.104888}
+
+\def\ri{0.661687}
+\def\rii{14.324036}
+\def\rg{-0.568048}
+\def\riii{0.690318}
+\def\riv{14.113063}
+
+\path (0.018330, 4.129831)coordinate(F1);
+
+\draw[part] (F1)arc(180+\ci:180+\ci+\alpi:\ri)coordinate(OM);
+\draw[part] (OM)arc(180+\ci+\alpi:180+\ci+\alpi+\beti:\rii)coordinate(F2);
+\draw[part] (OM)arc(90+\ci+\alpi:90+\ci+\alpi+\gam:\rg)coordinate(UM);
+\draw[part] (UM)arc(\gam+\ci+\alpi:\gam+\ci+\alpi+\alpii:\riii)coordinate(F3);
+\draw[part] (UM)arc(\gam+\ci+\alpi:\gam+\ci+\alpi-\betii:\riv)coordinate(F4);
+
+\draw[footfixed] (0.018330, 4.129831)circle(\rfoot);
+\draw[footfixed] (1.440528, 2.563289)circle(\rfoot);
+\draw[foot] (1.443797, 5.158596)circle(\rfoot);
+\draw[foot] (0.012556, 3.600397)circle(\rfoot);
+
+\draw[start line] (0.000000, 4.129831)++(-.2,0)--++(2,0);
+        
+\end{tikzpicture}
+\end{document}

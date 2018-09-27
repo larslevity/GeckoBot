@@ -13,7 +13,7 @@ class PseudoIntegrator(object):
     def __init__(self, step=1):
         self.step = step
         self.integ = 0
-        self.weight_of_present = 0.01
+        self.weight_of_present = 0.005
 
     def integrate(self, measurement):
         self.integ = (self.integ*(1.-self.weight_of_present)
@@ -30,7 +30,7 @@ step = .001
 t = np.arange(0, 1, step)
 
 
-pressure = [1-1*np.exp(-10*dt) + np.exp(-4*dt)*2*np.sin(dt*2*np.pi) for dt in t]
+pressure = [1-1*np.exp(-10*dt) + np.exp(-4*dt)*5*np.sin(dt*2*np.pi) for dt in t]
 
 
 integrator = PseudoIntegrator(step)
@@ -53,6 +53,7 @@ for idx, p in enumerate(pressure):
 
 plt.figure('pressure')
 plt.plot(t, pressure)
+plt.plot([0, 1], [1, 1], 'k--')
 for x in xc:
     plt.plot([x, x], [0, max(pressure)], 'k.-')
 

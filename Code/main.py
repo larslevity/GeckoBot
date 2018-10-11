@@ -56,12 +56,43 @@ ptrn_v2_6 = HUI.generate_pattern(.77, 0.99, 0.97, 0.93, 0.70, 0.71, 0.0, 0.0)
 ptrn_v3_0 = HUI.generate_pattern(.63, 0.56, 0.99, 0.99, 0.55, 0.73, 0.0, 0.0)
 ptrn_v3_pres = 1
 
+
+
+t_move = 1.5
+t_boost = .3
+t_fix = .66
+t_dfx = .25
+p_b = 1.5
+p01 = 0.25
+p11 = 0.25
+p41 = 0.25
+p51 = 0.25
+p0 = .63
+p1 = .56
+p2 = .99
+p3 = .99
+p4 = .55
+p5 = 0.73
+p6 = 0.0
+p7 = 0.0
+data = [
+    [p01, p_b, p_b, 0.0, p41, p_b, p6, 0.0, False, True, True, False, t_boost],
+    [p01, p1, p2, 0.0, p41, p5, p6, 0.0, False, True, True, False, t_move],
+    [0.0, p1, p2, 0.0, p41, p5, p6, 0.0, True, True, True, True, t_fix],
+    [0.0, p1, p2, 0.0, p41, p5, p6, 0.0, True, False, False, True, t_dfx],
+    [p_b, p11, 0.0, p_b, p_b, p51, 0.0, p7, True, False, False, True, t_boost],
+    [p0, p11, 0.0, p3, p4, p51, 0.0, p7, True, False, False, True, t_move],
+    [p0, 0.0, 0.0, p3, p4, p51, 0.0, p7, True, True, True, True, t_fix],
+    [p0, 0.0, 0.0, p3, p4, p51, 0.0, p7, False, True, True, False, t_dfx]
+    ]
+
+
 # MAX_PRESSURE = 0.85    # [bar] v2.2
 # MAX_PRESSURE = 0.93    # [bar] v2.3
 # MAX_PRESSURE = 0.85      # [bar] v2.4
 
 MAX_PRESSURE = ptrn_v3_pres
-DEFAULT_PATTERN = ptrn_v3_0      # default pattern
+DEFAULT_PATTERN = data      # default pattern
 
 MAX_CTROUT = 0.50     # [10V]
 TSAMPLING = 0.001     # [sec]

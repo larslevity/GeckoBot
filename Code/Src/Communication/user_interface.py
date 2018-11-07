@@ -117,7 +117,7 @@ def generate_pattern(p0, p1, p2, p3, p4, p5, p6, p7):
 
 
 class HUIThread(threading.Thread):
-    def __init__(self, shared_memory, rootLogger=None):
+    def __init__(self, shared_memory, rootLogger=None, camerasock=None):
         """ """
         threading.Thread.__init__(self)
         self.shared_memory = shared_memory
@@ -137,6 +137,9 @@ class HUIThread(threading.Thread):
 
         self.rootLogger = rootLogger
         self.rootLogger.info('Initialize HUI Thread ...')
+
+        self.camerasock = camerasock
+        self.camidx = 0
 
         ADC.setup()
 
@@ -296,6 +299,12 @@ class HUIThread(threading.Thread):
                     self.ptrn_idx = idx
                     self.process_time = processtime
                     self.last_process_time = time.time()
+
+                    # capture image?
+                    if self.camerasock:
+                        if idx % 3 == 1:
+                            self.camerasock.make_image('test'+str(self.camidx))
+                            self.camidx += 1
 
                 time.sleep(UI_TSAMPLING)
                 set_leds()

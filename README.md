@@ -24,5 +24,8 @@ The following figure shows the output of the model for the gait pattern of a cur
 ![principle sketch of the hardware and software structure](https://github.com/larslevity/GeckoBot/blob/master/Pictures/gesamtsystem_HUI.png)
 
 
+This repository also provides a kinematic model of the robot that is capable of predicting how the robot will deform under a given pressure.
+With the help of this model, new gait patterns can be tested much more easily.
+The following figure shows the output of the model for the gait pattern of a curve.
 
 

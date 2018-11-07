@@ -11,9 +11,12 @@ import numpy as np
 from Src.Hardware import sensors as sensors
 from Src.Hardware import actuators as actuators
 from Src.Management import state_machine
+from Src.Management import timeout
+from Src.Management import exception
 from Src.Communication import user_interface as HUI
 from Src.Math import IMUcalc
 from Src.Controller import controller as ctrlib
+from Src.Visual.PiCamera import client
 
 
 logPath = "log/"
@@ -30,6 +33,19 @@ consoleHandler = logging.StreamHandler()
 consoleHandler.setFormatter(logFormatter)
 rootLogger.addHandler(consoleHandler)
 
+
+# ------------ CAMERA INIT
+
+
+with timeout.timeout(2):
+    try:
+        client.start_server('134.28.136.49')
+        time.sleep(1)
+        camerasock = client.ClientSocket('134.28.136.49')
+    except exception.TimeoutError:
+        camerasock = None
+
+# ------------ PATTERN INIT
 
 ptrn_v2_2 = HUI.generate_pattern(.80, 0.80, 0.90, 0.99, 0.80, 0.80, 0.0, 0.0)
 ptrn_v2_3 = HUI.generate_pattern(.72, 0.74, 0.99, 0.99, 0.69, 0.63, 0.0, 0.0)
@@ -54,6 +70,9 @@ PIDimu = [0.0117, 1.012, 0.31]
 
 START_STATE = 'PAUSE'
 PRINTSTATE = True
+
+
+# ------------ CHANNELS INIT
 
 '''
 Positions of IMUs:
@@ -369,7 +388,7 @@ def main():
     automat.set_start(START_STATE)
 
     rootLogger.info('Starting Communication Thread ...')
-    communication_thread = HUI.HUIThread(shared_memory, rootLogger)
+    communication_thread = HUI.HUIThread(shared_memory, rootLogger, camerasock)
     communication_thread.setDaemon(True)
     communication_thread.start()
     rootLogger.info('started UI Thread as daemon?: {}'.format(

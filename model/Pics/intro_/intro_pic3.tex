@@ -1,0 +1,81 @@
+
+\documentclass[10pt]{standalone}
+\input{../tikzpic_packages.tex}
+\begin{document}
+\begin{tikzpicture}
+\tikzset{
+    part/.style={line width = 1mm, color=\col},
+    foot/.style={fill=white},
+    footfixed/.style={fill=darkgray},
+    grid line/.style={white},
+    start line/.style={help lines}}
+\def\rfoot{.1}
+
+\def\col{gray}
+\def\alpi{1.000000}
+\def\beti{90.000000}
+\def\gam{90.000000}
+\def\alpii{1.000000}
+\def\betii{90.000000}
+\def\gamh{45.000000}
+
+\def\eps{90.000000}
+\def\ci{44.000000}
+\def\cii{135.000000}
+\def\ciii{316.000000}
+\def\civ{225.000000}
+
+\def\ri{57.295780}
+\def\rii{0.636620}
+\def\rg{0.700282}
+\def\riii{57.295780}
+\def\riv{0.636620}
+
+\path (0.000000, 0.000000)coordinate(F1);
+
+\draw[part] (F1)arc(180+\ci:180+\ci+\alpi:\ri)coordinate(OM);
+\draw[part] (OM)arc(180+\ci+\alpi:180+\ci+\alpi+\beti:\rii)coordinate(F2);
+\draw[part] (OM)arc(90+\ci+\alpi:90+\ci+\alpi+\gam:\rg)coordinate(UM);
+\draw[part] (UM)arc(\gam+\ci+\alpi:\gam+\ci+\alpi+\alpii:\riii)coordinate(F3);
+\draw[part] (UM)arc(\gam+\ci+\alpi:\gam+\ci+\alpi-\betii:\riv)coordinate(F4);
+
+\draw[footfixed] (0.000000, 0.000000)circle(\rfoot);
+\draw[foot] (1.601217, -0.713241)circle(\rfoot);
+\draw[foot] (0.000000, -2.416831)circle(\rfoot);
+\draw[foot] (1.601217, -1.703589)circle(\rfoot);
+
+\def\col{black}
+\def\alpi{36.557277}
+\def\beti{6.527739}
+\def\gam{10.000000}
+\def\alpii{1.000000}
+\def\betii{10.897183}
+\def\gamh{5.000000}
+
+\def\eps{78.407884}
+\def\ci{36.850607}
+\def\cii{79.935623}
+\def\ciii{264.407884}
+\def\civ{252.510701}
+
+\def\ri{1.410559}
+\def\rii{7.899550}
+\def\rg{5.672320}
+\def\riii{57.153228}
+\def\riv{5.782327}
+
+\path (0.000000, 0.000000)coordinate(F1);
+
+\draw[part] (F1)arc(180+\ci:180+\ci+\alpi:\ri)coordinate(OM);
+\draw[part] (OM)arc(180+\ci+\alpi:180+\ci+\alpi+\beti:\rii)coordinate(F2);
+\draw[part] (OM)arc(90+\ci+\alpi:90+\ci+\alpi+\gam:\rg)coordinate(UM);
+\draw[part] (UM)arc(\gam+\ci+\alpi:\gam+\ci+\alpi+\alpii:\riii)coordinate(F3);
+\draw[part] (UM)arc(\gam+\ci+\alpi:\gam+\ci+\alpi-\betii:\riv)coordinate(F4);
+
+\draw[footfixed] (0.000000, 0.000000)circle(\rfoot);
+\draw[footfixed] (1.601223, -0.713235)circle(\rfoot);
+\draw[footfixed] (1.601191, -1.703523)circle(\rfoot);
+\draw[foot] (-0.464611, -1.368592)circle(\rfoot);
+
+\end{tikzpicture}
+\end{document}

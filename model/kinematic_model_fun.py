@@ -374,11 +374,11 @@ def tikz_interface(data, data_fp, data_nfp, data_x, name='Pics/py/gait.tex',
 \\tikzset{
     part/.style={line width = 1mm, color=\\col},
     foot/.style={fill=white},
-    footfixed/.style={fill=\\col},
+    footfixed/.style={fill=%s},
     grid line/.style={white},
     start line/.style={help lines}}
 \\def\\rfoot{.1}
-"""
+""" % 'darkgray' if typ == 'plain' else '\\col'
 
     header_straight = """
 \\foreach \\y in {0,1,2,3,4,5,6,7,8}{
@@ -414,6 +414,8 @@ def tikz_interface(data, data_fp, data_nfp, data_x, name='Pics/py/gait.tex',
     text_file.write(header)
     if typ == "straight":
         text_file.write(header_straight)
+    elif typ == "plain":
+        pass
     else:
         text_file.write(header_curve)
 
@@ -492,6 +494,8 @@ def tikz_interface(data, data_fp, data_nfp, data_x, name='Pics/py/gait.tex',
 """
     if typ == 'straight':
         text_file.write(footer_straight)
+    elif typ == "plain":
+        pass
     else:
         text_file.write(footer_curve)
     text_file.write(footer)

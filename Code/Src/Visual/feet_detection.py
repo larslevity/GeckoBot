@@ -8,27 +8,23 @@ Created on Tue Nov 06 15:43:23 2018
 
 import numpy as np
 import cv2
-import matplotlib.pyplot as plt
 
 
-filename = 'test{}.png'
-center = []
 
-debug = True
+cap = cv2.VideoCapture(0) # Set Capture Device, in case of a USB Webcam try 1, or give -1 to get a list of available devices
+ret, frame = cap.read()
 
-
-def debug_helper(img, name='img'):
+def debug_helper(img, name='img', debug=False):
         if debug:
             cv2.imshow(name, img)
             cv2.waitKey(0)
 
 
-
-for i in range(1, 8):
-    # for i in [3]:
-
-    img = cv2.imread(filename.format(i), 1)
-    img = cv2.medianBlur(img, 5)
+def detect_circles(filename='test.png', debug=False):
+    img = cv2.imread(filename, 1)
+    debug_helper(img, debug=debug)
+#    img = cv2.medianBlur(img, 5)
+    debug_helper(img, debug=debug)
 
     # detect green:
     img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
@@ -36,20 +32,13 @@ for i in range(1, 8):
     upper_red = np.array([10, 255, 255])
     gray = cv2.inRange(img_hsv, lower_red, upper_red)
 
-#    cv2.imshow('gray', gray)
-#    cv2.waitKey(0)
-
     # Adaptive Guassian Threshold is to detect sharp edges in the Image.
-    # For more information Google it.
     gray = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                                  cv2.THRESH_BINARY, 11, 3.5)
 
     kernel = np.ones((3, 3), np.uint8)
     gray = cv2.erode(gray, kernel, iterations=1)
     gray = cv2.dilate(gray, kernel, iterations=1)
-
-#    cv2.imshow('gray', gray)
-#    cv2.waitKey(0)
 
     # detect circles in the image
 #    circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, dp=11, minDist=101,  # Works for Picture 1
@@ -106,30 +95,12 @@ for i in range(1, 8):
                 # print x, y, idx, idx_sorted[idx]
                 cv2.putText(img, str(idx_sorted[idx]), (x, y-10), font,
                             fontscale, col, 2)
-                centers[idx_sorted[idx]] = (x, y)
-            debug_helper(img)
+                centers[idx_sorted[idx]] = (x, y, r)
+            debug_helper(img, debug=debug)
 
-    # Display the resulting frame
-    print centers
-#    cv2.imshow('gray', gray)
-#    cv2.imshow('frame', img)
-    cv2.waitKey(0)
+    return centers
+
+
+if __name__ == '__main__':
+    print detect_circles(debug=True)
     cv2.destroyAllWindows()
-
-    center.append(centers)
-
-
-c_y = [[-i[j][1] for i in center] for j in range(4)]
-c_x = [[-i[j][0] for i in center] for j in range(4)]
-
-
-delta = [0, 20, 40, 50]
-
-for i in range(4):
-    plt.plot(c_y[i], label='y{}'.format(i))
-plt.legend()
-
-plt.figure()
-for i in range(4):
-    plt.plot(c_x[i], label='x{}'.format(i))
-plt.legend()

@@ -8,6 +8,7 @@ Created on Tue Nov 06 15:43:23 2018
 
 import numpy as np
 import cv2
+import imutils
 
 
 def debug_helper(img, name='img', debug=False):
@@ -21,15 +22,19 @@ def detect_circles(filename, debug=False):
         img = cv2.imread(filename, 1)
     else:
         img = filename
-    debug_helper(img, debug=debug)
+    img = imutils.resize(img, width=700)
+#    debug_helper(img, debug=debug)
     img = cv2.medianBlur(img, 5)
-    debug_helper(img, debug=debug)
+#    debug_helper(img, debug=debug)
 
     # detect green:
     img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-    lower_red = np.array([0, 60, 60])
-    upper_red = np.array([10, 255, 255]) # hsv
-    gray = cv2.inRange(img_hsv, lower_red, upper_red)
+#    lower_red = np.array([0, 60, 60])
+#    upper_red = np.array([10, 255, 255]) # hsv
+#    gray = cv2.inRange(img_hsv, lower_red, upper_red)
+    lower_green = np.array([40, 120, 120])
+    upper_green = np.array([50, 255, 255]) # hsv
+    gray = cv2.inRange(img_hsv, lower_green, upper_green)
     debug_helper(gray, debug=debug)
 
     # Adaptive Guassian Threshold is to detect sharp edges in the Image.
@@ -109,14 +114,12 @@ if __name__ == '__main__':
     try:
         import picamera
         import picamera.array
-        import imutils
-
         import time
         picam = True
     except ImportError:
         picam = False
         print 'No PiCam Found'
-        img = 'test.png'
+        img = 'test1.jpg'
     
     if picam:
         with picamera.PiCamera() as camera:
@@ -127,7 +130,7 @@ if __name__ == '__main__':
             with picamera.array.PiRGBArray(camera) as stream:
                 camera.capture(stream, format='bgr')
                 img = stream.array
-                img = imutils.resize(img, width=700)
     
-    print detect_circles(img, debug=True)
+    circs, img = detect_circles(img, debug=True)
+    print circs
     cv2.destroyAllWindows()

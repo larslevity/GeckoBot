@@ -120,14 +120,14 @@ if __name__ == '__main__':
     
     if picam:
         with picamera.PiCamera() as camera:
-            camera.resolution=(320, 240)
+            camera.resolution = (640, 480)
             # Start a preview and let the camera warm up for 2 seconds
             camera.start_preview()
             time.sleep(1)
             with picamera.array.PiRGBArray(camera) as stream:
                 camera.capture(stream, format='bgr')
                 img = stream.array
-                img = imutils.resize(img, width=400)
+                img = imutils.resize(img, width=700)
     
     print detect_circles(img, debug=True)
     cv2.destroyAllWindows()

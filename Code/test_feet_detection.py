@@ -15,17 +15,15 @@ from Src.Visual.PiCamera.PiVideoStream import PiVideoStream
 from Src.Visual import feet_detection as fd
 
 
-
 def main(testtime=100, disp=False):
 
+    print("[INFO] warm up the camera sensor...")
     vs = PiVideoStream().start()
     # allow the camera sensor to warmup
     time.sleep(2.0)
 
-
     # created a *threaded *video stream, and start the FPS counter
     print("[INFO] sampling THREADED frames from `picamera` module...")
-    
 
     start = time.time()
     fps = FPS().start()
@@ -35,12 +33,12 @@ def main(testtime=100, disp=False):
             # grab the frame from the threaded video stream and resize it
             # to have a maximum width of 400 pixels
             frame = vs.read()
-            frame = imutils.resize(frame, width=400)
-            
+            frame = imutils.resize(frame, width=700)
+
             # detect circles
             circs, img = fd.detect_circles(frame)
             print circs
-    
+
             # check to see if the frame should be displayed to our screen
             if disp:
                 if img is not None:
@@ -48,7 +46,7 @@ def main(testtime=100, disp=False):
                 else:
                     cv2.imshow("Frame", frame)
                 cv2.waitKey(1) & 0xFF
-    
+
             fps.update()
     finally:
         vs.stop()
@@ -61,4 +59,3 @@ def main(testtime=100, disp=False):
 
 if __name__ == "__main__":
     main(disp=True)
-

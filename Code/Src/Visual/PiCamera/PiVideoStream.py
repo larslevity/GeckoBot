@@ -16,7 +16,7 @@ import cv2
 
 
 class PiVideoStream:
-    def __init__(self, resolution=(320, 240), framerate=32):
+    def __init__(self, resolution=(640, 480), framerate=32):
         # initialize the camera and stream
         self.camera = PiCamera()
         self.camera.resolution = resolution
@@ -80,9 +80,9 @@ if __name__ == "__main__":
 
     # initialize the camera and stream
     camera = PiCamera()
-    camera.resolution = (320, 240)
+    camera.resolution = (640, 480)
     camera.framerate = 32
-    rawCapture = PiRGBArray(camera, size=(320, 240))
+    rawCapture = PiRGBArray(camera, size=(640, 480))
     stream = camera.capture_continuous(rawCapture, format="bgr",
                                        use_video_port=True)
 
@@ -96,7 +96,7 @@ if __name__ == "__main__":
         # grab the frame from the stream and resize it to have a maximum
         # width of 400 pixels
         frame = f.array
-        frame = imutils.resize(frame, width=400)
+        frame = imutils.resize(frame, width=700)
 
         # check to see if the frame should be displayed to our screen
         if args["display"] > 0:
@@ -135,7 +135,7 @@ if __name__ == "__main__":
         # grab the frame from the threaded video stream and resize it
         # to have a maximum width of 400 pixels
         frame = vs.read()
-        frame = imutils.resize(frame, width=400)
+        frame = imutils.resize(frame, width=700)
 
         # check to see if the frame should be displayed to our screen
         if args["display"] > 0:

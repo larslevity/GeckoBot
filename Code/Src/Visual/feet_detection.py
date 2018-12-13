@@ -22,18 +22,18 @@ def detect_circles(filename, debug=False):
         img = cv2.imread(filename, 1)
     else:
         img = filename
-    img = imutils.resize(img, width=700)
-#    debug_helper(img, debug=debug)
+    img = imutils.resize(img, width=400)
+    debug_helper(img, debug=debug)
     img = cv2.medianBlur(img, 5)
-#    debug_helper(img, debug=debug)
+    debug_helper(img, debug=debug)
 
     # detect green:
     img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 #    lower_red = np.array([0, 60, 60])
 #    upper_red = np.array([10, 255, 255]) # hsv
 #    gray = cv2.inRange(img_hsv, lower_red, upper_red)
-    lower_green = np.array([40, 120, 120])
-    upper_green = np.array([50, 255, 255]) # hsv
+    lower_green = np.array([35, 50, 50])   
+    upper_green = np.array([55, 255, 255]) # hsv
     gray = cv2.inRange(img_hsv, lower_green, upper_green)
     debug_helper(gray, debug=debug)
 
@@ -52,9 +52,9 @@ def detect_circles(filename, debug=False):
 #                               param1=1,
 #                               param2=100, minRadius=0, maxRadius=20)    
 
-    circles = cv2.HoughCircles(gray, cv2.cv.CV_HOUGH_GRADIENT, dp=13, minDist=101,  # works for 2
-                               param1=1,
-                               param2=100, minRadius=0, maxRadius=20)
+    circles = cv2.HoughCircles(gray, cv2.cv.CV_HOUGH_GRADIENT, dp=13, minDist=50,  # works for 2
+                               param1=50,
+                               param2=30, minRadius=0, maxRadius=20)
 
     # ensure at least some circles were found
     if circles is not None:
@@ -123,13 +123,14 @@ if __name__ == '__main__':
     
     if picam:
         with picamera.PiCamera() as camera:
-            camera.resolution = (640, 480)
+            camera.resolution = (320, 240)
             # Start a preview and let the camera warm up for 2 seconds
             camera.start_preview()
             time.sleep(1)
             with picamera.array.PiRGBArray(camera) as stream:
                 camera.capture(stream, format='bgr')
                 img = stream.array
+                img = imutils.resize(img, width=400)
     
     circs, img = detect_circles(img, debug=True)
     print circs

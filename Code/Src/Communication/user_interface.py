@@ -18,6 +18,7 @@ from termcolor import colored
 from Src.Management import state_machine
 
 UI_TSAMPLING = .1
+VIDEO_DETECT = True
 
 MODE1 = "P9_23"
 MODE2 = "P9_27"
@@ -301,7 +302,7 @@ class HUIThread(threading.Thread):
                     self.last_process_time = time.time()
 
                     # capture image?
-                    if self.camerasock:
+                    if self.camerasock and not VIDEO_DETECT:
                         if idx % 3 == 1:
                             self.camerasock.make_image('test'+str(self.camidx))
                             self.camidx += 1

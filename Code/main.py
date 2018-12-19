@@ -36,7 +36,6 @@ rootLogger.addHandler(consoleHandler)
 
 # ------------ CAMERA INIT
 
-
 with timeout.timeout(2):
     try:
         client.start_server('134.28.136.49')

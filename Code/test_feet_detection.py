@@ -16,6 +16,8 @@ import numpy as np
 from Src.Visual.PiCamera.PiVideoStream import PiVideoStream
 # from Src.Visual import feet_detection as fd
 from Src.Math import IMUcalc
+from Src.Math import kinematic_model_fun as kin_mod
+
 
 
 
@@ -102,10 +104,20 @@ def main(testtime=200, disp=False):
     print("[INFO] approx. FPS: {:.2f}".format(fps.fps()))
 
 
+
 def mask_img(img, april_result):
     if april_result is not None:
-        bend_angle = calc_angle(april_result)
+        bend_angle, eps = calc_angle(april_result)
+        X, Y = extract_positions(april_result)
+        
         print bend_angle
+
+        pattern = [[bend_angle[idx] for idx in [0, 1, 2, 4, 5]], [1, 1, 1, 1]]
+        pose = [pattern[0], eps, (X[0], Y[0])]
+        print pose
+        x, r, data_, cst = kin_mod.predict_pose([pattern], pose)
+        data, data_fp, data_nfp, data_x = data_
+        mask_repr(data, img)
         
         for res in april_result:
             tag_id = res.tag_id
@@ -122,6 +134,23 @@ def mask_img(img, april_result):
         return None
 
 
+def mask_repr(img, data):
+    (X, Y) = data
+    for x,y in zip(X, Y):
+        cv2.circle(img, (int(x), int(y)), 1, (0, 128, 255))
+
+        
+
+def extract_positions(april_result):
+    X, Y = [None]*6, [None]*6
+    for res in april_result:
+        tag_id = res.tag_id
+        x, y = int(res.center[0]), int(res.center[1])
+        X[tag_id] = x
+        Y[tag_id] = y
+    return X, Y
+    
+
 def calc_angle(april_result):
     POSs = {
     0: [0, 1],
@@ -129,22 +158,29 @@ def calc_angle(april_result):
     2: [1, 4],
     3: [4, 1],
     4: [4, 3],
-    5: [5, 4]
+    5: [5, 4],
+    'eps': [1, 4]
     }
     ori = [None]*6
     for res in april_result:
         tag_id = res.tag_id
         ori[tag_id] = res.corners[2] - res.corners[0] 
     
-    angle = [None]*6
-    for tag_id in range(6):
+    angle, eps = [None]*6, None
+    for tag_id in POSs:
         if ori[POSs[tag_id][0]] is not None and ori[POSs[tag_id][1]] is not None:
             p0, p1 = (np.append(ori[POSs[tag_id][0]], 0),
                       np.append(ori[POSs[tag_id][1]], 0))
-
-            angle[tag_id] = round(IMUcalc.calc_angle(p0, p1), 1)
+            if tag_id == 'eps':
+                eps = round(IMUcalc.calc_angle(p1-p0, [1, 0, 0]), 1)
+            else:
+                angle[tag_id] = round(IMUcalc.calc_angle(p0, p1), 1)
     
-    return angle
+    return angle, eps
+
+
+
+
 
 if __name__ == "__main__":
     main(disp=True)

@@ -17,4 +17,4 @@ with picamera.PiCamera() as camera:
     camera.start_preview()
     time.sleep(2)
     
-    camera.capture(time.strftime('photo_%Y-%m-%d--%H-%M-%S'))
+    camera.capture(time.strftime('photo_%Y-%m-%d--%H-%M-%S.jpg'))

@@ -22,11 +22,21 @@ dev_ang = 100  # allowed deviation of angles
 
 arc_res = 40    # resolution of arcs
 
-len_leg = 1
-len_tor = 1.1
+len_leg = 100
+len_tor = 110
 
 n_foot = 4
 n_limbs = 5
+
+
+def extract_pose(alpha, fpos, len_leg=len_leg, len_tor=len_tor):
+    
+    # unknown
+    ell0 = [len_leg, len_leg, len_tor, len_leg, len_leg]
+    beta0 = [0, 0, 0, 0]
+    x0 = ell0 + beta0
+    
+
 
 
 def predict_pose(pattern, initial_pose, stats=False, debug=False,

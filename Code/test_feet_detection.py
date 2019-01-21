@@ -29,8 +29,20 @@ def main(testtime=200):
         while time.time()-start < testtime:
             # grab the frame from the threaded video stream 
             frame = vs.read()
-            # calc repr
-            img = img_proc.calc_robo_repr(frame)
+            # detect pose
+            alpha, eps, positions = img_proc.detect_all(frame)
+            
+            if alpha is not None:
+                print 'alpha:\t', alpha
+                print 'eps:\t', eps
+            
+                img = img_proc.draw_positions(frame, positions)
+            else:
+                img = frame
+            
+#            pose, ell, bet = img_proc.calc_pose(alpha, eps, positions)
+#            img = img_proc.draw_pose(img, pose)
+            
 
             # display
             cv2.imshow("Frame", img)
@@ -52,10 +64,17 @@ if __name__ == '__main__':
         from Src.Visual.PiCamera.PiVideoStream import PiVideoStream
         picam = True
     except ImportError:
+        import imutils
         picam = False
         print 'No PiCam Found'
         frame = cv2.imread('photo_2019-01-15--14-39-58.jpg', 1)
-        img = img_proc.calc_robo_repr(frame)
+        frame = imutils.resize(frame, width=700)
+        alpha, eps, positions = img_proc.detect_all(frame)
+     
+        print 'alpha:\t', alpha
+        print 'eps:\t', eps
+        
+        img = img_proc.draw_positions(frame, positions)
         # display
         cv2.imshow("Frame", img)
         cv2.waitKey(0)

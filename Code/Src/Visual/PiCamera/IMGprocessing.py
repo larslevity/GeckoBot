@@ -33,7 +33,6 @@ def detect_all(frame):
         alpha, eps = extract_alpha(april_result)
         X, Y = extract_position(april_result)
     else:
-        print 'no detection'
         alpha, eps = None, None
         X, Y = None, None
 
@@ -47,8 +46,7 @@ def calc_pose(alpha, eps, positions):
 
 
 def detect_apriltags(frame):
-    # fit frame
-    #frame = imutils.resize(frame, width=700)
+    # gray frame
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     # detect apriltags
     april_result = detector.detect(frame)
@@ -94,10 +92,6 @@ def extract_alpha(april_result):
     if len(center) == 2:
         p0, p1 = np.append(center[0], 0), np.append(center[1], 0)
         eps = np.mod(-round(IMUcalc.calc_angle(p1-p0, [1, 0, 0]) + 180, 1), 360)
-
-    # debug
-    if all(a==None for a in angle):
-        print april_result
 
     return angle, eps
 

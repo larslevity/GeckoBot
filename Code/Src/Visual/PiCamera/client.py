@@ -6,14 +6,54 @@ Created on Fri Jul 20 15:18:21 2018
 """
 
 import socket
-import time
 from subprocess import call
 
+import pickler
 
 def start_server(ip='134.28.136.49'):
     cmd = 'ssh -i ~/.ssh/BBB_key pi@{} nohup python\
         /home/pi/Git/GeckoBot/Code/Src/Visual/PiCamera/server.py &'.format(ip)
     call(cmd, shell=True)
+
+
+def start_img_processing(ip='134.28.136.49'):
+    cmd = 'ssh -i ~/.ssh/BBB_key pi@{} nohup python\
+        /home/pi/Git/GeckoBot/Code/RPi_main.py &'.format(ip)
+    call(cmd, shell=True)
+
+
+def start_img_processing_from_bianca(ip='134.28.136.49'):
+    cmd = 'ssh -i ~/.ssh/key_bianca pi@{} nohup python\
+        /home/pi/Git/GeckoBot/Code/RPi_main.py &'.format(ip)
+    call(cmd, shell=True)
+
+
+class IMGProcSocket(object):
+    def __init__(self, ip='134.28.136.49'):
+        self.client_socket = socket.socket()
+        self.client_socket.connect((ip, 8000))
+
+        # Make a file-like object out of the connection
+        self.connection = self.client_socket.makefile('wb')
+
+    def get_alpha(self):
+        self.send_all(['get_alpha'])
+        alpha = self.recieve_data()
+        return alpha
+
+    def send_all(self, data):
+        self.client_socket.sendall(pickler.pickle_data(data))
+
+    def recieve_data(self):
+        ans = pickler.unpickle_data(self.client_socket.recv(4096))
+        return ans
+
+    def close(self):
+        print 'close socket'
+        self.send_all(['Exit'])
+        self.connection.close()
+        self.client_socket.close()
+
 
 
 class ClientSocket(object):
@@ -40,8 +80,35 @@ class ClientSocket(object):
 
 
 if __name__ == "__main__":
-    sock = ClientSocket()
-    for foo in range(3):
-        sock.get_image('image{}'.format(foo))
-        time.sleep(2)
+    import time
+
+
+    start_img_processing_from_bianca()
+    time.sleep(4)
+
+    sock = IMGProcSocket()
+    time.sleep(2)
+
+    try:
+        while True:
+            alpha, eps, positions = sock.get_alpha()
+            print alpha
+            print eps
+            X, Y = positions
+            print X[0], Y[0]
+    except KeyboardInterrupt:
         sock.close()
+    finally:
+        sock.close()
+        
+    
+    
+    
+    
+    
+    
+#    sock = ClientSocket()
+#    for foo in range(3):
+#        sock.get_image('image{}'.format(foo))
+#        time.sleep(2)
+#        sock.close()

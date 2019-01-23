@@ -362,28 +362,42 @@ def generate_pose_ref(pattern, idx):
 
 
 class Printer(threading.Thread):
-    def __init__(self, shared_memory):
+    def __init__(self, shared_memory, imgprocsock=None):
         threading.Thread.__init__(self)
         self.shared_memory = shared_memory
         self.state = 'RUN'
+        self.imgprocsock = imgprocsock
 
     def print_state(self):
-        state_str = '\n\t| Ref \t| State\n'
-        state_str = state_str + '-----------------------\n'
+        if self.imgprocsock:
+            alpha, eps, (X, Y) = self.imgprocsock.get_alpha()
+            alpha = alpha + [None, None]
+            X = X + [None, None]
+            Y = Y + [None, None]
+            eps = [eps] + [None]*3
+        else:
+            alpha, X, Y, eps = [None]*8 , [None]*8, [None]*8, [None]*4
+        state_str = '\n\t| Ref \t| State \t| epsilon \n'
+        state_str = state_str + '------------------------------------------------\n'
         for i in range(4):
-            s = '{}\t| {}\t| {}\n'.format(
-                i, True if GPIO.input(SWITCHES[i]) else False,
-                self.shared_memory.dvalve_task[i])
+            s = '{}\t| {}\t| {} \t\t| {}\n'.format(
+                i, 1.0 if GPIO.input(SWITCHES[i]) else 0.0,
+                self.shared_memory.dvalve_task[i], eps[i])
             state_str = state_str + s
-        state_str = state_str + '\n\t| Ref \t| p \t| PWM \t| Angle \n'
-        state_str = state_str + '-----------------------------------------\n'
+        state_str = (state_str
+            + '\n\t| Ref \t| p \t| PWM \t| aIMU \t| aIMG \t| POS  \n')
+        state_str = state_str + '----------------------------------------------------------------------------\n'
         for i in range(8):
             rec_angle = self.shared_memory.rec_angle
             angle = round(rec_angle[i], 2) if rec_angle[i] else None
-            s = '{}\t| {}\t| {}\t| {}\t| {}\n'.format(
+            angle_imgProc = round(alpha[i], 2) if alpha[i] else None
+            x = round(X[i], 1) if X[i] else None
+            y = round(Y[i], 1) if Y[i] else None
+            s = '{}\t| {}\t| {}\t| {}\t| {}\t| {}\t| ({},{})\n'.format(
                 i, self.shared_memory.ref_task[i], 
                 round(self.shared_memory.rec[i], 2),
-                round(self.shared_memory.rec_u[i], 2), angle)
+                round(self.shared_memory.rec_u[i], 2), angle,
+                angle_imgProc, x, y)
             state_str = state_str + s
         print(state_str)
         time.sleep(.1)

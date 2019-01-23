@@ -7,8 +7,10 @@ Created on Fri Jul 20 15:18:21 2018
 
 import socket
 from subprocess import call
-
-import pickler
+try:
+    from Src.Visual.PiCamera import pickler
+except ImportError:
+    print 'Relative Import does not work..'
 
 def start_server(ip='134.28.136.49'):
     cmd = 'ssh -i ~/.ssh/BBB_key pi@{} nohup python\
@@ -31,7 +33,7 @@ def start_img_processing_from_bianca(ip='134.28.136.49'):
 class IMGProcSocket(object):
     def __init__(self, ip='134.28.136.49'):
         self.client_socket = socket.socket()
-        self.client_socket.connect((ip, 8000))
+        self.client_socket.connect((ip, 12397))
 
         # Make a file-like object out of the connection
         self.connection = self.client_socket.makefile('wb')
@@ -81,13 +83,15 @@ class ClientSocket(object):
 
 if __name__ == "__main__":
     import time
+    import pickler
 
 
-    start_img_processing_from_bianca()
-    time.sleep(4)
+#    start_img_processing_from_bianca()
+    start_img_processing()
+    time.sleep(5)
 
     sock = IMGProcSocket()
-    time.sleep(2)
+    time.sleep(1)
 
     try:
         while True:

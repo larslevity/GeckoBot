@@ -35,14 +35,25 @@ rootLogger.addHandler(consoleHandler)
 
 
 # ------------ CAMERA INIT
+IMGPROC = True
+camerasock, imgprocsock = None, None
+RPi_ip = '134.28.136.49'
 
-with timeout.timeout(2):
+with timeout.timeout(6):
     try:
-        client.start_server('134.28.136.49')
-        time.sleep(1)
-        camerasock = client.ClientSocket('134.28.136.49')
+        rootLogger.info("Try to start server ...")
+        if IMGPROC:
+            client.start_img_processing(RPi_ip)
+            time.sleep(5)
+            imgprocsock = client.IMGProcSocket(RPi_ip)
+            rootLogger.info("RPi Server found: Img Processing is running")
+        else:
+            client.start_server(RPi_ip)
+            time.sleep(1)
+            camerasock = client.ClientSocket(RPi_ip)
+            rootLogger.info("RPi Server found: MakeImageServer is running")
     except exception.TimeoutError:
-        camerasock = None
+        rootLogger.info("Server not found")
 
 # ------------ PATTERN INIT
 
@@ -393,9 +404,10 @@ def main():
     rootLogger.info('started UI Thread as daemon?: {}'.format(
             communication_thread.isDaemon()))
     if PRINTSTATE:
-        printer_thread = HUI.Printer(shared_memory)
+        printer_thread = HUI.Printer(shared_memory, imgprocsock)
         printer_thread.setDaemon(True)
         printer_thread.start()
+        rootLogger.info('Started the Printer Thread')
     
 
     try:
@@ -403,9 +415,7 @@ def main():
         automat.run(shared_memory)
     except KeyboardInterrupt:
         rootLogger.exception('keyboard interrupt detected...   killing UI')
-        communication_thread.kill()
-        if PRINTSTATE:
-            printer_thread.kill()
+       
     except Exception as err:
         rootLogger.exception(
             '\n----------caught exception! in Main Thread----------------\n')
@@ -413,10 +423,15 @@ def main():
         rootLogger.exception(sys.exc_info()[1])
         rootLogger.error(err, exc_info=True)
         rootLogger.info('\n ----------------------- killing UI --')
-        communication_thread.kill()
+    finally:
         if PRINTSTATE:
             printer_thread.kill()
-
+        if imgprocsock:
+            imgprocsock.close()
+        if camerasock:
+            camerasock.close()
+        communication_thread.kill()
+        
     communication_thread.join()
     if PRINTSTATE:
         printer_thread.join()

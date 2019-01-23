@@ -13,23 +13,24 @@ class SelectionArea(Gtk.Bin):
     Selection Area with the atrribute keylist containing tuple of (abs, ord)
     which somebody selected to plot in the Plotting Area
     """
-    def find_default_keylist(self, modus='m'):
+    def find_default_keylist(self, modus='p'):
         """ Look in Recorder and check what data is worth to plot """
-        keylist = []
+        keylist_p = []
         keylist_u = []
         keylist_r = []
         for el in sorted(self.data.recorded.iterkeys()):
             if len(el.split('_')) == 1:
                 if len(el.split('u')) == 2 and len(el.split('u')[0]) == 0:
-                    if el+'_t' in self.data.recorded:
-                        keylist_u.append((el+'_t', el))
+                    if 'time' in self.data.recorded:
+                        keylist_u.append(('time', el))
                 elif len(el.split('r')) == 2 and len(el.split('r')[0]) == 0:
-                    if el+'_t' in self.data.recorded:
-                        keylist_r.append((el+'_t', el))
-                elif el+'_t' in self.data.recorded:
-                    keylist.append((el+'_t', el))
-        if modus == 'm':
-            return keylist
+                    if 'time' in self.data.recorded:
+                        keylist_r.append(('time', el))
+                elif len(el.split('p')) == 2 and len(el.split('p')[0]) == 0:
+                    if 'time' in self.data.recorded:
+                        keylist_p.append(('time', el))
+        if modus == 'p':
+            return keylist_p
         elif modus == 'u':
             return keylist_u
         elif modus == 'r':
@@ -55,14 +56,23 @@ class SelectionArea(Gtk.Bin):
             keylist_to_append (list): List of tuples of the desired plots
         """
         keylist_to_append = self.find_default_keylist(modus)
+        idx = []
         for key in keylist_to_append:
             if self.selection(key[0], key[1], True) not in self._selected:
                 if self.selection(key[0], key[1], False) not in self._selected:
                     self._selected.append(self.selection(key[0], key[1], True))
+                else:
+                    idx.append(self._selected.index(self.selection(key[0], key[1], False)))
+            else:
+                idx.append(self._selected.index(self.selection(key[0], key[1], True)))
+        if len(idx) == len(keylist_to_append):
+            for i in sorted(idx, reverse=True):
+                self.delete_selection_btn_clicked(None, i)
+
         self._refresh_display_box()
 
     def delete_keylist(self, widget):
-        for idx  in range(len(self._selected)):
+        for idx in range(len(self._selected)):
             self.vis_btn[idx].set_active(False)
         self._selected = []
         self._refresh_display_box()
@@ -195,6 +205,7 @@ class SelectionArea(Gtk.Bin):
 
         # Global Data
         self.data = data
+        self.choices = [key for key in sorted(self.data.recorded.iterkeys())]
         # key list of (abs,ord)-tuple with only visible selections
         self.keylist = []
         m = self.find_default_keylist()
@@ -204,17 +215,21 @@ class SelectionArea(Gtk.Bin):
         self._selected = []
 
         # FRAME of Selection Area
+        # first add hbox
+        self.main_hbox = Gtk.HBox(homogeneous=False, spacing=3)
+        self.add(self.main_hbox)
+
         # add main vbox
         self.main_vbox = Gtk.VBox(homogeneous=False, spacing=3)
-        self.add(self.main_vbox)
+        self.main_hbox.pack_start(self.main_vbox, True, True, 1)
         # Buttons to simplify selection filling
         btns_viewport = Gtk.Viewport()
         btns_hbox = Gtk.HBox(True, 2)
         self.main_vbox.pack_start(btns_viewport, False, False, 2)
         btns_viewport.add(btns_hbox)
-        m_btn = Gtk.Button('m')
-        m_btn.connect("clicked", self.keylist_append, 'm')
-        btns_hbox.pack_start(m_btn, False, False, 2)
+        p_btn = Gtk.Button('p')
+        p_btn.connect("clicked", self.keylist_append, 'p')
+        btns_hbox.pack_start(p_btn, False, False, 2)
         u_btn = Gtk.Button('u')
         u_btn.connect("clicked", self.keylist_append, 'u')
         btns_hbox.pack_start(u_btn, False, False, 2)
@@ -227,16 +242,33 @@ class SelectionArea(Gtk.Bin):
         del_btn.add(image)
         del_btn.connect("clicked", self.delete_keylist)
         btns_hbox.pack_start(del_btn, False, False, 2)
+
         # create display VBox in a scrolled window
+        s_view = Gtk.Viewport()
+        vbox = Gtk.VBox(homogeneous=False, spacing=1)
+        self.main_vbox.pack_start(s_view, True, True, 0)
+        s_view.add(vbox)
+        page_size = Gtk.Adjustment(lower=10, page_size=100)
+        scrolled_win = Gtk.ScrolledWindow(page_size)
+        scrolled_win.set_min_content_width(200)
+        scrolled_win.set_min_content_height(100)
+        vbox.pack_start(scrolled_win, True, True, 0)
+        # another vbox
+        vbox = Gtk.VBox(homogeneous=False, spacing=1)
+        # Put the vbox in the scrolled Window which is in the select_hbox
+        scrolled_win.add_with_viewport(vbox)
+
         self.list_selection = Gtk.Viewport()
-        self.main_vbox.pack_start(self.list_selection, True, True, 1)
-        self.display_vbox = Gtk.VBox(homogeneous=True, spacing=1)
+#        self.main_vbox.pack_start(self.list_selection, False, False, 1)
+        vbox.pack_start(self.list_selection, False, False, 1)
+        self.display_vbox = Gtk.VBox(homogeneous=False, spacing=1)
         self.list_selection.add(self.display_vbox)
         self.vis_btn = {}
+
         # create select HBox
         select_view = Gtk.Viewport()
         self.select_hbox = Gtk.HBox(homogeneous=True, spacing=1)
-        self.main_vbox.pack_start(select_view, False, False, 1)
+        self.main_hbox.pack_start(select_view, True, True, 1)
         select_view.add(self.select_hbox)
         # init the Window:
         self._init_select_hbox()
@@ -255,18 +287,19 @@ class SelectionArea(Gtk.Bin):
         for axis in ["abszisse", "ordinate"]:
             # create vbox
             vbox = Gtk.VBox(homogeneous=False, spacing=1)
-            self.select_hbox.pack_start(vbox, True, False, 0)
+            self.select_hbox.pack_start(vbox, False, False, 0)
             # create label and pack it to select_hbox:
             label = Gtk.Label()
-            label.set_markup('<b>{}</b>'.format(axis))
-            vbox.pack_start(label, True, False, 0)
+            label.set_markup('<b>{}</b>'.format(axis[:3]))
+            vbox.pack_start(label, False, False, 12)
             # create a vertical box in a scrolled win within the select_hbox
-            scrolled_win = Gtk.ScrolledWindow()
-            scrolled_win.set_min_content_width(100)
+            page_size = Gtk.Adjustment(lower=10, page_size=100)
+            scrolled_win = Gtk.ScrolledWindow(page_size)
+            scrolled_win.set_min_content_width(80)
             scrolled_win.set_min_content_height(100)
-            vbox.pack_start(scrolled_win, True, False, 0)
+            vbox.pack_start(scrolled_win, True, True, 0)
             # another vbox
-            vbox = Gtk.VBox(homogeneous=True, spacing=1)
+            vbox = Gtk.VBox(homogeneous=False, spacing=1)
             # Put the vbox in the scrolled Window which is in the select_hbox
             scrolled_win.add_with_viewport(vbox)
             # create a Button for each key in data.recorded
@@ -275,8 +308,9 @@ class SelectionArea(Gtk.Bin):
                 # connect Button
                 button.connect("clicked", self.push_axis_to_display_clicked,
                                key, axis)
+                button.set_property("height-request", 37.7)
                 # Put button into vbox
-                vbox.pack_start(button, expand=True, fill=True, padding=2)
+                vbox.pack_start(button, expand=False, fill=False, padding=1)
             self.show_all()
 
     def _refresh_display_box(self):
@@ -285,7 +319,7 @@ class SelectionArea(Gtk.Bin):
         """
         # remove all widget from self.display_vbox, i.e. destroy and create new
         self.list_selection.remove(self.list_selection.get_child())
-        self.display_vbox = Gtk.VBox(homogeneous=True, spacing=1)
+        self.display_vbox = Gtk.VBox(homogeneous=False, spacing=1)
         self.list_selection.add(self.display_vbox)
         self.vis_btn = {}
 
@@ -293,15 +327,24 @@ class SelectionArea(Gtk.Bin):
             # create HBox
             hbox = Gtk.HBox(homogeneous=False, spacing=2)
             # put the hbox into the display_vbox
-            self.display_vbox.pack_start(hbox, True, False, 1)
+            self.display_vbox.pack_start(hbox, False, False, 1)
             # #### Label Ordinate ####
             label_abs = Gtk.Label(selection.abszisse)
             label_abs.set_width_chars(10)
-            hbox.pack_start(label_abs, expand=True, fill=False, padding=1)
+            hbox.pack_start(label_abs, expand=False, fill=False, padding=1)
             # #### Label Ordinate ####
             label_ord = Gtk.Label(selection.ordinate)
             label_ord.set_width_chars(1)
-            hbox.pack_start(label_ord, expand=True, fill=False, padding=1)
+            hbox.pack_start(label_ord, expand=False, fill=False, padding=1)
+            # #### Delete Button ####
+            # create image
+            image = Gtk.Image()
+            image.set_from_file("Src/Visual/GUI/pictures/delete.gif")
+            # a button to contain the image widget
+            button = Gtk.Button()
+            button.add(image)
+            button.connect("clicked", self.delete_selection_btn_clicked, idx)
+            hbox.pack_end(button, expand=False, fill=False, padding=1)
             # #### Visible Button ####
             # create image
             image = Gtk.Image()
@@ -312,14 +355,6 @@ class SelectionArea(Gtk.Bin):
             self.vis_btn[idx].connect("clicked",
                                       self.visible_selection_btn_clicked, idx)
             self.vis_btn[idx].set_active(selection.visible)
-            hbox.pack_start(self.vis_btn[idx], True, False, 1)
-            # #### Delete Button ####
-            # create image
-            image = Gtk.Image()
-            image.set_from_file("Src/Visual/GUI/pictures/delete.gif")
-            # a button to contain the image widget
-            button = Gtk.Button()
-            button.add(image)
-            button.connect("clicked", self.delete_selection_btn_clicked, idx)
-            hbox.pack_start(button, expand=True, fill=False, padding=1)
+            hbox.pack_end(self.vis_btn[idx], False, False, 1)
+
         self.show_all()

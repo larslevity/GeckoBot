@@ -10,7 +10,7 @@ from gi.repository import GLib
 
 from Src.Visual.GUI import AnalysisWindow
 from Src.Visual.GUI import MenuToolbar
-from Src.Visual.GUI import StatusWindow
+
 
 gi.require_version('Gtk', '3.0')
 
@@ -23,8 +23,7 @@ class GeckoBotGUI(Gtk.Window):
     def run(self):
         """ Add timeout which update the PlotWindow every ._interval seconds
         and starts the Gtk.main() loop """
-        GLib.timeout_add(self._interval, self.status_win.update_gecko_repr,
-                         self.data)
+        self.is_running = True
         GLib.timeout_add(self._interval,
                          self.analyse_win.plot_win.update,
                          self.analyse_win.select_win.keylist)
@@ -34,42 +33,40 @@ class GeckoBotGUI(Gtk.Window):
         """
         define what happens if a key is pressed
         """
-        key = event.keyval
-#        if key == ord("u"):
-#            self.on_user_control_clicked(widget=None)
-#        if key == ord("t"):
-#            self.on_tune_clicked(widget=None)
-#        if key == ord("a"):
-#            self.on_analyse_clicked(widget=None)
-        if key == ord("q"):
-            self.do_delete_event(widget=None)
+        pass
+#        key = event.keyval
+#        if key == ord("q"):
+#            self.do_delete_event(widget=None)
 
     # pylint: disable=arguments-differ
-    def do_delete_event(self, widget):
+    def do_delete_event(self, widget, force=False):
         """ Override the default handler for the delete-event signal
         Ask if user is sure of deleting the main_window"""
         # Show our message dialog
-        dialog = Gtk.MessageDialog(transient_for=self,
-                                   modal=True,
-                                   buttons=Gtk.ButtonsType.OK_CANCEL)
-        dialog.props.text = 'Are you sure you want to quit?'
-        response = dialog.run()
-        dialog.destroy()
+        if force:
+            response = Gtk.ResponseType.OK
+        else:
+            dialog = Gtk.MessageDialog(transient_for=self,
+                                       modal=True,
+                                       buttons=Gtk.ButtonsType.OK_CANCEL)
+            dialog.props.text = 'Are you sure you want to quit?'
+            response = dialog.run()
+            dialog.destroy()
 
         # We only terminate when the user presses the OK button
         if response == Gtk.ResponseType.OK:
             print 'Terminating...'
-            self.task.state = 'EXIT'
             for window in self.list_of_open_windows:
                 window.destroy()
             self.destroy()
             Gtk.main_quit()
+            self.is_running = False
             return False
 
         # Otherwise we keep the application open
         return True
 
-    def __init__(self, data, task, sampleinterval=.2):
+    def __init__(self, data, sampleinterval=.2):
         """
         *Initialize with:*
         Args:
@@ -84,7 +81,7 @@ class GeckoBotGUI(Gtk.Window):
 
         # init GUIData
         self.data = data
-        self.task = task
+        self.is_running = False
 
         # interval for GLib argument
         self._interval = int(sampleinterval*1000)
@@ -104,8 +101,8 @@ class GeckoBotGUI(Gtk.Window):
         main_hbox = Gtk.HBox(homogeneous=False, spacing=2)
         main_box.pack_start(main_hbox, expand=True, fill=True, padding=2)
         # Status Window
-        self.status_win = StatusWindow.StatusObject(self.data, self)
-        main_hbox.pack_start(self.status_win, False, False, 1)
+#        self.status_win = StatusWindow.StatusObject(self.data, self)
+#        main_hbox.pack_start(self.status_win, False, False, 1)
         # Analysis Window
         self.analyse_win = AnalysisWindow.AnalysisObject(self.data)
         self.analyse_win.size_request()

@@ -18,23 +18,7 @@ import fileinput
 
 def save_recorded_data(data, filename):
     """ save the recorded data from GlobalData object to .h5 file  """
-    data.flag['PAUSE'] = True
-    image_data = data.recorded
-    deepdish.io.save(filename, image_data)
-
-
-def save_buffer_data(data, filename):
-    """ save the buffer data from GlobalData object to .h5 file  """
-    data.flag['PAUSE'] = True
-    image_data = data.buffer
-    deepdish.io.save(filename, image_data)
-
-
-def save_motor_input_buffer_data(data, filename):
-    """save the motorinput buffer data from GlobalData object to .h5 file"""
-    data.flag['PAUSE'] = True
-    image_data = data.motor_input_buffer
-    deepdish.io.save(filename, image_data)
+    deepdish.io.save(filename, data)
 
 
 def save_current_plot_as_tikz(toplevel, filename):
@@ -60,9 +44,8 @@ def save_current_plot_as_tikz(toplevel, filename):
     print('Done!')
 
 
-def load_data(data, filename):
+def load_data(filename):
     """ Reading data back """
-    data.flag['PAUSE'] = True
     return_data = deepdish.io.load(filename)
     return return_data
 

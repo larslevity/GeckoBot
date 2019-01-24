@@ -46,7 +46,6 @@ class Socket(object):  # pragma: no cover
     def __init__(self, ip):
         self.client_socket = socket.socket()
         self.client_socket.connect((ip, 12397))
-        # Make a file-like object out of the connection
         self.connection = self.client_socket.makefile('wb')
 
     def send_all(self, data):
@@ -57,35 +56,19 @@ class Socket(object):  # pragma: no cover
         return ans
 
     def close(self):
-        print 'close socket'
         self.send_all(['Exit'])
         self.connection.close()
         self.client_socket.close()
 
 
-class LivePlotterSocket(object):
+class LivePlotterSocket(Socket):
     def __init__(self, ip='134.28.136.70'):
-        super().__init__(self, ip)
+        Socket.__init__(self, ip)
 
     def get_alpha(self):
         self.send_all(['get_alpha'])
         alpha = self.recieve_data()
         return alpha
-
-    def send_all(self, data):
-        self.client_socket.sendall(pickler.pickle_data(data))
-
-    def recieve_data(self):
-        ans = pickler.unpickle_data(self.client_socket.recv(4096))
-        return ans
-
-    def close(self):
-        print 'close socket'
-        self.send_all(['Exit'])
-        self.connection.close()
-        self.client_socket.close()
-
-
 
 
 class IMGProcSocket(Socket):

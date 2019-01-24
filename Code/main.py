@@ -35,25 +35,29 @@ rootLogger.addHandler(consoleHandler)
 
 
 # ------------ CAMERA INIT
-IMGPROC = True
-camerasock, imgprocsock = None, None
-RPi_ip = '134.28.136.49'
 
-with timeout.timeout(6):
-    try:
-        rootLogger.info("Try to start server ...")
-        if IMGPROC:
-            client.start_img_processing(RPi_ip)
-            time.sleep(5)
-            imgprocsock = client.IMGProcSocket(RPi_ip)
-            rootLogger.info("RPi Server found: Img Processing is running")
-        else:
-            client.start_server(RPi_ip)
-            time.sleep(1)
-            camerasock = client.ClientSocket(RPi_ip)
-            rootLogger.info("RPi Server found: MakeImageServer is running")
-    except exception.TimeoutError:
-        rootLogger.info("Server not found")
+def init_server_connections(IMGPROC = True):
+    camerasock, imgprocsock = None, None
+    RPi_ip = '134.28.136.49'
+    pc_ip = '134.28.136.49'
+    
+    
+    with timeout.timeout(12):
+        try:
+            rootLogger.info("Try to start server ...")
+            if IMGPROC:
+                client.start_img_processing(RPi_ip)
+                time.sleep(10)
+                imgprocsock = client.IMGProcSocket(RPi_ip)
+                rootLogger.info("RPi Server found: Img Processing is running")
+            else:
+                client.start_server(RPi_ip)
+                time.sleep(1)
+                camerasock = client.ClientSocket(RPi_ip)
+                rootLogger.info("RPi Server found: MakeImageServer is running")
+        except exception.TimeoutError:
+            rootLogger.info("Server not found")
+    return camerasock, imgprocsock
 
 # ------------ PATTERN INIT
 
@@ -206,6 +210,7 @@ def main():
 
     rootLogger.info('Initialize the shared variables, i.e. cargo ...')
     shared_memory = SharedMemory()
+
 
     """ ---------------- Sensor  Evaluation ------------------------- """
     def read_sens(shared_memory):
@@ -398,11 +403,15 @@ def main():
     automat.set_start(START_STATE)
 
     rootLogger.info('Starting Communication Thread ...')
-    communication_thread = HUI.HUIThread(shared_memory, rootLogger, camerasock)
+    communication_thread = HUI.HUIThread(shared_memory, rootLogger)
     communication_thread.setDaemon(True)
     communication_thread.start()
     rootLogger.info('started UI Thread as daemon?: {}'.format(
             communication_thread.isDaemon()))
+
+    camerasock, imgprocsock = init_server_connections()
+    communication_thread.set_camera_socket(camerasock)
+
     if PRINTSTATE:
         printer_thread = HUI.Printer(shared_memory, imgprocsock)
         printer_thread.setDaemon(True)

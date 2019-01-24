@@ -153,6 +153,9 @@ class HUIThread(threading.Thread):
             GPIO.setup(SWITCHES[idx], GPIO.IN)
         ring_leds()
 
+    def set_camera_socket(self, socket):
+        self.camerasock = socket
+
     def run(self):
         """ run HUI """
         self.rootLogger.info('Running HUI Thread ...')

@@ -43,17 +43,30 @@ class PlotArea(Gtk.Bin):
         if self.look_at_present:
             self.adj_scroll_hist.set_value(maxidx)
         # increase number of plots if neccessary
-        while len(keylist) > self.nartist:
+        while len(keylist)+self.nMarkers > self.nartist:
             self.points[self.nartist] = self.axx.plot(nan, nan, '-')[0]
             self.nartist += 1
         # get selection
+        mark = []
         for artist, elem in enumerate(keylist):
             ord_val = self.getdata(elem[1])
             abs_val = self.getdata(elem[0])
             # update line
-            self.points[artist].set_data(abs_val, ord_val)
+            self.points[artist+self.nMarkers].set_data(abs_val, ord_val)
+
+            # position artist gets special care -> Marker
+            if elem[0][0] == 'x' and elem[1][0] == 'y':  # key = (x?, y?)
+                if elem[0][1] == elem[1][1]:    # (? = ?)
+                    artist = int(elem[0][1])  # idx = ?
+                    mark.append(artist)
+                    ord_val = [ord_val[-1]]
+                    abs_val = [abs_val[-1]]
+                    # update line
+                    self.points[artist].set_data(abs_val, ord_val)
+
+        nomark = [x for x in range(self.nMarkers) if x not in mark]
         # set all other plots to None
-        for artist in range(len(keylist), self.nartist):
+        for artist in range(len(keylist)+self.nMarkers, self.nartist) + nomark:
             self.points[artist].set_data(nan, nan)
 
         # scaling stuff
@@ -124,8 +137,12 @@ class PlotArea(Gtk.Bin):
         self.canvas = FigureCanvasGTK3Agg(self.figure)
         # init plots
         self.points = {}
-        self.nartist = 10
-        for artist in range(self.nartist):
+        self.nartist = 16
+        self.nMarkers = 6
+        # set the first 6 artists as Markers instead of lines
+        for artist in range(self.nMarkers):
+            self.points[artist] = self.axx.plot(nan, nan, 'ko')[0]
+        for artist in range(self.nMarkers, self.nartist):
             self.points[artist] = self.axx.plot(nan, nan, '-')[0]
 
         # GTK:

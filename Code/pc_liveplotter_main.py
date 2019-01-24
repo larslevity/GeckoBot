@@ -12,12 +12,14 @@ import threading
 import time
 import socket
 import random
+import numpy as np
 
 from Src.Visual.GUI import gtk_gui_v2
 from Src.Visual.GUI import datamanagement
 from Src.Visual.PiCamera import pickler
 from Src.Management import timeout
 from Src.Management import exception
+
 
 # GTK
 class GuiThread(threading.Thread):
@@ -46,24 +48,26 @@ class GuiThread(threading.Thread):
         return self.gui_win.is_running
 
 
-def main():
+def main(wait=30):
     def fill_rnd_values():
-        def gen_rnd_val():
+        def gen_rnd_val(mul=1.):
             rnd = random.randint(0, 100)
             if rnd in range(30):
                 return None
-            return rnd/100.
+            return rnd/100.*mul
 
         pressure = {'p1': gen_rnd_val(), 'p2': gen_rnd_val()}
         rec_u = {'u1': gen_rnd_val(), 'u2': gen_rnd_val()}
-        rec_r = {'r1': gen_rnd_val(), 'r2': gen_rnd_val()}
+        rec_r = {'r1': gen_rnd_val(), 'r2': gen_rnd_val(),
+                 'x1': gen_rnd_val(300), 'y1': gen_rnd_val(300),
+                 'x2': gen_rnd_val(300), 'y2': gen_rnd_val(300),
+                 'x3': np.sin(time.time()/10.), 'y3': np.cos(time.time()/10.)}
         timestamp = {'time': time.time()}
 
         gui_rec.append(pressure)
         gui_rec.append(rec_u)
         gui_rec.append(rec_r)
         gui_rec.append(timestamp)
-
 
     def bind_to_client():
         server_socket = socket.socket()
@@ -73,7 +77,6 @@ def main():
         conn = server_socket.accept()[0]
         connection = conn.makefile('rb')
         return server_socket, conn, connection
-
 
     def recv_sample(connection):
         task_raw = connection.recv(4096)
@@ -93,13 +96,11 @@ def main():
         if sample:
             gui_rec.append(sample)
 
-
-
     gui_rec = datamanagement.GUIRecorder()
 
     print('wait for client .. ')
     is_client = False
-    with timeout.timeout(30):
+    with timeout.timeout(wait):
         try:
             server_socket, conn, connection = bind_to_client()
             get_sample_from_client_and_put_into_gui_rec(conn)
@@ -108,14 +109,11 @@ def main():
             print("There is no client. fill with rnd vals ...")
             fill_rnd_values()
 
-    
-
     print('start GUI .. ')
     gui = GuiThread(gui_rec)
     gui.start()
     time.sleep(.5)
     print('GUI started .. ')
-    
 
     try:
         print('begin to fill with samples ...')
@@ -124,7 +122,7 @@ def main():
                 get_sample_from_client_and_put_into_gui_rec(conn)
             else:
                 fill_rnd_values()
-            
+
             time.sleep(.1)
     except KeyboardInterrupt:
         print('keyboard interrupt')
@@ -139,4 +137,4 @@ def main():
 
 if __name__ == '__main__':
 
-    main()
+    main(30)

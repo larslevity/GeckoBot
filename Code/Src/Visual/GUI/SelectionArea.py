@@ -16,11 +16,19 @@ class SelectionArea(Gtk.Bin):
     def find_default_keylist(self, modus='p'):
         """ Look in Recorder and check what data is worth to plot """
         keylist = []
-        for el in sorted(self.data.recorded.iterkeys()):
-            if len(el.split('_')) == 1:
-                if len(el.split(modus)) == 2 and len(el.split(modus)[0]) == 0:
-                    if 'time' in self.data.recorded:
-                        keylist.append(('time', el))
+        if modus == 'pos':
+            recorded_data = sorted(self.data.recorded.iterkeys())
+            for idx in range(6):
+                if 'x{}'.format(idx) in recorded_data:
+                    if 'y{}'.format(idx) in recorded_data:
+                        keylist.append(('x{}'.format(idx), 'y{}'.format(idx)))
+        else:
+            for el in sorted(self.data.recorded.iterkeys()):
+                if len(el.split('_')) == 1:
+                    if (len(el.split(modus)) == 2 and
+                       len(el.split(modus)[0]) == 0):
+                        if 'time' in self.data.recorded:
+                            keylist.append(('time', el))
 
         return keylist
 
@@ -50,9 +58,11 @@ class SelectionArea(Gtk.Bin):
                 if self.selection(key[0], key[1], False) not in self._selected:
                     self._selected.append(self.selection(key[0], key[1], True))
                 else:
-                    idx.append(self._selected.index(self.selection(key[0], key[1], False)))
+                    idx.append(self._selected.index(
+                        self.selection(key[0], key[1], False)))
             else:
-                idx.append(self._selected.index(self.selection(key[0], key[1], True)))
+                idx.append(self._selected.index(
+                    self.selection(key[0], key[1], True)))
         if len(idx) == len(keylist_to_append):
             for i in sorted(idx, reverse=True):
                 self.delete_selection_btn_clicked(None, i)
@@ -210,7 +220,7 @@ class SelectionArea(Gtk.Bin):
         # add main vbox
         self.main_vbox = Gtk.VBox(homogeneous=False, spacing=3)
         self.main_hbox.pack_start(self.main_vbox, True, True, 1)
-        ###### BTNS View
+        # ##### BTNS View #############################################
         # Buttons to simplify selection filling
         btns_viewport = Gtk.Viewport()
         btns_vbox = Gtk.VBox(True, 1)
@@ -277,9 +287,7 @@ class SelectionArea(Gtk.Bin):
         fix_btn.connect("clicked", self.keylist_append, 'f')
         btns_hbox2.pack_start(fix_btn, False, False, 2)
 
-
-
-        #### Selected - View
+        # ### Selected - View #############################################
         # create display VBox in a scrolled window
         s_view = Gtk.Viewport()
         vbox = Gtk.VBox(homogeneous=False, spacing=1)
@@ -301,7 +309,7 @@ class SelectionArea(Gtk.Bin):
         self.list_selection.add(self.display_vbox)
         self.vis_btn = {}
 
-        #### Selection - View
+        # ### Selection - View #############################################
         # create select HBox
         select_view = Gtk.Viewport()
         self.select_hbox = Gtk.HBox(homogeneous=True, spacing=1)

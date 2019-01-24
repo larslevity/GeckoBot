@@ -7,6 +7,7 @@ import time
 import logging
 import errno
 import numpy as np
+from socket import error as SocketError
 
 from Src.Hardware import sensors as sensors
 from Src.Hardware import actuators as actuators
@@ -37,9 +38,9 @@ rootLogger.addHandler(consoleHandler)
 # ------------ CAMERA INIT
 
 def init_server_connections(IMGPROC = True):
-    camerasock, imgprocsock = None, None
+    camerasock, imgprocsock, plotsock = None, None, None
     RPi_ip = '134.28.136.49'
-    pc_ip = '134.28.136.49'
+    pc_ip = '134.28.136.131'
     
     
     with timeout.timeout(12):
@@ -57,7 +58,29 @@ def init_server_connections(IMGPROC = True):
                 rootLogger.info("RPi Server found: MakeImageServer is running")
         except exception.TimeoutError:
             rootLogger.info("Server not found")
-    return camerasock, imgprocsock
+        except SocketError as err:
+            if err.errno == errno.ECONNREFUSED:
+                rootLogger.info("RPi Server refused connection")
+            elif err.errno == errno.EADDRINUSE:
+                rootLogger.info("RPi Server already in Use")
+            else:
+                raise
+
+    with timeout.timeout(2):
+        try:
+            plotsock = client.LivePlotterSocket(pc_ip)
+            rootLogger.info("Connected to LivePlot Server")
+        except exception.TimeoutError:
+            rootLogger.info("Live Plot Server not found")
+        except SocketError as err:
+            if err.errno == errno.ECONNREFUSED:
+                rootLogger.info("LivePlotter Server refused connection")
+            elif err.errno == errno.EADDRINUSE:
+                rootLogger.info("LivePlotter Server already in Use")
+            else:
+                raise
+
+    return camerasock, imgprocsock, plotsock
 
 # ------------ PATTERN INIT
 
@@ -409,11 +432,11 @@ def main():
     rootLogger.info('started UI Thread as daemon?: {}'.format(
             communication_thread.isDaemon()))
 
-    camerasock, imgprocsock = init_server_connections()
+    camerasock, imgprocsock, plotsock = init_server_connections()
     communication_thread.set_camera_socket(camerasock)
 
     if PRINTSTATE:
-        printer_thread = HUI.Printer(shared_memory, imgprocsock)
+        printer_thread = HUI.Printer(shared_memory, imgprocsock, plotsock, IMU)
         printer_thread.setDaemon(True)
         printer_thread.start()
         rootLogger.info('Started the Printer Thread')
@@ -439,6 +462,8 @@ def main():
             imgprocsock.close()
         if camerasock:
             camerasock.close()
+        if plotsock:
+            plotsock.close()
         communication_thread.kill()
         
     communication_thread.join()

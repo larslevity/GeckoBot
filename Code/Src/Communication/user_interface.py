@@ -13,9 +13,13 @@ import time
 import sys
 import Adafruit_BBIO.GPIO as GPIO
 import Adafruit_BBIO.ADC as ADC
+import errno
+from socket import error as SocketError
+
 
 from termcolor import colored
 from Src.Management import state_machine
+from Src.Visual.GUI import datamanagement as mgmt
 
 UI_TSAMPLING = .1
 VIDEO_DETECT = True
@@ -365,11 +369,40 @@ def generate_pose_ref(pattern, idx):
 
 
 class Printer(threading.Thread):
-    def __init__(self, shared_memory, imgprocsock=None):
+    def __init__(self, shared_memory, imgprocsock=None, plotsock=None,
+                 IMU=False):
         threading.Thread.__init__(self)
         self.shared_memory = shared_memory
         self.state = 'RUN'
         self.imgprocsock = imgprocsock
+        self.plotsock = plotsock
+        self.IMU_connected = True if IMU else False
+
+
+    def prepare_data(self):
+        p = [round(self.shared_memory.rec[i], 2) for i in range(8)]
+        r = [round(self.shared_memory.ref_task[i], 2) for i in range(8)]
+        u = [round(self.shared_memory.rec_u[i], 2) for i in range(8)]
+        f = [round(self.shared_memory.dvalve_task[i], 2) for i in range(4)]
+
+        if self.imgprocsock:
+            IMG = True
+            alpha, eps, (X, Y) = self.imgprocsock.get_alpha()
+            alpha = alpha + [None, None]
+            aIMG = [round(alpha[i], 2) if alpha[i] else None for i in range(8)]
+            X = X + [None, None]
+            Y = Y + [None, None]
+        else:
+            IMG = False
+            aImg, eps, X, Y = [None]*3
+        if self.IMU_connected:
+            rec_angle = self.shared_memory.rec_angle
+            aIMU = [round(rec_angle[i], 2) if rec_angle[i] else None for i in range(8)]
+        else:
+            aIMU = None
+        
+        return (p, r, u, f, aIMG, eps, X, Y, aIMU, self.IMU_connected, IMG)
+
 
     def print_state(self):
         if self.imgprocsock:
@@ -407,7 +440,18 @@ class Printer(threading.Thread):
 
     def run(self):
         while self.state is not 'EXIT':
-            self.print_state()
+            if self.plotsock:
+                try:
+                    sample = mgmt.rehash_record(*self.prepare_data())
+                    resp = self.plotsock.send_sample(sample)
+                except SocketError as err:
+                    if err.errno != errno.ECONNRESET:
+                        raise
+                    print(err)
+                    self.plotsock = None
+
+            else:
+                self.print_state()
 
     def kill(self):
         self.state = 'EXIT'

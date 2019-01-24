@@ -65,10 +65,10 @@ class LivePlotterSocket(Socket):
     def __init__(self, ip='134.28.136.70'):
         Socket.__init__(self, ip)
 
-    def get_alpha(self):
-        self.send_all(['get_alpha'])
-        alpha = self.recieve_data()
-        return alpha
+    def send_sample(self, sample):
+        self.send_all(['sample', sample])
+        resp = self.recieve_data()
+        return resp
 
 
 class IMGProcSocket(Socket):

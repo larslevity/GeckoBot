@@ -15,28 +15,14 @@ class SelectionArea(Gtk.Bin):
     """
     def find_default_keylist(self, modus='p'):
         """ Look in Recorder and check what data is worth to plot """
-        keylist_p = []
-        keylist_u = []
-        keylist_r = []
+        keylist = []
         for el in sorted(self.data.recorded.iterkeys()):
             if len(el.split('_')) == 1:
-                if len(el.split('u')) == 2 and len(el.split('u')[0]) == 0:
+                if len(el.split(modus)) == 2 and len(el.split(modus)[0]) == 0:
                     if 'time' in self.data.recorded:
-                        keylist_u.append(('time', el))
-                elif len(el.split('r')) == 2 and len(el.split('r')[0]) == 0:
-                    if 'time' in self.data.recorded:
-                        keylist_r.append(('time', el))
-                elif len(el.split('p')) == 2 and len(el.split('p')[0]) == 0:
-                    if 'time' in self.data.recorded:
-                        keylist_p.append(('time', el))
-        if modus == 'p':
-            return keylist_p
-        elif modus == 'u':
-            return keylist_u
-        elif modus == 'r':
-            return keylist_r
-        else:
-            return []
+                        keylist.append(('time', el))
+
+        return keylist
 
     def set_keylist(self, desired_keylist):
         """

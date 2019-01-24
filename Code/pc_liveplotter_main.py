@@ -137,4 +137,4 @@ def main(wait=30):
 
 if __name__ == '__main__':
 
-    main(30)
+    main(1)

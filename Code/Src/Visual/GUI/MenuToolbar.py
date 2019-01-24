@@ -23,8 +23,9 @@ UI_INFO = """
         <menuitem action='FileLoadRecorded' />
       </menu>
       <menu action='FileSave'>
-        <menuitem action='FileSaveRecordedAsTikz' />
         <menuitem action='FileSaveRecorded' />
+        <menuitem action='FileSaveRecordedAsCsv' />
+        <menuitem action='FileSaveRecordedAsTikz' />
       </menu>
       <separator />
       <menuitem action='FileQuit' />
@@ -37,6 +38,7 @@ UI_INFO = """
   <toolbar name='ToolBar'>
     <toolitem action='FileLoadRecorded' />
     <toolitem action='FileSaveRecorded' />
+    <toolitem action='FileSaveRecordedAsCsv' />
     <toolitem action='FileSaveRecordedAsTikz' />
     <toolitem action='FileQuit' />
   </toolbar>
@@ -96,6 +98,13 @@ class MenuToolbarWindow(Gtk.Bin):
                                 "Current Plot as Tikz",
                                 "Save current Plot as TikZ-Picture",
                                 Gtk.STOCK_CONVERT)
+        action_new.connect("activate", self.on_save_clicked)
+        action_group.add_action_with_accel(action_new, None)
+
+        action_new = Gtk.Action("FileSaveRecordedAsCsv",
+                                "Current Plot as CSV",
+                                "Save Recorder as CSV-File",
+                                Gtk.STOCK_SAVE_AS)
         action_new.connect("activate", self.on_save_clicked)
         action_group.add_action_with_accel(action_new, '<control><shift>S')
 
@@ -161,6 +170,8 @@ class MenuToolbarWindow(Gtk.Bin):
         if filename:
             if target == "FileSaveRecordedAsTikz":
                 save.save_current_plot_as_tikz(self.toplevel, filename)
+            if target == "FileSaveRecordedAsCsv":
+                save.save_recorded_data_as_csv(self.data.recorded, filename)
             elif target == 'FileSaveRecorded':
                 save.save_recorded_data(self.data, filename)
 
@@ -176,7 +187,12 @@ class MenuToolbarWindow(Gtk.Bin):
                                         Gtk.ResponseType.CANCEL,
                                         Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
         if action == "save":
-            typ = '.h5' if target == 'FileSaveRecorded' else '.tex'
+            if target == 'FileSaveRecorded':
+                typ = '.h5'
+            elif target == 'FileSaveRecordedAsCsv':
+                typ = '.csv'
+            else:
+                typ = '.tex'
             dialog.set_current_name(target+strftime("%Y_%m_%d__%H_%M")+typ)
         elif action == 'open':
             typ = '.h5'
@@ -200,15 +216,19 @@ def add_filters(dialog, typ='.h5'):
     filter_h5.set_name("*.h5")
     filter_h5.add_pattern("*.h5")
 
+    filter_csv = Gtk.FileFilter()
+    filter_csv.set_name("*.csv")
+    filter_csv.add_pattern("*.csv")
+
     filter_any = Gtk.FileFilter()
     filter_any.set_name("Any files")
     filter_any.add_pattern("*")
 
-    if typ == '.h5':
+    if typ == '.csv':
+        dialog.add_filter(filter_csv)
+    elif typ == '.h5':
         dialog.add_filter(filter_h5)
-        dialog.add_filter(filter_tex)
     elif typ == '.tex':
         dialog.add_filter(filter_tex)
-        dialog.add_filter(filter_h5)
     dialog.add_filter(filter_any)
     return dialog

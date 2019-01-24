@@ -14,11 +14,21 @@ import deepdish
 import matplotlib.pyplot as plt
 from matplotlib2tikz import save as tikz_save
 import fileinput
+import csv
 
 
 def save_recorded_data(data, filename):
     """ save the recorded data from GlobalData object to .h5 file  """
     deepdish.io.save(filename, data)
+
+
+def save_recorded_data_as_csv(data, filename):
+    d = {key: data[key]['val'] for key in data}
+    keys = sorted(d.keys())
+    with open(filename, "wb") as outfile:
+        writer = csv.writer(outfile, delimiter="\t")
+        writer.writerow(keys)
+        writer.writerows(zip(*[d[key] for key in keys]))
 
 
 def save_current_plot_as_tikz(toplevel, filename):

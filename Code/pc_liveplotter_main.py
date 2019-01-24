@@ -54,7 +54,10 @@ class GuiThread(threading.Thread):
 def main():
     def fill_rnd_values():
         def gen_rnd_val():
-            return random.randint(0, 100)/100.
+            rnd = random.randint(0, 100)
+            if rnd in range(30):
+                return None
+            return rnd/100.
 
         pressure = {'p1': gen_rnd_val(), 'p2': gen_rnd_val()}
         rec_u = {'u1': gen_rnd_val(), 'u2': gen_rnd_val()}
@@ -81,9 +84,10 @@ def main():
     gui = GuiThread(gui_rec)
     gui.start()
 
+    print('GUI started .. ')
     try:
+        print('begin to create rnd samples ...')
         while gui.is_running():
-            pass
             fill_rnd_values()
             time.sleep(1)
     except KeyboardInterrupt:

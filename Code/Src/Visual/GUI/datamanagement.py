@@ -16,7 +16,6 @@ class GUIRecorder(object):
         """
         self.recorded = {}
         self.max_idx = 0
-        self.start_time = time.time()
 
     def append(self, sample):
         """

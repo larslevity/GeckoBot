@@ -151,7 +151,8 @@ class MenuToolbarWindow(Gtk.Bin):
         if filename:
             data = save.load_data(filename)
             if target == 'FileLoadRecorded':
-                self.data = data
+                self.data.recorded = data.recorded
+                self.data.max_idx = data.max_idx
 
     def on_save_clicked(self, widget):
         """ Save the current state to .h5 """

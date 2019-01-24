@@ -35,6 +35,8 @@ class SelectionArea(Gtk.Bin):
             return keylist_u
         elif modus == 'r':
             return keylist_r
+        else:
+            return []
 
     def set_keylist(self, desired_keylist):
         """
@@ -222,27 +224,76 @@ class SelectionArea(Gtk.Bin):
         # add main vbox
         self.main_vbox = Gtk.VBox(homogeneous=False, spacing=3)
         self.main_hbox.pack_start(self.main_vbox, True, True, 1)
+        ###### BTNS View
         # Buttons to simplify selection filling
         btns_viewport = Gtk.Viewport()
-        btns_hbox = Gtk.HBox(True, 2)
+        btns_vbox = Gtk.VBox(True, 1)
+        btns_hbox1 = Gtk.HBox(True, 1)
+        btns_hbox2 = Gtk.HBox(True, 1)
+        btns_vbox.pack_start(btns_hbox1, False, False, 0)
+        btns_vbox.pack_start(btns_hbox2, False, False, 0)
         self.main_vbox.pack_start(btns_viewport, False, False, 2)
-        btns_viewport.add(btns_hbox)
-        p_btn = Gtk.Button('p')
+        btns_viewport.add(btns_vbox)
+        # p btn
+        p_btn = Gtk.Button()
+        image = Gtk.Image()
+        image.set_from_file("Src/Visual/GUI/pictures/pressure.png")
+        p_btn.add(image)
         p_btn.connect("clicked", self.keylist_append, 'p')
-        btns_hbox.pack_start(p_btn, False, False, 2)
-        u_btn = Gtk.Button('u')
+        btns_hbox1.pack_start(p_btn, False, False, 2)
+        # u btn
+        u_btn = Gtk.Button()
+        image = Gtk.Image()
+        image.set_from_file("Src/Visual/GUI/pictures/motor_input.png")
+        u_btn.add(image)
         u_btn.connect("clicked", self.keylist_append, 'u')
-        btns_hbox.pack_start(u_btn, False, False, 2)
-        r_btn = Gtk.Button('r')
+        btns_hbox1.pack_start(u_btn, False, False, 2)
+        # r btn
+        r_btn = Gtk.Button()
+        image = Gtk.Image()
+        image.set_from_file("Src/Visual/GUI/pictures/reference.png")
+        r_btn.add(image)
         r_btn.connect("clicked", self.keylist_append, 'r')
-        btns_hbox.pack_start(r_btn, False, False, 2)
+        btns_hbox1.pack_start(r_btn, False, False, 2)
+        # del btn
         del_btn = Gtk.Button()
         image = Gtk.Image()
-        image.set_from_file("Src/Visual/GUI/pictures/delete.gif")
+        image.set_from_file("Src/Visual/GUI/pictures/delete.png")
         del_btn.add(image)
         del_btn.connect("clicked", self.delete_keylist)
-        btns_hbox.pack_start(del_btn, False, False, 2)
+        btns_hbox1.pack_start(del_btn, False, False, 2)
+        # alpha btn
+        alpha_btn = Gtk.Button()
+        image = Gtk.Image()
+        image.set_from_file("Src/Visual/GUI/pictures/alpha_IMG.png")
+        alpha_btn.add(image)
+        alpha_btn.connect("clicked", self.keylist_append, 'a')
+        btns_hbox2.pack_start(alpha_btn, False, False, 2)
+        # epsilon btn
+        eps_btn = Gtk.Button()
+        image = Gtk.Image()
+        image.set_from_file("Src/Visual/GUI/pictures/epsilon.png")
+        eps_btn.add(image)
+        eps_btn.connect("clicked", self.keylist_append, 'e')
+        btns_hbox2.pack_start(eps_btn, False, False, 2)
+        # pos btn
+        pos_btn = Gtk.Button()
+        image = Gtk.Image()
+        image.set_from_file("Src/Visual/GUI/pictures/pos_feet.png")
+        pos_btn.add(image)
+        pos_btn.connect("clicked", self.keylist_append, 'pos')
+        btns_hbox2.pack_start(pos_btn, False, False, 2)
+        # fixation btn
+        fix_btn = Gtk.Button()
+        image = Gtk.Image()
+        image.set_from_file("Src/Visual/GUI/pictures/fixation.png")
+        fix_btn.add(image)
+        fix_btn.connect("clicked", self.keylist_append, 'f')
+        btns_hbox2.pack_start(fix_btn, False, False, 2)
 
+
+
+        #### Selected - View
         # create display VBox in a scrolled window
         s_view = Gtk.Viewport()
         vbox = Gtk.VBox(homogeneous=False, spacing=1)
@@ -257,7 +308,6 @@ class SelectionArea(Gtk.Bin):
         vbox = Gtk.VBox(homogeneous=False, spacing=1)
         # Put the vbox in the scrolled Window which is in the select_hbox
         scrolled_win.add_with_viewport(vbox)
-
         self.list_selection = Gtk.Viewport()
 #        self.main_vbox.pack_start(self.list_selection, False, False, 1)
         vbox.pack_start(self.list_selection, False, False, 1)
@@ -265,6 +315,7 @@ class SelectionArea(Gtk.Bin):
         self.list_selection.add(self.display_vbox)
         self.vis_btn = {}
 
+        #### Selection - View
         # create select HBox
         select_view = Gtk.Viewport()
         self.select_hbox = Gtk.HBox(homogeneous=True, spacing=1)
@@ -291,7 +342,7 @@ class SelectionArea(Gtk.Bin):
             # create label and pack it to select_hbox:
             label = Gtk.Label()
             label.set_markup('<b>{}</b>'.format(axis[:3]))
-            vbox.pack_start(label, False, False, 12)
+            vbox.pack_start(label, False, False, 7)
             # create a vertical box in a scrolled win within the select_hbox
             page_size = Gtk.Adjustment(lower=10, page_size=100)
             scrolled_win = Gtk.ScrolledWindow(page_size)

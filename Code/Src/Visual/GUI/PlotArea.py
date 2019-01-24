@@ -120,8 +120,6 @@ class PlotArea(Gtk.Bin):
         self.axx.grid(True)
         # set equal scale
         self.axx.set_aspect('auto')
-        # enable mutilple plots in window
-        self.axx.hold(True)
         # set dynamic canvas to GTK3AGG backend
         self.canvas = FigureCanvasGTK3Agg(self.figure)
         # init plots

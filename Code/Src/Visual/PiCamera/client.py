@@ -6,6 +6,7 @@ Created on Fri Jul 20 15:18:21 2018
 """
 
 import socket
+import abc
 from subprocess import call
 try:
     from Src.Visual.PiCamera import pickler
@@ -30,13 +31,41 @@ def start_img_processing_from_bianca(ip='134.28.136.49'):
     call(cmd, shell=True)
 
 
-class IMGProcSocket(object):
-    def __init__(self, ip='134.28.136.49'):
+def start_liveplotter(ip='134.28.136.70'):
+    cmd = 'ssh -i ~/.ssh/BBB_key pi@{} nohup python\
+        /home/pi/Git/GeckoBot/Code/pc_liveplotter_main.py &'.format(ip)
+    call(cmd, shell=True)
+
+
+
+
+class Socket(object):  # pragma: no cover
+    """Base class for Sockets. This defines the interface to Sockets"""
+    __metaclass__ = abc.ABCMeta
+
+    def __init__(self, ip):
         self.client_socket = socket.socket()
         self.client_socket.connect((ip, 12397))
-
         # Make a file-like object out of the connection
         self.connection = self.client_socket.makefile('wb')
+
+    def send_all(self, data):
+        self.client_socket.sendall(pickler.pickle_data(data))
+
+    def recieve_data(self):
+        ans = pickler.unpickle_data(self.client_socket.recv(4096))
+        return ans
+
+    def close(self):
+        print 'close socket'
+        self.send_all(['Exit'])
+        self.connection.close()
+        self.client_socket.close()
+
+
+class LivePlotterSocket(object):
+    def __init__(self, ip='134.28.136.70'):
+        super().__init__(self, ip)
 
     def get_alpha(self):
         self.send_all(['get_alpha'])
@@ -56,6 +85,17 @@ class IMGProcSocket(object):
         self.connection.close()
         self.client_socket.close()
 
+
+
+
+class IMGProcSocket(Socket):
+    def __init__(self, ip='134.28.136.49'):
+        Socket.__init__(self, ip)
+
+    def get_alpha(self):
+        self.send_all(['get_alpha'])
+        alpha = self.recieve_data()
+        return alpha
 
 
 class ClientSocket(object):

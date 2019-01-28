@@ -10,11 +10,15 @@ pip install deepdish
 http://deepdish.io/2014/11/11/python-dictionary-to-hdf5/
 """
 
-import deepdish
+try:
+    import deepdish
+except ImportError:
+    print 'Can not import Deepdish'
 import matplotlib.pyplot as plt
 from matplotlib2tikz import save as tikz_save
 import fileinput
 import csv
+import numpy as np
 
 
 def save_recorded_data(data, filename):
@@ -34,6 +38,7 @@ def save_recorded_data_as_csv(data, filename, StartStop=None):
         writer.writerow(keys)
         writer.writerows(zip(*[d[key] for key in keys]))
 
+
 def read_csv(filename):
     dic = {}
     mapping = {}
@@ -47,7 +52,7 @@ def read_csv(filename):
                     dic[key] = []
             else:
                 for jdx, val in enumerate(row):
-                    dic[mapping[jdx]].append(val)
+                    dic[mapping[jdx]].append(float(val) if val else np.nan)
     return dic
 
 

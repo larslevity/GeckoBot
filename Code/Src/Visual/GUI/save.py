@@ -34,6 +34,22 @@ def save_recorded_data_as_csv(data, filename, StartStop=None):
         writer.writerow(keys)
         writer.writerows(zip(*[d[key] for key in keys]))
 
+def read_csv(filename):
+    dic = {}
+    mapping = {}
+    with open(filename, 'rb') as csvfile:
+        reader = csv.reader(csvfile, delimiter='\t')
+        for idx, row in enumerate(reader):
+            # print ', '.join(row)
+            if idx == 0:
+                for jdx, key in enumerate(row):
+                    mapping[jdx] = key
+                    dic[key] = []
+            else:
+                for jdx, val in enumerate(row):
+                    dic[mapping[jdx]].append(val)
+    return dic
+
 
 def save_current_plot_as_tikz(toplevel, filename):
     print('Saving as TikZ-Picture...')

@@ -102,14 +102,10 @@ def print(*args, **kwargs):
     __builtin__.print(colored('Comm_Thread: ', 'red'), *args, **kwargs)
 
 
-def generate_pattern(p0, p1, p2, p3, p4, p5, p6, p7):
-    t_move = 3.0
-    t_fix = .66
-    t_dfx = .25
-    p01 = 0.25
-    p11 = 0.25
-    p41 = 0.25
-    p51 = 0.25
+def generate_pattern(p0, p1, p2, p3, p4, p5, p6, p7, t_move=3.0, t_fix=.66,
+                     t_dfx=.25, stiffener=True):
+    p01, p11, p41, p51 = [.25]*4 if stiffener else [.0]*4
+
     data = [
         [p01, p1, p2, 0.0, p41, p5, p6, 0.0, False, True, True, False, t_move],
         [0.0, p1, p2, 0.0, p41, p5, p6, 0.0, True, True, True, True, t_fix],

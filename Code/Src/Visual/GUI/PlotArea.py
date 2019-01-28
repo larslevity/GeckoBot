@@ -28,6 +28,7 @@ class PlotArea(Gtk.Bin):
             val_new = self.data.recorded[key]['val'][-self._bufsize:]
         else:
             start_idx = self.look_at_head - self._bufsize
+            start_idx = 0 if start_idx < 0 else start_idx
             val_new =\
                 self.data.recorded[key]['val'][start_idx:self.look_at_head]
         return val_new
@@ -42,6 +43,11 @@ class PlotArea(Gtk.Bin):
         # update value
         if self.look_at_present:
             self.adj_scroll_hist.set_value(maxidx)
+            
+        # change Buffer size if StartStop
+        if self.data.StartStop:
+            self.BufSizeSpinnBtn.set_value(maxidx-self.data.StartStopIdx[0])
+
         # increase number of plots if neccessary
         while len(keylist)+self.nMarkers > self.nartist:
             self.points[self.nartist] = self.axx.plot(nan, nan, '-')[0]
@@ -83,7 +89,7 @@ class PlotArea(Gtk.Bin):
         """
         timewindow = spin.get_value_as_int()
         self._bufsize = int(timewindow)
-        print "BufferSize: %s" % self._bufsize
+        # print "BufferSize: %s" % self._bufsize
 
     def change_look_at_hist(self, widget, event=None):
         """
@@ -103,7 +109,10 @@ class PlotArea(Gtk.Bin):
         else:
             self.axx.set_aspect('auto')
 
-    def __init__(self, data):
+    def set_look_at_HEAD(self, state):
+        self.check_button.set_active(state)
+
+    def __init__(self, data, toplevel):
         """
         *Initialize with:*
 
@@ -111,7 +120,7 @@ class PlotArea(Gtk.Bin):
             data (GlobalData Object): Source of Data
         """
         super(PlotArea, self).__init__()
-
+        self.toplevel = toplevel
         # GlobalData
         self.data = data
         # look_at_head: index-_bufsize:index -> the data you gonna display
@@ -123,6 +132,8 @@ class PlotArea(Gtk.Bin):
         # scrol Window Adjustments
         self.adj_scroll_hist = None
         self.axisequal = False
+        #
+        self.BufSizeSpinnBtn = None
 
         # MPL:
         # create figure
@@ -188,14 +199,17 @@ class PlotArea(Gtk.Bin):
         adjustment = Gtk.Adjustment(value=30, lower=1, upper=1e5,
                                     step_incr=1, page_incr=-1)
         # create Label
-        label = Gtk.Label("Time Window [sec]:")
+        label = Gtk.Label("Buffer [1]:")
         # pack label to hbox:
         hbox.pack_start(label, expand=False, fill=False, padding=0)
         # create a text enter field for buffer size
-        button = Gtk.SpinButton(adjustment=adjustment, climb_rate=1, digits=0)
-        adjustment.connect("value_changed", self.change_buffer_size, button)
+        self.BufSizeSpinnBtn = \
+            Gtk.SpinButton(adjustment=adjustment, climb_rate=1, digits=0)
+        adjustment.connect("value_changed", self.change_buffer_size,
+                           self.BufSizeSpinnBtn)
         # pack SpinButton zu hbox
-        hbox.pack_start(button, expand=False, fill=False, padding=1)
+        hbox.pack_start(self.BufSizeSpinnBtn, expand=False, fill=False,
+                        padding=1)
 
         # #### ScrollBar
         hbox = Gtk.HBox(homogeneous=False, spacing=1)
@@ -209,10 +223,10 @@ class PlotArea(Gtk.Bin):
         label = Gtk.Label("Look at:")
         hbox.pack_start(label, expand=False, fill=False, padding=1)
         hbox.pack_start(scroll_button, expand=True, fill=True, padding=1)
-        check_button = Gtk.CheckButton("Present")
-        check_button.connect("clicked", self.look_at_present_callback)
-        check_button.set_active(True)
-        hbox.pack_start(check_button, expand=False, fill=False, padding=1)
+        self.check_button = Gtk.CheckButton("HEAD")
+        self.check_button.connect("clicked", self.look_at_present_callback)
+        self.check_button.set_active(True)
+        hbox.pack_start(self.check_button, expand=False, fill=False, padding=1)
         spinner = Gtk.SpinButton(adjustment=self.adj_scroll_hist, climb_rate=1,
                                  digits=0)
         hbox.pack_start(spinner, expand=False, fill=False, padding=1)

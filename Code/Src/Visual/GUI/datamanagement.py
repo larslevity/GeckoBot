@@ -48,6 +48,8 @@ class GUIRecorder(object):
         """
         self.recorded = {}
         self.max_idx = 0
+        self.StartStop = False
+        self.StartStopIdx = [None, None]
 
     def append(self, sample):
         """

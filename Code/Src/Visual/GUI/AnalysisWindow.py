@@ -12,7 +12,7 @@ from Src.Visual.GUI import SelectionArea
 class AnalysisObject(Gtk.Bin):
     """ Analysis Object """
 
-    def __init__(self, data):
+    def __init__(self, data, toplevel):
         """
         *Initialize with:*
         Args:
@@ -28,7 +28,7 @@ class AnalysisObject(Gtk.Bin):
         # #### Fill Buffer Window ####
         hbox = Gtk.HBox(False, 2)
         self.add(hbox)
-        self.plot_win = PlotArea.PlotArea(self.data)
+        self.plot_win = PlotArea.PlotArea(self.data, toplevel=toplevel)
         self.select_win = SelectionArea.SelectionArea(self.data)
         hbox.pack_start(self.plot_win, True, True, 2)
         hbox.pack_start(self.select_win, False, False, 2)

@@ -22,8 +22,12 @@ def save_recorded_data(data, filename):
     deepdish.io.save(filename, data)
 
 
-def save_recorded_data_as_csv(data, filename):
-    d = {key: data[key]['val'] for key in data}
+def save_recorded_data_as_csv(data, filename, StartStop=None):
+    if StartStop:
+        start, stop = StartStop
+    else:
+        start, stop = [0, data.max_idx]
+    d = {key: data[key]['val'][start:stop] for key in data}
     keys = sorted(d.keys())
     with open(filename, "wb") as outfile:
         writer = csv.writer(outfile, delimiter="\t")

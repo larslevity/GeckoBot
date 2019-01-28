@@ -104,7 +104,8 @@ class GeckoBotGUI(Gtk.Window):
 #        self.status_win = StatusWindow.StatusObject(self.data, self)
 #        main_hbox.pack_start(self.status_win, False, False, 1)
         # Analysis Window
-        self.analyse_win = AnalysisWindow.AnalysisObject(self.data)
+        self.analyse_win = AnalysisWindow.AnalysisObject(self.data,
+                                                         toplevel=self)
         self.analyse_win.size_request()
         main_hbox.pack_start(self.analyse_win, True, True, 1)
 

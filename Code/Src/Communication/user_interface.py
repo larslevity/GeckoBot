@@ -432,7 +432,6 @@ class Printer(threading.Thread):
                 angle_imgProc, x, y)
             state_str = state_str + s
         print(state_str)
-        time.sleep(.1)
 
     def run(self):
         while self.state is not 'EXIT':
@@ -448,6 +447,7 @@ class Printer(threading.Thread):
 
             else:
                 self.print_state()
+                time.sleep(.1)
 
     def kill(self):
         self.state = 'EXIT'

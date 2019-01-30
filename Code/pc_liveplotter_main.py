@@ -123,7 +123,7 @@ def main(wait=30):
             else:
                 fill_rnd_values()
 
-            time.sleep(.1)
+            time.sleep(.03)
     except KeyboardInterrupt:
         print('keyboard interrupt')
     finally:

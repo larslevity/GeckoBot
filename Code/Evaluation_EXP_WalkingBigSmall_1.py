@@ -4,13 +4,15 @@ Created on Mon Jan 28 15:35:06 2019
 
 @author: AmP
 """
-
-SAVE = True
-
-
-from Src.Visual.GUI import save
 import matplotlib.pyplot as plt
 import numpy as np
+
+from Src.Visual.GUI import save
+from Src.Math import kinematic_model_fun as kinematic
+
+
+SAVE = False
+
 
 
 def remove_offset_time_xy(data):
@@ -206,16 +208,19 @@ for exp in range(1,4):
     cyc_big.append(cycles_big)
 
 
-def calc_centerpoint(data_set, cycles):
+def calc_centerpoint(data_set, cycles, axis='x'):
     X = []
     min_dist = min([idx[-1] - idx[0] for idx in cycles])
+    markers = ['{}{}'.format(axis, idx) for idx in range(6)]
 
     for exp in range(len(data_set)):
         start = cycles[exp][0]
         x = []  # list of center in current exp
         for idx in range(start, start+min_dist):
-            all_x = [data_set[exp][foot][idx] for foot in ['x0', 'x2', 'x3', 'x5']]  # calc center
+#            all_x = [data_set[exp][foot][idx] for foot in ['x0', 'x2', 'x3', 'x5']]  # calc center
+            all_x = [data_set[exp][foot][idx] for foot in markers]  # calc center
             x.append(np.nanmean(all_x))
+#            x.append(np.mean(all_x))
         X.append(x)     # List of centers in all exp
     t = data_set[exp]['time'][start:start+min_dist]
     return X, t
@@ -248,7 +253,7 @@ plt.title('Shift in position')
 centers, t = calc_centerpoint(ds, cyc_small)
 mat = make_matrix_plain(centers)
 mu, sigma = calc_mean_stddev(mat)
-plt.plot(t, mu, ':', lw=2, label='p_{v0}', color=color_prs)
+plt.plot(t, mu, '-', lw=2, label='p_{v0}', color=color_prs)
 plt.fill_between(t, mu+sigma, mu-sigma, facecolor=color_prs, alpha=0.2)
 
 
@@ -256,7 +261,7 @@ plt.fill_between(t, mu+sigma, mu-sigma, facecolor=color_prs, alpha=0.2)
 centers, t = calc_centerpoint(db, cyc_big)
 mat = make_matrix_plain(centers)
 mu, sigma = calc_mean_stddev(mat)
-plt.plot(t, mu, ':', lw=2, label='p_{v0}', color=color_alp)
+plt.plot(t, mu, '-', lw=2, label='p_{v0}', color=color_alp)
 plt.fill_between(t, mu+sigma, mu-sigma, facecolor=color_alp, alpha=0.2)
 
 if SAVE:
@@ -274,26 +279,51 @@ ________________________________________________
 
 
 
-plt.figure()
-plt.title('Test Track')
+#plt.figure()
+#plt.title('Test Track')
+#
+#min_dist = min([idx[-1] - idx[0] for idx in cyc_small])
+#
+#col = ['red', 'orange', 'green', 'blue', 'blue', 'blue']
+#spec = ['--', '-']
+#shiftx = [0, 0, 0.]
+#shifty = [0, 0, 0]
+#
+#
+#for exp in range(len(ds)):
+#    start = cyc_small[exp][0]
+#    for mark in range(6):    
+#        x = [val+shiftx[exp] for val in ds[exp]['x{}'.format(mark)][start:start+min_dist]]
+#        y = [val+shifty[exp] for val in ds[exp]['y{}'.format(mark)][start:start+min_dist]]
+#        
+#        plt.plot(x, y, spec[mark%2], color=col[exp])
+#
+#plt.axis('equal')
 
-min_dist = min([idx[-1] - idx[0] for idx in cyc_small])
 
-col = ['red', 'orange', 'green', 'blue', 'blue', 'blue']
-spec = ['--', '-']
-shiftx = [0, 0, 0.]
-shifty = [0, 0, 0]
+#plt.figure()
+#plt.title('Test Track BigBot')
+#
+#min_dist = min([idx[-1] - idx[0] for idx in cyc_big])
+#
+#col = ['red', 'orange', 'green', 'blue', 'blue', 'blue']
+#spec = ['--', '-']
+#
+#for exp in range(len(ds)):
+#    start = cyc_big[exp][0]
+#    for mark in range(6):    
+#        x = [val+shiftx[exp] for val in db[exp]['x{}'.format(mark)][start:start+min_dist]]
+#        y = [val+shifty[exp] for val in db[exp]['y{}'.format(mark)][start:start+min_dist]]
+#        
+#        plt.plot(x, y, spec[mark%2], color=col[exp])
+#
+#plt.axis('equal')
+#
+#
 
 
-for exp in range(len(ds)):
-    start = cyc_small[exp][0]
-    for mark in range(6):    
-        x = [val+shiftx[exp] for val in ds[exp]['x{}'.format(mark)][start:start+min_dist]]
-        y = [val+shifty[exp] for val in ds[exp]['y{}'.format(mark)][start:start+min_dist]]
-        
-        plt.plot(x, y, spec[mark%2], color=col[exp])
 
-plt.axis('equal')
+
 
 
 
@@ -326,7 +356,7 @@ for idx in range(6):
     y = -np.array(Y[idx])
     sigx = np.array(Xstd[idx])
     sigy = np.array(Ystd[idx])
-#    plt.plot(x, y, color=col[idx])
+    plt.plot(x, y, color=col[idx])
     plt.fill_between(x, y+sigy, y-sigy, facecolor=col[idx], alpha=0.6)
 
 
@@ -337,16 +367,84 @@ for idx in range(6):
     y = -(np.array(Y[idx]) + yshift)
     sigx = np.array(Xstd[idx])
     sigy = np.array(Ystd[idx])
-#    plt.plot(x, y, color=col[idx])
+    plt.plot(x, y, color=col[idx])
     plt.fill_between(x, y+sigy, y-sigy, facecolor=col[idx], alpha=0.5, label='mark_{}'.format(idx))
+
+
+
+
+######## plot gecko in first position:
+exp = 0
+cycle = 3
+idx = cyc_big[exp][cycle]
+positions = ([db[exp]['x{}'.format(foot)][idx] for foot in range(6)],
+             [db[exp]['y{}'.format(foot)][idx] for foot in range(6)])
+alpha = [db[exp]['aIMG{}'.format(foot)][idx] for foot in range(6)]
+eps = db[exp]['eps'][idx]
+
+
+alpha_ = alpha[0:3] + alpha[4:6]
+pose, ell, bet = kinematic.extract_pose(alpha_, eps, positions)
+
+
+
 
 
 
 plt.axis('equal')
 plt.legend(loc='upper right')
 
+
+
 if SAVE:
     plt.savefig('pics/Track.png', dpi=500, facecolor='w', edgecolor='w',
+                orientation='portrait', papertype=None, format=None,
+                transparent=False, bbox_inches=None, pad_inches=0.1,
+                frameon=None, metadata=None)
+
+
+###############################################################################
+########################### TRACK MEAN ########################################
+###############################################################################
+
+
+
+plt.figure()
+plt.title('Track Mean')
+
+# Big
+yshift = -100
+X, _ = calc_centerpoint(db, cyc_big, axis='x')
+mat = make_matrix_plain(X)
+x, sigx = calc_mean_stddev(mat)
+
+Y, _ = calc_centerpoint(db, cyc_big, axis='y')
+mat = make_matrix_plain(Y)
+y, sigy = calc_mean_stddev(mat)
+y = -(y + yshift)
+
+plt.plot(x, y, color=col[idx])
+plt.fill_between(x, y+sigy, y-sigy, facecolor=color_alp, alpha=0.5, label='mean_big')
+
+# Mean Small
+yshift = 0
+X, _ = calc_centerpoint(ds, cyc_small, axis='x')
+mat = make_matrix_plain(X)
+x, sigx = calc_mean_stddev(mat)
+
+Y, _ = calc_centerpoint(ds, cyc_small, axis='y')
+mat = make_matrix_plain(Y)
+y, sigy = calc_mean_stddev(mat)
+y = -(y + yshift)
+
+plt.plot(x, y, color=col[idx])
+plt.fill_between(x, y+sigy, y-sigy, facecolor=color_prs, alpha=0.5, label='mean_small')
+
+plt.axis('equal')
+plt.legend(loc='upper right')
+
+if SAVE:
+    plt.savefig('pics/Track_Mean.png', dpi=500, facecolor='w', edgecolor='w',
                 orientation='portrait', papertype=None, format=None,
                 transparent=False, bbox_inches=None, pad_inches=0.1,
                 frameon=None, metadata=None)

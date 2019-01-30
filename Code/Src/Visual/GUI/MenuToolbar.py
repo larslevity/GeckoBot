@@ -187,7 +187,8 @@ class MenuToolbarWindow(Gtk.Bin):
             else:
                 self.toplevel.analyse_win.plot_win.set_look_at_HEAD(False)
                 self.data.StartStopIdx[1] = self.data.max_idx
-                filename = strftime("%Y_%m_%d__%H_%M_%S")+'-StartStop'+'.csv'
+#                filename = strftime("%Y_%m_%d__%H_%M_%S")+'-StartStop'+'.csv'
+                filename = None
                 save.save_recorded_data_as_csv(self.data.recorded, filename,
                                                self.data.StartStopIdx)
                 self.data.StartStopIdx = [None]*2

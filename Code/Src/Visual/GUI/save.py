@@ -19,6 +19,8 @@ from matplotlib2tikz import save as tikz_save
 import fileinput
 import csv
 import numpy as np
+import os
+from time import strftime
 
 
 def save_recorded_data(data, filename):
@@ -26,7 +28,15 @@ def save_recorded_data(data, filename):
     deepdish.io.save(filename, data)
 
 
-def save_recorded_data_as_csv(data, filename, StartStop=None):
+def save_recorded_data_as_csv(data, filename=None, StartStop=None):
+    if not filename:
+        exp = 'big--'
+        filename = exp+strftime("%Y_%m_%d__%H_%M_%S")+'.csv'
+    dirname = os.path.dirname(os.path.realpath(__file__))
+    realpath = '../../../../../GeckoBotExperiments/' + filename
+    filename = os.path.join(dirname, realpath)
+    filename = os.path.abspath(os.path.realpath(filename))
+ 
     if StartStop:
         start, stop = StartStop
     else:

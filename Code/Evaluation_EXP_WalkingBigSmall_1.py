@@ -5,6 +5,8 @@ Created on Mon Jan 28 15:35:06 2019
 @author: AmP
 """
 
+SAVE = True
+
 
 from Src.Visual.GUI import save
 import matplotlib.pyplot as plt
@@ -59,8 +61,6 @@ def rm_offset(lis):
 
 def calc_mean_stddev(mat):
     mu1 = np.nanmean(mat, axis=1)
-#    mu1 = mat.mean(axis=1)
-#    sigma1 = mat.std(axis=1)
     sigma1 = np.nanstd(mat, axis=1)
     return mu1, sigma1
 
@@ -175,11 +175,12 @@ ax_alp.legend(loc='right')
 ax_prs.grid()
 fig.tight_layout()
 
-plt.savefig('pics/actuation_speed.png', dpi=500, facecolor='w', edgecolor='w',
-            orientation='portrait', papertype=None, format=None,
-            transparent=False, bbox_inches=None, pad_inches=0.1,
-            frameon=None, metadata=None)
-
+if SAVE:
+    plt.savefig('pics/actuation_speed.png', dpi=500, facecolor='w', edgecolor='w',
+                orientation='portrait', papertype=None, format=None,
+                transparent=False, bbox_inches=None, pad_inches=0.1,
+                frameon=None, metadata=None)
+    
 
 
 
@@ -189,8 +190,6 @@ ____________________Shift in Position___________
 ________________________________________________
 """
 
-plt.figure()
-plt.title('Shift in position')
 
 ds, db, cyc_small, cyc_big = [], [], [], []
 for exp in range(1,4):
@@ -206,13 +205,6 @@ for exp in range(1,4):
     cyc_small.append(cycles_small)
     cyc_big.append(cycles_big)
 
-    
-    plt.plot(data_small['time'], data_small['x0'])
-
-
-min_dist_big = min([idx[-1] - idx[0] for idx in cyc_big])
-
-
 
 def calc_centerpoint(data_set, cycles):
     X = []
@@ -225,7 +217,8 @@ def calc_centerpoint(data_set, cycles):
             all_x = [data_set[exp][foot][idx] for foot in ['x0', 'x2', 'x3', 'x5']]  # calc center
             x.append(np.nanmean(all_x))
         X.append(x)     # List of centers in all exp
-    return X
+    t = data_set[exp]['time'][start:start+min_dist]
+    return X, t
 
 
 
@@ -241,28 +234,122 @@ def make_matrix_plain(data):
 
 
 
-plt.figure()
-for row in calc_centerpoint(ds, cyc_small):
-    plt.plot(row)
+#plt.figure()
+#centers, t = calc_centerpoint(ds, cyc_small)
+#for row in centers:
+#    plt.plot(row)
+
 
 plt.figure()
+plt.title('Shift in position')
+
 
 ## small
-centers = calc_centerpoint(ds, cyc_small)
+centers, t = calc_centerpoint(ds, cyc_small)
 mat = make_matrix_plain(centers)
 mu, sigma = calc_mean_stddev(mat)
-# calc t
-plt.plot(range(len(mu)), mu, ':', lw=2, label='p_{v0}', color=color_prs)
-plt.fill_between(range(len(mu)), mu+sigma, mu-sigma, facecolor=color_prs, alpha=0.2)
+plt.plot(t, mu, ':', lw=2, label='p_{v0}', color=color_prs)
+plt.fill_between(t, mu+sigma, mu-sigma, facecolor=color_prs, alpha=0.2)
 
 
 ## big
-centers = calc_centerpoint(db, cyc_big)
+centers, t = calc_centerpoint(db, cyc_big)
 mat = make_matrix_plain(centers)
 mu, sigma = calc_mean_stddev(mat)
-# calc t
-plt.plot(range(len(mu)), mu, ':', lw=2, label='p_{v0}', color=color_alp)
-plt.fill_between(range(len(mu)), mu+sigma, mu-sigma, facecolor=color_alp, alpha=0.2)
+plt.plot(t, mu, ':', lw=2, label='p_{v0}', color=color_alp)
+plt.fill_between(t, mu+sigma, mu-sigma, facecolor=color_alp, alpha=0.2)
+
+if SAVE:
+    plt.savefig('pics/Shift.png', dpi=500, facecolor='w', edgecolor='w',
+                orientation='portrait', papertype=None, format=None,
+                transparent=False, bbox_inches=None, pad_inches=0.1,
+                frameon=None, metadata=None)
+
+
+"""
+________________________________________________
+____________________Track___________
+________________________________________________
+"""
+
+
+
+plt.figure()
+plt.title('Test Track')
+
+min_dist = min([idx[-1] - idx[0] for idx in cyc_small])
+
+col = ['red', 'orange', 'green', 'blue', 'blue', 'blue']
+spec = ['--', '-']
+shiftx = [0, 0, 0.]
+shifty = [0, 0, 0]
+
+
+for exp in range(len(ds)):
+    start = cyc_small[exp][0]
+    for mark in range(6):    
+        x = [val+shiftx[exp] for val in ds[exp]['x{}'.format(mark)][start:start+min_dist]]
+        y = [val+shifty[exp] for val in ds[exp]['y{}'.format(mark)][start:start+min_dist]]
+        
+        plt.plot(x, y, spec[mark%2], color=col[exp])
+
+plt.axis('equal')
+
+
+
+def calc_foot_mean_of_all_exp(data_set, cycles):
+    X, Y, Xstd, Ystd = {}, {}, {}, {}
+    min_dist = min([idx[-1] - idx[0] for idx in cycles])
+    for foot in range(6):
+        x, y, stdx, stdy = [], [], [], []
+        for idx in range(min_dist):
+            footx = [data_set[exp]['x{}'.format(foot)][cycles[exp][0]+idx] for exp in range(len(data_set))]
+            footy = [data_set[exp]['y{}'.format(foot)][cycles[exp][0]+idx] for exp in range(len(data_set))]
+            x.append(np.nanmean(footx))
+            y.append(np.nanmean(footy))
+            stdx.append(np.nanstd(footx))
+            stdy.append(np.nanstd(footy))
+            
+        X[foot] = x
+        Xstd[foot] = stdx
+        Y[foot] = y
+        Ystd[foot] = stdy
+    return X, Y, Xstd, Ystd
+
+plt.figure()
+plt.title('Track')
+
+col = ['red', 'orange', 'green', 'blue', 'magenta', 'darkred']
+X, Y, Xstd, Ystd = calc_foot_mean_of_all_exp(ds, cyc_small)
+for idx in range(6):
+    x = np.array(X[idx])
+    y = -np.array(Y[idx])
+    sigx = np.array(Xstd[idx])
+    sigy = np.array(Ystd[idx])
+#    plt.plot(x, y, color=col[idx])
+    plt.fill_between(x, y+sigy, y-sigy, facecolor=col[idx], alpha=0.6)
+
+
+yshift = -230
+X, Y, Xstd, Ystd = calc_foot_mean_of_all_exp(db, cyc_big)
+for idx in range(6):
+    x = np.array(X[idx])
+    y = -(np.array(Y[idx]) + yshift)
+    sigx = np.array(Xstd[idx])
+    sigy = np.array(Ystd[idx])
+#    plt.plot(x, y, color=col[idx])
+    plt.fill_between(x, y+sigy, y-sigy, facecolor=col[idx], alpha=0.5, label='mark_{}'.format(idx))
+
+
+
+plt.axis('equal')
+plt.legend(loc='upper right')
+
+if SAVE:
+    plt.savefig('pics/Track.png', dpi=500, facecolor='w', edgecolor='w',
+                orientation='portrait', papertype=None, format=None,
+                transparent=False, bbox_inches=None, pad_inches=0.1,
+                frameon=None, metadata=None)
 
 
 

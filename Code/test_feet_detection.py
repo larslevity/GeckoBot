@@ -28,17 +28,17 @@ def main(testtime=200):
             # grab the frame from the threaded video stream
             frame = vs.read()
 
-            img = img_proc.draw_rects(frame)
-#            # detect pose
-#            alpha, eps, positions = img_proc.detect_all(frame)
+#            img = img_proc.draw_rects(frame)
+            # detect pose
+            alpha, eps, positions = img_proc.detect_all(frame)
 
-#            if alpha is not None:
-#                print 'alpha:\t', alpha
-#                print 'eps:\t', eps
+            if alpha is not None:
+                print 'alpha:\t', alpha
+                print 'eps:\t', eps
 
-#                img = img_proc.draw_positions(frame, positions)
-#            else:
-#                img = frame
+                img = img_proc.draw_positions(frame, positions)
+            else:
+                img = frame
 
 #            pose, ell, bet = img_proc.calc_pose(alpha, eps, positions)
 #            img = img_proc.draw_pose(img, pose)

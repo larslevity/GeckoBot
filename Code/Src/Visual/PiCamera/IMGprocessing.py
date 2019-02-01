@@ -52,10 +52,24 @@ def detect_apriltags(frame):
 
 
 def extract_position(april_result):
+    SHIFT = {
+        0: [0, 1, 10],
+        1: [0, 3, 16],
+        2: [1, 0, 10],
+        3: [0, 1, 10],
+        4: [3, 0, 5],
+        5: [1, 0, 10],
+            }
     X, Y = [None]*6, [None]*6
     for res in april_result:
         tag_id = res.tag_id
-        x, y = int(res.center[0]), int(res.center[1])
+        pc0 = np.array([res.corners[SHIFT[tag_id][0]][0],
+                        res.corners[SHIFT[tag_id][0]][1]])
+        pc1 = np.array([res.corners[SHIFT[tag_id][1]][0],
+                        res.corners[SHIFT[tag_id][1]][1]])
+        shift = (pc1-pc0)/np.linalg.norm(pc1-pc0)*SHIFT[tag_id][2]
+        center = res.center + shift
+        x, y = int(center[0]), int(center[1])
         X[tag_id] = x
         Y[tag_id] = y
     return X, Y

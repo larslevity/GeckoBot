@@ -21,8 +21,6 @@ from Src.Math import IMUcalc
 from Src.Math import kinematic_model_fun as kin_mod
 
 
-
-
 detector = apriltag.Detector()
 
 
@@ -100,13 +98,28 @@ def draw_positions(img, position_coords):
     X, Y = position_coords
     for tag_id, coords in enumerate(zip(X, Y)):
         x, y = coords
-        if x is not None:    
+        if x is not None:
             cv2.rectangle(img, (x-5, y-5), (x+5, y+5), (0, 128, 255), -1)
             font = cv2.FONT_HERSHEY_SIMPLEX
             fontscale = .8
             col = (255, 0, 0)
             cv2.putText(img, str(tag_id), (x, y-10), font, fontscale, col, 2)
 
+    return img
+
+
+def draw_rects(img):
+    april_result = detect_apriltags(img)
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    fontscale = .8
+    col = (255, 0, 0)
+    for res in april_result:
+        tag_id = res.tag_id
+        xc, yc = int(res.center[0]), int(res.center[1])
+        cv2.putText(img, str(tag_id), (xc, yc), font, fontscale, col, 2)
+        for corner in range(4):
+            x, y = int(res.corners[corner][0]), int(res.corners[corner][1])
+            cv2.putText(img, str(corner), (x, y), font, fontscale*.5, col, 2)
     return img
 
 

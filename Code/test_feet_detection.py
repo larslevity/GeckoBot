@@ -11,9 +11,7 @@ import cv2
 from imutils.video import FPS
 
 
-from Src.Math import IMGprocessing as img_proc
-
-
+from Src.Visual.PiCamera import IMGprocessing as img_proc
 
 
 def main(testtime=200):
@@ -27,22 +25,23 @@ def main(testtime=200):
     fps = FPS().start()
     try:
         while time.time()-start < testtime:
-            # grab the frame from the threaded video stream 
+            # grab the frame from the threaded video stream
             frame = vs.read()
-            # detect pose
-            alpha, eps, positions = img_proc.detect_all(frame)
-            
-            if alpha is not None:
-                print 'alpha:\t', alpha
-                print 'eps:\t', eps
-            
-                img = img_proc.draw_positions(frame, positions)
-            else:
-                img = frame
-            
+
+            img = img_proc.draw_rects(frame)
+#            # detect pose
+#            alpha, eps, positions = img_proc.detect_all(frame)
+
+#            if alpha is not None:
+#                print 'alpha:\t', alpha
+#                print 'eps:\t', eps
+
+#                img = img_proc.draw_positions(frame, positions)
+#            else:
+#                img = frame
+
 #            pose, ell, bet = img_proc.calc_pose(alpha, eps, positions)
 #            img = img_proc.draw_pose(img, pose)
-            
 
             # display
             cv2.imshow("Frame", img)

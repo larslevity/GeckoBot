@@ -7,7 +7,7 @@ Created on Wed Aug 22 15:45:16 2018
 
 from __future__ import print_function
 
-import __builtin__
+# import __builtin__
 import threading
 import time
 import sys
@@ -16,8 +16,6 @@ import Adafruit_BBIO.ADC as ADC
 import errno
 from socket import error as SocketError
 
-
-from termcolor import colored
 from Src.Management import state_machine
 from Src.Visual.GUI import datamanagement as mgmt
 
@@ -97,8 +95,8 @@ def read_switches():
     return switches
 
 
-def print(*args, **kwargs):
-    __builtin__.print(colored('Comm_Thread: ', 'red'), *args, **kwargs)
+#def print(*args, **kwargs):
+#    __builtin__.print(colored('Comm_Thread: ', 'red'), *args, **kwargs)
 
 
 def generate_pattern(p0, p1, p2, p3, p4, p5, p6, p7, t_move=3.0, t_fix=.66,

@@ -10,7 +10,7 @@ https://groups.google.com/forum/#!topic/beagleboard/vbuM-4oShS8
 try:
     import Adafruit_GPIO.I2C as Adafruit_I2C
 except ImportError:
-    print "Can't import Adafruit_I2C"
+    print("Can't import Adafruit_I2C")
 
 import subprocess
 import time
@@ -109,5 +109,5 @@ if __name__ == "__main__":
         s = 'x_acc: {}\n'.format(x)
         s = s + 'y_acc: {}\n'.format(y)
         s = s + 'z_acc: {}\n'.format(z)
-        print s
+        print(s)
         time.sleep(.05)

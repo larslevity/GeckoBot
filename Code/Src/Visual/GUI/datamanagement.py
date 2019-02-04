@@ -7,7 +7,7 @@ import time
 def merge_multiple_dicts(dicts):
     super_dict = {}
     for d in dicts:
-        for key, value in d.iteritems():
+        for key, value in iter(d.items()):
             super_dict[key] = value
     return super_dict
 

@@ -22,7 +22,6 @@ from Src.Management import state_machine
 from Src.Visual.GUI import datamanagement as mgmt
 
 UI_TSAMPLING = .1
-VIDEO_DETECT = True
 
 MODE1 = "P9_23"
 MODE2 = "P9_27"
@@ -117,6 +116,13 @@ def generate_pattern(p0, p1, p2, p3, p4, p5, p6, p7, t_move=3.0, t_fix=.66,
     return data
 
 
+def get_initial_pose(pattern, hold0=2., hold1=1.):
+    ref0 = pattern[0]
+    ref0 = ref0[:8] + [False]*4 + [hold0]
+    ref1 = ref0[:8] + [False, True, True, False] + [hold1]
+    return [ref0, ref1]
+
+
 class HUIThread(threading.Thread):
     def __init__(self, shared_memory, rootLogger=None, camerasock=None):
         """ """
@@ -182,7 +188,8 @@ class HUIThread(threading.Thread):
 
             change = False
             if new_state and time.time()-self.lastchange > 1:
-                if all_potis_zero() and new_state is not self.ui_state or new_state == 'EXIT':
+                if (all_potis_zero() and new_state is not self.ui_state
+                        or new_state == 'EXIT'):
                     change = True
                     self.ui_state = new_state
                     self.rootLogger.info("UI goes to: {}".format(new_state))
@@ -285,6 +292,8 @@ class HUIThread(threading.Thread):
             return (self.ui_state)
 
         def pattern_reference():
+            self.ptrn_idx = 0   # always start with ref0
+            initial_cycle, initial_cycle_idx = True, 0
             while not mode_changed():
                 change_state_in_main_thread(MODE[3]['main_state'][fun2()])
                 if is_userpattern():
@@ -292,20 +301,26 @@ class HUIThread(threading.Thread):
                     self.shared_memory.pattern = generate_pattern(*cref)
                 if (fun1() and self.last_process_time + self.process_time <
                         time.time()):
-
-                    pattern = self.shared_memory.pattern
-                    idx = self.ptrn_idx
-                    idx = idx+1 if idx < len(pattern)-1 else 0
+                    if initial_cycle:  # initial cacle
+                        pattern = get_initial_pose(self.shared_memory.pattern)
+                        idx = initial_cycle_idx
+                        initial_cycle_idx += 1
+                        if initial_cycle_idx > 1:
+                            initial_cycle = False
+                    else:  # normaler style
+                        pattern = self.shared_memory.pattern
+                        idx = self.ptrn_idx
+                        self.ptrn_idx = idx+1 if idx < len(pattern)-1 else 0
+                    # generate tasks
                     dvtsk, pvtsk, processtime = generate_pose_ref(pattern, idx)
+                    # send to main thread
                     self.shared_memory.dvalve_task = dvtsk
                     self.shared_memory.ref_task = pvtsk
-
-                    self.ptrn_idx = idx
+                    # organisation
                     self.process_time = processtime
                     self.last_process_time = time.time()
-
                     # capture image?
-                    if self.camerasock and not VIDEO_DETECT:
+                    if self.camerasock:
                         if idx % 3 == 1:
                             self.camerasock.make_image('test'+str(self.camidx))
                             self.camidx += 1
@@ -374,7 +389,6 @@ class Printer(threading.Thread):
         self.plotsock = plotsock
         self.IMU_connected = True if IMU else False
 
-
     def prepare_data(self):
         p = [round(self.shared_memory.rec[i], 2) for i in range(8)]
         r = [round(self.shared_memory.ref_task[i], 2) for i in range(8)]
@@ -393,12 +407,14 @@ class Printer(threading.Thread):
             aImg, eps, X, Y = [None]*3
         if self.IMU_connected:
             rec_angle = self.shared_memory.rec_angle
-            aIMU = [round(rec_angle[i], 2) if rec_angle[i] else None for i in range(8)]
+            aIMU = [
+                round(rec_angle[i], 2)
+                if rec_angle[i]
+                else None for i in range(8)]
         else:
             aIMU = None
-        
-        return (p, r, u, f, aIMG, eps, X, Y, aIMU, self.IMU_connected, IMG)
 
+        return (p, r, u, f, aIMG, eps, X, Y, aIMU, self.IMU_connected, IMG)
 
     def print_state(self):
         if self.imgprocsock:
@@ -408,17 +424,18 @@ class Printer(threading.Thread):
             Y = Y + [None, None]
             eps = [eps] + [None]*3
         else:
-            alpha, X, Y, eps = [None]*8 , [None]*8, [None]*8, [None]*4
+            alpha, X, Y, eps = [None]*8, [None]*8, [None]*8, [None]*4
         state_str = '\n\t| Ref \t| State \t| epsilon \n'
-        state_str = state_str + '------------------------------------------------\n'
+        state_str = state_str + '-------------------------------------------\n'
         for i in range(4):
             s = '{}\t| {}\t| {} \t\t| {}\n'.format(
                 i, 1.0 if GPIO.input(SWITCHES[i]) else 0.0,
                 self.shared_memory.dvalve_task[i], eps[i])
             state_str = state_str + s
-        state_str = (state_str
+        state_str = (
+            state_str
             + '\n\t| Ref \t| p \t| PWM \t| aIMU \t| aIMG \t| POS  \n')
-        state_str = state_str + '----------------------------------------------------------------------------\n'
+        state_str = state_str + '-'*75 + '\n'
         for i in range(8):
             rec_angle = self.shared_memory.rec_angle
             angle = round(rec_angle[i], 2) if rec_angle[i] else None
@@ -426,7 +443,7 @@ class Printer(threading.Thread):
             x = round(X[i], 1) if X[i] else None
             y = round(Y[i], 1) if Y[i] else None
             s = '{}\t| {}\t| {}\t| {}\t| {}\t| {}\t| ({},{})\n'.format(
-                i, self.shared_memory.ref_task[i], 
+                i, self.shared_memory.ref_task[i],
                 round(self.shared_memory.rec[i], 2),
                 round(self.shared_memory.rec_u[i], 2), angle,
                 angle_imgProc, x, y)
@@ -438,7 +455,7 @@ class Printer(threading.Thread):
             if self.plotsock:
                 try:
                     sample = mgmt.rehash_record(*self.prepare_data())
-                    resp = self.plotsock.send_sample(sample)
+                    _ = self.plotsock.send_sample(sample)
                 except SocketError as err:
                     if err.errno != errno.ECONNRESET:
                         raise

@@ -3,12 +3,12 @@
 try:
     import Adafruit_BBIO.PWM as PWM
 except ImportError:
-    print "Can't import Adafruit_BBIO.PWM"
+    print("Can't import Adafruit_BBIO.PWM")
 
 try:
     import Adafruit_BBIO.GPIO as GPIO
 except ImportError:
-    print "Can't import Adafruit_BBIO.GPIO"
+    print("Can't import Adafruit_BBIO.GPIO")
 
 
 from Src.Management import exception

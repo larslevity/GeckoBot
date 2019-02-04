@@ -11,7 +11,7 @@ from subprocess import call
 try:
     from Src.Visual.PiCamera import pickler
 except ImportError:
-    print 'Relative Import does not work..'
+    print('Relative Import does not work..')
 
 def start_server(ip='134.28.136.49'):
     cmd = 'ssh -i ~/.ssh/BBB_key pi@{} nohup python\
@@ -119,10 +119,10 @@ if __name__ == "__main__":
     try:
         while True:
             alpha, eps, positions = sock.get_alpha()
-            print alpha
-            print eps
+            print(alpha)
+            print(eps)
             X, Y = positions
-            print X[0], Y[0]
+            print(X[0], Y[0])
     except KeyboardInterrupt:
         sock.close()
     finally:

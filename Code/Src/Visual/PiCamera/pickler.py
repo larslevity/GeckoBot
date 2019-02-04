@@ -7,17 +7,22 @@ https://docs.python.org/2/library/pickle.html#data-stream-format
 """
 
 import pickle
+import sys
+
+if sys.version_info > (3, 0):
+    def unpickle_data(string):
+        return pickle.loads(string, encoding='latin1')
+else:
+    def unpickle_data(string):
+        return pickle.loads(string)
+
 
 
 def pickle_data(data):
     """
         returns a string repr of data (if its pickable)
     """
-    return pickle.dumps(data)
+    return pickle.dumps(data, protocol=2)
 
 
-def unpickle_data(string):
-    """
-        returns the data of the string repr
-    """
-    return pickle.loads(string)
+

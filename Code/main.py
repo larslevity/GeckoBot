@@ -171,6 +171,8 @@ def init_channels():
 
     imu_set = [imu for imu in IMUset]
     imu_used_ = [CHANNELset[name]['IMUs'] for name in CHANNELset]
+    while [None] in imu_used_:
+        imu_used_.remove([None])
     imu_used = list(np.unique([imu for subl in imu_used_ for imu in subl]))
     for imu in imu_used:
         if imu not in imu_set and imu is not None:

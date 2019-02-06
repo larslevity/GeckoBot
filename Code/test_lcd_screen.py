@@ -1,9 +1,11 @@
 # to run with python 3
-
+#
 import board
 import busio
 import adafruit_character_lcd.character_lcd_rgb_i2c as char_lcd
 import time
+from Src.Management import load_pattern
+
 
 
 cols = 16
@@ -21,6 +23,16 @@ lcd.color = [100, 0, 0]
 lcd.message = "Hello\nWorld!"
 
 print('start ...')
+
+
+for name in load_pattern.get_csv_files():
+    print(name)
+
+
+print(load_pattern.read_list_from_csv(
+        load_pattern.get_local_dir() + '/' + name))
+
+
 try:
 	while True:
 		if lcd.up_button:

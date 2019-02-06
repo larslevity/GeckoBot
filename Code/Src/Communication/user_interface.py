@@ -238,7 +238,8 @@ class HUIThread(threading.Thread):
                 if self.user_pattern:
                     self.user_pattern = False
                     self.shared_memory.pattern = \
-                        self.shared_memory.ptrndic['default']
+                        self.shared_memory.ptrndic[
+                                self.shared_memory.ptrndic['selected']]
                     self.rootLogger.info('user_pattern was turned False')
             else:
                 if not self.user_pattern:
@@ -263,12 +264,15 @@ class HUIThread(threading.Thread):
                 GPIO.output(pin, GPIO.HIGH if state else GPIO.LOW)
 
         def select_pattern():
-            patterns = [name for name in ptrn.get_csv_files()]
+            patterns = [
+                name for name in sorted(iter(self.shared_memory.ptrndic.keys()))]
+            patterns.remove('selected')
+            current_selection = self.shared_memory.ptrndic['selected']
             select = None
-            idx = 0
+            idx = patterns.index(current_selection)
             self.lcd.color = [100, 0, 0]
             self.lcd.message = patterns[idx]
-            while not mode_changed() and select == None:
+            while not mode_changed() and select is None:
                 if self.lcd.up_button:
                     idx = idx - 1 if idx > 0 else len(patterns) - 1
                     self.lcd.clear()
@@ -277,19 +281,19 @@ class HUIThread(threading.Thread):
                     idx = idx + 1 if idx < len(patterns) - 1 else 0
                     self.lcd.clear()
                     self.lcd.message = patterns[idx]
-
-                elif self.lcd.select_button:
+                elif self.lcd.select_button or fun1():
                     self.lcd.clear()
                     self.lcd.message = "SELECTED"
-                    select = idx
+                    select = patterns[idx]
+                    self.shared_memory.ptrndic['selected'] = patterns[idx]
                 time.sleep(.2)
 
             self.lcd.clear()
             self.lcd.color = [0, 0, 0]
-            
+
             if select:
-                return ptrn.read_list_from_csv(
-                        ptrn.get_local_dir()+'/'+patterns[select])
+                return self.shared_memory.ptrndic[
+                        self.shared_memory.ptrndic['selected']]
             else:
                 return None
 
@@ -341,9 +345,9 @@ class HUIThread(threading.Thread):
         def pattern_reference():
             # first select pattern
             set_leds()
-            ptrn = select_pattern()
-            if ptrn:
-                self.shared_memory.pattern = ptrn
+            pattern = select_pattern()
+            if pattern:
+                self.shared_memory.pattern = pattern
             # always start with ref0
             self.ptrn_idx = 0
             initial_cycle, initial_cycle_idx = True, 0

@@ -12,6 +12,7 @@ except ImportError:
 import csv
 from os import path
 
+
 def save_list_as_csv(lis, filename='test.csv'):
     # with open(filename, 'w', newline='') as f:
     with open(filename, 'wb') as f:

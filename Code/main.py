@@ -18,6 +18,7 @@ from Src.Communication import user_interface as HUI
 from Src.Math import IMUcalc
 from Src.Controller import controller as ctrlib
 from Src.Visual.PiCamera import client
+from Src.Management import load_pattern as ptrn
 
 
 logPath = "log/"
@@ -37,12 +38,12 @@ rootLogger.addHandler(consoleHandler)
 
 # ------------ CAMERA INIT
 
-def init_server_connections(IMGPROC = True):
+def init_server_connections(IMGPROC=True):
     camerasock, imgprocsock, plotsock = None, None, None
     RPi_ip = '134.28.136.49'
     pc_ip = '134.28.136.131'
-    
-    
+
+    # RPi connection
     with timeout.timeout(12):
         try:
             rootLogger.info("Try to start server ...")
@@ -65,7 +66,7 @@ def init_server_connections(IMGPROC = True):
                 rootLogger.info("RPi Server already in Use")
             else:
                 raise
-
+    # PC Dell Latitude Connection
     with timeout.timeout(2):
         try:
             plotsock = client.LivePlotterSocket(pc_ip)
@@ -82,36 +83,10 @@ def init_server_connections(IMGPROC = True):
 
     return camerasock, imgprocsock, plotsock
 
+
 # ------------ PATTERN INIT
 
-ptrn_v2_2 = HUI.generate_pattern(.80, 0.80, 0.90, 0.99, 0.80, 0.80, 0.0, 0.0)
-ptrn_v2_3 = HUI.generate_pattern(.72, 0.74, 0.99, 0.99, 0.69, 0.63, 0.0, 0.0)
-ptrn_v2_4 = HUI.generate_pattern(.64, 0.79, 0.99, 0.99, 0.75, 0.78, 0.0, 0.0)
-ptrn_v2_5 = HUI.generate_pattern(.92, 0.68, 0.93, 0.92, 0.90, 0.74, 0.0, 0.0)
-ptrn_v2_6 = HUI.generate_pattern(.77, 0.99, 0.97, 0.93, 0.70, 0.71, 0.0, 0.0)
-
-ptrn_v3_0 = HUI.generate_pattern(.63, 0.56, 0.99, 0.99, 0.55, 0.73, 0.0, 0.0)
-ptrn_v3_pres = 1
-
-ptrn_v4_0 = HUI.generate_pattern(.81, 0.81, 0.79, 0.84, 0.78, 0.76, 0.0, 0.0)
-
-
-
-
-### SmallBot
-
-
-ptrn_SB_v1_1 = HUI.generate_pattern(.81, 0.76, 0.73, 0.78, 0.73, 0.76, 0.0, 0.0,
-                                    t_move=.8, t_fix=.1, t_dfx=.1, stiffener=False)
-
-
-# MAX_PRESSURE = 0.85    # [bar] v2.2
-# MAX_PRESSURE = 0.93    # [bar] v2.3
-# MAX_PRESSURE = 0.85      # [bar] v2.4
-
-MAX_PRESSURE = ptrn_v3_pres
-DEFAULT_PATTERN = ptrn_SB_v1_1      # default pattern
-
+MAX_PRESSURE = 1.   # bar
 MAX_CTROUT = 0.50     # [10V]
 TSAMPLING = 0.001     # [sec]
 PID = [1.05, 0.03, 0.01]    # [1]
@@ -237,10 +212,11 @@ def main():
             self.rec_u = {name: 0.0 for name in CHANNELset}
             self.rec_angle = {name: None for name in CHANNELset}
 
-            self.pattern = DEFAULT_PATTERN
-            self.ptrndic = {'default': DEFAULT_PATTERN,
-                            'usr_ptrn': HUI.generate_pattern(
-                                0, 0, 0, 0, 0, 0, 0, 0)}
+            self.ptrndic = {
+                name: ptrn.read_list_from_csv('Patterns/'+name)
+                for name in ptrn.get_csv_files()}
+            self.ptrndic['selected'] = sorted(list(self.ptrndic.keys()))[0]
+            self.pattern = self.ptrndic[self.ptrndic['selected']]
 
     rootLogger.info('Initialize Hardware ...')
     PSens, PValve, DValve, IMU, Ctr, ImuCtr = init_channels()

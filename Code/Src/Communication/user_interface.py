@@ -16,6 +16,12 @@ import Adafruit_BBIO.ADC as ADC
 import errno
 from socket import error as SocketError
 
+# lcd stuff ...
+import board
+import busio
+import adafruit_character_lcd.character_lcd_rgb_i2c as char_lcd
+from Src.Management import load_pattern as ptrn
+
 from Src.Management import state_machine
 from Src.Visual.GUI import datamanagement as mgmt
 
@@ -95,7 +101,7 @@ def read_switches():
     return switches
 
 
-#def print(*args, **kwargs):
+# def print(*args, **kwargs):
 #    __builtin__.print(colored('Comm_Thread: ', 'red'), *args, **kwargs)
 
 
@@ -119,6 +125,15 @@ def get_initial_pose(pattern, hold0=2., hold1=1.):
     ref0 = ref0[:8] + [False]*4 + [hold0]
     ref1 = ref0[:8] + [False, True, True, False] + [hold1]
     return [ref0, ref1]
+
+
+def init_lcd_display():
+    cols = 16
+    rows = 2
+    i2c = busio.I2C(board.SCL, board.SDA)
+    lcd = char_lcd.Character_LCD_RGB_I2C(i2c, cols, rows)
+    lcd.clear()
+    return lcd
 
 
 class HUIThread(threading.Thread):
@@ -145,6 +160,9 @@ class HUIThread(threading.Thread):
 
         self.camerasock = camerasock
         self.camidx = 0
+
+        self.rootLogger.info('Initialize LCD Display ...')
+        self.lcd = init_lcd_display()
 
         ADC.setup()
 
@@ -244,6 +262,37 @@ class HUIThread(threading.Thread):
                                (FUN2LED, self.fun2)]:
                 GPIO.output(pin, GPIO.HIGH if state else GPIO.LOW)
 
+        def select_pattern():
+            patterns = [name for name in ptrn.get_csv_files()]
+            select = None
+            idx = 0
+            self.lcd.color = [100, 0, 0]
+            self.lcd.message = patterns[idx]
+            while not mode_changed() and select == None:
+                if self.lcd.up_button:
+                    idx = idx - 1 if idx > 0 else len(patterns) - 1
+                    self.lcd.clear()
+                    self.lcd.message = patterns[idx]
+                elif self.lcd.down_button:
+                    idx = idx + 1 if idx < len(patterns) - 1 else 0
+                    self.lcd.clear()
+                    self.lcd.message = patterns[idx]
+
+                elif self.lcd.select_button:
+                    self.lcd.clear()
+                    self.lcd.message = "SELECTED"
+                    select = idx
+                time.sleep(.2)
+
+            self.lcd.clear()
+            self.lcd.color = [0, 0, 0]
+            
+            if select:
+                return ptrn.read_list_from_csv(
+                        ptrn.get_local_dir()+'/'+patterns[select])
+            else:
+                return None
+
         """ ---------------- ----- ------- ----------------------------- """
         """ ---------------- STATE HANDLERS    ------------------------- """
         """ ---------------- ----- ------- ----------------------------- """
@@ -290,7 +339,13 @@ class HUIThread(threading.Thread):
             return (self.ui_state)
 
         def pattern_reference():
-            self.ptrn_idx = 0   # always start with ref0
+            # first select pattern
+            set_leds()
+            ptrn = select_pattern()
+            if ptrn:
+                self.shared_memory.pattern = ptrn
+            # always start with ref0
+            self.ptrn_idx = 0
             initial_cycle, initial_cycle_idx = True, 0
             while not mode_changed():
                 change_state_in_main_thread(MODE[3]['main_state'][fun2()])
@@ -299,7 +354,7 @@ class HUIThread(threading.Thread):
                     self.shared_memory.pattern = generate_pattern(*cref)
                 if (fun1() and self.last_process_time + self.process_time <
                         time.time()):
-                    if initial_cycle:  # initial cacle
+                    if initial_cycle:  # initial cycle
                         pattern = get_initial_pose(self.shared_memory.pattern)
                         idx = initial_cycle_idx
                         initial_cycle_idx += 1

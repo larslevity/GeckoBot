@@ -598,18 +598,20 @@ The figure below shows the numbering scheme of the pressure sensors \cite[p. 19]
 
 
 
+\subsection{LCD-Display}
+
+LCD-Display is connected to I2C.
+\includegraphics[scale=1]{Images/LCDDisplay/LCDPins.pdf}
 
 
 
-
-\clearpage
 \section{Auxilary}
 
 
 \subsection{IP-Addresses in AmP}
 \begin{tabular}{l|ccccccc}
 Subnet 		& 255 &.& 255 &.& 255 &.& 0 \\
-Gateway 	& 134 &.& 28  &.& 136 &.& 1 \\
+Route / Gateway 	& 134 &.& 28  &.& 136 &.& 1 \\
 DNS	 	& 134 &.& 28  &.& 202 &.& 14 \\
 alt. DNS 	& 134 &.& 28  &.& 205 &.& 14 \\ \hline
 \\
@@ -620,6 +622,7 @@ VR - Bianca	& 134 &.& 28  &.& 136 &.& 131 \\
 RaspPi IMUCam 	& 134 &.& 28  &.& 136 &.& 49 \\
 RaspPi GeckoCam	& 134 &.& 28  &.& 136 &.& 118 \\
 DellLat CBoard 	& 134 &.& 28  &.& 136 &.& 70 \\
+
 
 \end{tabular}
 
@@ -696,16 +699,20 @@ sudo sh -c "echo 'BB-ADC' > /sys/devices/platform/bone_capemgr/slots"
 \subsection{Autorun}
 
 In order to autorun this script after booting the BBB use crontab like this:
+
+\begin{lstlisting}[language=bash]
 root@beaglebone:# crontab -e -u root
+\end{lstlisting}
 
 adding the following lines to the cron boot jobs:
-
+\begin{lstlisting}[language=bash]
 @reboot config-pin P9_28 pwm
 @reboot python /home/debian/Git/GeckoBot/Code/server_hardware_controlled.py &
+\end{lstlisting}
 
-NOTE: Dont forget the '&' at the end. Otherwise it will block the console.
+NOTE: Dont forget the \texttt{\&} at the end. Otherwise it will block the console.
 And you wont be able to ssh into it.
-But with the '&' it will run as background process and will be able to ssh into
+But with the \texttt{\&} it will run as background process and will be able to ssh into
 the BBB.
 
 Ending Background Processes
@@ -714,25 +721,31 @@ Since the python script will run in the background, we need to find it and
 end it manually. Enter this to find the processing running off the file we
 wrote earlier.
 
+\begin{lstlisting}[language=bash]
 ps aux | grep home/debian/GeckoBot/Code/server_hardware_controlled.py
+\end{lstlisting}
 
 You will get something like this:
+\begin{lstlisting}[language=bash]
     root    873     0.1     0.6     7260    3264    ?   S   22:19   0:01 python home/debian/GeckoBot/Code/server_hardware_controlled.py
+\end{lstlisting}
 
 The number 873 is the process ID. Then, just use the process ID and kill
 the process.
 
+\begin{lstlisting}[language=bash]
 root@beaglebone:# kill 873
-
+\end{lstlisting}
 
 Ref:
-https://billwaa.wordpress.com/2014/10/03/beaglebone-black-launch-python-script-at-boot-like-arduino-sketch/
+\url{https://billwaa.wordpress.com/2014/10/03/beaglebone-black-launch-python-script-at-boot-like-arduino-sketch/}
 
 ---------------------------
 
 Okay, cron gives error:
 try with daemontools - Ref:
-http://samliu.github.io/2017/01/10/daemontools-cheatsheet.html
+\url{http://samliu.github.io/2017/01/10/daemontools-cheatsheet.html}
+
 -- This is super weird! starting the script every time a error occurs again.
 
 
@@ -740,62 +753,81 @@ http://samliu.github.io/2017/01/10/daemontools-cheatsheet.html
 
 To see what happens in crontab, create a Crontab Logger:
 
+\begin{lstlisting}[language=bash]
 crontab -e:
     @reboot /home/debian/Git/GeckoBot/boot_autorun_test/ssh_hack.sh 2>&1 |
         /home/debian/Git/GeckoBot/boot_autorun_test/timestamp.sh  >>
         /home/debian/Git/GeckoBot/boot_autorun_test/log/cronlog.log
+\end{lstlisting}
 
 ---------------------------
 
 ssh Hack:
-For some reason the BBIO.PWM module needs a terminal (tty) to initialize.
-A Job, started by crontab does not have a tty. There is simply no tty.
-Therefore we ssh into the device from the device itself. So we create a virtual
-tty.
-To do so run the "ssh_hack.sh" script. it will automatically run the start
+For some reason the \texttt{BBIO.PWM} module needs a terminal (\texttt{tty}) to initialize.
+A Job, started by \texttt{crontab} does not have a \texttt{tty}. There is simply no \texttt{tty}.
+Therefore we \texttt{ssh} into the device from the device itself. So we create a virtual \texttt{tty}.
+To do so run the \texttt{ssh\_hack.sh} script. it will automatically run the start
 script.
 But you must enable a ssh-login as root without password. 2 Steps:
-#    1. disable root pw:
-#        passwd -d root
-#            (to clear the password)
-#            editing
-#        nano /etc/pam.d/common-auth
-#            Find the "pam_unix.so" line and add "nullok" to the end if its
-#            not there or change "nullok_secure" to be just "nullok" if
-#            yours says nullok_secure.
-    2. allow ssh to root login without password:
-        Ref: https://askubuntu.com/questions/115151/how-to-set-up-passwordless-ssh-access-for-root-user
-        Basically, we have to create a public key for root and copy it
-        to the BBB itself. Just follow the
-        instructions on Ref above.
-        But dont set "PasswordAuthentication" to 'no'! Since than nobody can
-        login with a password anymore, only with a public key. Which is not
-        yet created anywhere else except on the BBB itself.
 
+1. disable root pw (to clear the password):
+\begin{lstlisting}[language=bash]
+passwd -d root
+\end{lstlisting}
+            
+editing
+\begin{lstlisting}[language=bash]
+nano /etc/pam.d/common-auth
+\end{lstlisting}
+Find the \texttt{pam\_unix.so} line and add \texttt{nullok} to the end if its
+not there or change \texttt{nullok\_secure} to be just \texttt{nullok} if
+yours says \texttt{nullok\_secure}.
+
+2. allow \texttt{ssh} to root login without password:
+Ref: \url{https://askubuntu.com/questions/115151/how-to-set-up-passwordless-ssh-access-for-root-user}
+
+Basically, we have to create a public key for root and copy it
+to the \texttt{BBB} itself. Just follow the instructions on Ref above.
+But dont set \texttt{PasswordAuthentication} to \texttt{no}! 
+Since than nobody can login with a password anymore, only with a public key. Which is not yet created anywhere else except on the \texttt{BBB} itself.
+
+\begin{lstlisting}[language=bash]
         nano /etc/ssh/sshd_config
             PermitRootLogin without-password
-    3. restart ssh service:
-        service ssh restart
-    4. disable requiretty for root:
-        visudo
-        and add 'Defaults: root !requiretty'
+\end{lstlisting}
 
-    5. spawn a shell:
-        Ref: https://netsec.ws/?p=337
+3. restart ssh service:
+\begin{lstlisting}[language=bash]
+service ssh restart
+\end{lstlisting}
 
-#### stdin is no tty:
-    https://michaelseiler.net/2013/04/25/cron-jobs-and-ssh-errors-tty-and-sudo/
+4. disable requiretty for root:
+\begin{lstlisting}[language=bash]
+visudo
+\end{lstlisting}
+and add \texttt{Defaults: root !requiretty}
+
+5. spawn a shell:
+
+\url{Ref: https://netsec.ws/?p=337}
 
 
-https://sachinpradeeplinux.wordpress.com/2012/09/28/stdin-is-not-a-tty-error/
-On the destination server, edit /root/.bashrc file and comment out
-the "mesg y" line.
+Error: \texttt{stdin is no tty}:
+\url{https://michaelseiler.net/2013/04/25/cron-jobs-and-ssh-errors-tty-and-sudo/}
 
-If it is no there, please add the following line to .bashrc file .
+\url{https://sachinpradeeplinux.wordpress.com/2012/09/28/stdin-is-not-a-tty-error/}
 
+On the destination server, edit \texttt{/root/.bashrc} file and comment out
+the \texttt{mesg y} line.
+
+If it is no there, please add the following line to \texttt{.bashrc} file .
+
+\begin{lstlisting}[language=bash]
 if `tty -s`; then
  mesg n
 fi
+\end{lstlisting}
+
 
 
 

@@ -76,6 +76,7 @@ def extract_position(april_result):
 
 
 def extract_alpha(april_result):
+    jump = np.pi/180.*110  # jump bei 110
     POSs = {
             0: [0, 1],
             1: [1, 2],
@@ -98,7 +99,7 @@ def extract_alpha(april_result):
             p0, p1 = (np.append(ori[POSs[tag_id][0]], 0),
                       np.append(ori[POSs[tag_id][1]], 0))
 
-            angle[tag_id] = round(IMUcalc.calc_angle(p0, p1), 1)
+            angle[tag_id] = round(IMUcalc.calc_angle(p0, p1, jump=jump), 1)
 
     # calc eps
     if len(center) == 2:

@@ -48,16 +48,16 @@ import numpy as np
 #
 #    return alpha_IMU, delta
 
-def calc_angle(vec1, vec2, rotate_angle=0., delta_out=False):
+def calc_angle(vec1, vec2, rotate_angle=0., delta_out=False, jump=np.pi*.5):
     theta = np.radians(rotate_angle)
     vec1 = rotate(vec1, theta)
     x1, y1, z1 = normalize(vec1)
     x2, y2, z2 = normalize(vec2)
     phi1 = np.arctan2(y1, x1)
-    vec2 = rotate([x2, y2, 0], -phi1+np.pi*.5)
-    phi2 = np.degrees(np.arctan2(vec2[1], vec2[0]))
+    vec2 = rotate([x2, y2, 0], -phi1+jump)
+    phi2 = np.degrees(np.arctan2(vec2[1], vec2[0])-jump)
 
-    alpha_IMU = -phi2+90
+    alpha_IMU = -phi2
 
     if delta_out:
         z = np.mean([z1, z2])

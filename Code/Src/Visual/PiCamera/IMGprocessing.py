@@ -76,7 +76,7 @@ def extract_position(april_result):
 
 
 def extract_alpha(april_result):
-    jump = np.pi/180.*110  # jump bei 110
+    jump = np.pi/180.*70  # jump bei 110
     POSs = {
             0: [0, 1],
             1: [1, 2],

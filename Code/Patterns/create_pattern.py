@@ -15,9 +15,11 @@ def generate_pattern(p0, p1, p2, p3, p4, p5, p6, p7, t_move=3.0, t_fix=.66,
 
     data = [
         [p01, p1, p2, 0.0, p41, p5, p6, 0.0, False, True, True, False, t_move],
+        [p01, p1, p2, 0.0, p41, p5, p6, 0.0, False, True, True, False, 1],
         [0.0, p1, p2, 0.0, p41, p5, p6, 0.0, True, True, True, True, t_fix],
         [0.0, p1, p2, 0.0, p41, p5, p6, 0.0, True, False, False, True, t_dfx],
         [p0, p11, 0.0, p3, p4, p51, 0.0, p7, True, False, False, True, t_move],
+        [p0, p11, 0.0, p3, p4, p51, 0.0, p7, True, False, False, True, 1],
         [p0, 0.0, 0.0, p3, p4, p51, 0.0, p7, True, True, True, True, t_fix],
         [p0, 0.0, 0.0, p3, p4, p51, 0.0, p7, False, True, True, False, t_dfx]
     ]

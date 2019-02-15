@@ -517,12 +517,12 @@ if __name__ == "__main__":
     x, r, data, cst = predict_pose(ref, init_pose, True, True)
     plot_gait(*data)
 
-    if 0:
+    if 1:
         fig_ani = plt.figure()
         plt.title('Gecko-robot model animation')
         line_ani = animate_gait(fig_ani, *data)
 
-    if 1:
+    if 0:
         tikz_interface(*data)
 
     plt.show()

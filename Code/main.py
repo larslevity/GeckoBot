@@ -38,7 +38,7 @@ rootLogger.addHandler(consoleHandler)
 
 # ------------ CAMERA INIT
 
-def init_server_connections(IMGPROC=False):
+def init_server_connections(IMGPROC=True):
     camerasock, imgprocsock, plotsock = None, None, None
     RPi_ip = '134.28.136.49'
     pc_ip = '134.28.136.131'

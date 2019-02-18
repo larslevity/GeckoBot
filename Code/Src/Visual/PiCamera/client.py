@@ -81,27 +81,17 @@ class IMGProcSocket(Socket):
         return alpha
 
 
-class ClientSocket(object):
+class ClientSocket(Socket):
     def __init__(self, ip='134.28.136.49'):
-        # Connect a client socket to my_server:8000 (change my_server to the
-        # hostname of your server)
-        self.client_socket = socket.socket()
-        self.client_socket.connect((ip, 8000))
-
-        # Make a file-like object out of the connection
-        self.connection = self.client_socket.makefile('wb')
+        Socket.__init__(self, ip)
 
     def make_image(self, filename='test', folder='/home/pi/testimages/',
                    imgformat='.jpg'):
-        self.client_socket.sendall('m{}'.format(folder+filename+imgformat))
+        self.send_all('m{}'.format(folder+filename+imgformat))
 
     def make_video(self, filename):
-        self.client_socket.sendall('v{}'.format(filename))
+        self.send_all('v{}'.format(filename))
 
-    def close(self):
-        self.client_socket.sendall('Exit')
-        self.connection.close()
-        self.client_socket.close()
 
 
 if __name__ == "__main__":

@@ -11,6 +11,8 @@ import socket
 import time
 import picamera
 
+import pickler
+
 
 # Start a socket listening for connections on 0.0.0.0:8000
 server_socket = socket.socket()
@@ -30,7 +32,8 @@ try:
         time.sleep(2)
 
         while True:
-            task = conn.recv(4096)
+            task_raw = conn.recv(4096)
+            task = pickler.unpickle_data(task_raw)
             if task[0] == 'm':
                 filename = task[1:]
                 camera.capture(filename)

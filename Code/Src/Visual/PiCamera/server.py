@@ -11,10 +11,12 @@ import socket
 import time
 import picamera
 
+import pickler
+
 
 # Start a socket listening for connections on 0.0.0.0:8000
 server_socket = socket.socket()
-server_socket.bind(('0.0.0.0', 8000))  # (0.0.0.0 means all interfaces)
+server_socket.bind(('', 12397))  # (0.0.0.0 means all interfaces)
 server_socket.listen(0)
 
 # Accept a single connection and make a file-like object out of it
@@ -30,7 +32,8 @@ try:
         time.sleep(2)
 
         while True:
-            task = conn.recv(4096)
+            task_raw = conn.recv(4096)
+            task = pickler.unpickle_data(task_raw)
             if task[0] == 'm':
                 filename = task[1:]
                 camera.capture(filename)
@@ -38,7 +41,7 @@ try:
                 filename = task[1:]
                 camera.resolution = (640, 480)
                 camera.start_recording(filename)
-                camera.wait_recording(2)
+                camera.wait_recording(10)
                 camera.stop_recording()
 finally:
     connection.close()

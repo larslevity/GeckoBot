@@ -54,7 +54,7 @@ def init_server_connections(IMGPROC=True):
                 rootLogger.info("RPi Server found: Img Processing is running")
             else:
                 client.start_server(RPi_ip)
-                time.sleep(1)
+                time.sleep(3)
                 camerasock = client.ClientSocket(RPi_ip)
                 rootLogger.info("RPi Server found: MakeImageServer is running")
         except exception.TimeoutError:

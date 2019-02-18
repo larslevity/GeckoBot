@@ -20,7 +20,6 @@ from socket import error as SocketError
 import board
 import busio
 import adafruit_character_lcd.character_lcd_rgb_i2c as char_lcd
-from Src.Management import load_pattern as ptrn
 
 from Src.Management import state_machine
 from Src.Visual.GUI import datamanagement as mgmt
@@ -120,7 +119,7 @@ def generate_pattern(p0, p1, p2, p3, p4, p5, p6, p7, t_move=3.0, t_fix=.66,
     return data
 
 
-def get_initial_pose(pattern, hold0=2., hold1=1.):
+def get_initial_pose(pattern, hold0=5., hold1=1.):
     ref0 = pattern[0]
     ref0 = ref0[:8] + [False]*4 + [hold0]
     ref1 = ref0[:8] + [False, True, True, False] + [hold1]

@@ -111,6 +111,9 @@ if __name__ == '__main__':
     ptrn28 = generate_pattern_2(
             .69, .72, .95, .94, .76, .74, 0, 0, t_move=3, t_fix=.2, t_dfx=.2)
 
+    ptrn48 = generate_pattern_2(
+            .62, .65, .98, .97, .73, .71, 0, 0, t_move=3, t_fix=.2, t_dfx=.2)
+
 
 
     Ptrn = resample(ptrn)
@@ -128,7 +131,7 @@ if __name__ == '__main__':
         plt.step(t, p1)
 
 
-    save_list_as_csv(ptrn28, 'incl_exp_v40_28.csv')
+    save_list_as_csv(ptrn48, 'incl_exp_v40_48.csv')
 
 
 

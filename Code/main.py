@@ -93,7 +93,7 @@ PID = [1.05, 0.03, 0.01]    # [1]
 PIDimu = [0.0117, 1.012, 0.31]
 
 START_STATE = 'PAUSE'
-PRINTSTATE = False
+PRINTSTATE = True
 
 
 # ------------ CHANNELS INIT

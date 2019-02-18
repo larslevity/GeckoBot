@@ -41,6 +41,27 @@ def generate_pattern_2(p0, p1, p2, p3, p4, p5, p6, p7, t_move=3.0, t_fix=.66,
     return data
 
 
+def generate_pattern_climb(p0, p1, p2, p3, p4, p5, p6, p7, t_move=3.0,
+                           t_fix=.3, t_dfx=.25, stiffener=False):
+    p01, p11, p41, p51 = [.25]*4 if stiffener else [.0]*4
+
+    data = [
+        [p01, p1, p2, 0.0, p41, p5, p6, 0.0, False, True, True, False, t_move],  # 0
+        [0.0, p1, p2, 0.0, p41, p5, p6, 0.0, False, True, True, True, t_fix],  # 1
+        [0.0, p1, p2, 0.0, p41, 0.0, p6, 0.0, False, True, True, True, t_fix],  # 2
+        [0.0, p1, p2, 0.0, p41, p5, p6, 0.0, True, True, True, True, t_fix],  # 3
+        [p0, p1, p2, 0.0, p41, p5, p6, 0.0, True, True, True, True, t_fix],  # 4
+        [0.0, p1, p2, 0.0, p41, p5, p6, 0.0, True, False, False, True, t_dfx],  # 5
+
+        [p0, p11, 0.0, p3, p4, p51, 0.0, p7, True, False, False, True, t_move],  # 6
+        [p0, 0.0, 0.0, p3, p4, p51, 0.0, p7, True, False, True, True, t_fix],  # 7
+        [p0, 0.0, 0.0, p3, 0.0, p51, 0.0, p7, True, False, True, True, t_fix],  # 8
+        [p0, 0.0, 0.0, p3, p4, p51, 0.0, p7, True, True, True, True, t_fix],  # 9
+        [p0, p1, 0.0, p3, p4, p51, 0.0, p7, True, True, True, True, t_fix],  # 10
+        [p0, 0.0, 0.0, p3, p4, p51, 0.0, p7, False, True, True, False, t_dfx]  # 11
+    ]
+    return data
+
 
 def save_list_as_csv(lis, filename='test.csv'):
     # with open(filename, 'w', newline='') as f:
@@ -117,9 +138,12 @@ if __name__ == '__main__':
     ptrn63 = generate_pattern_2(
             .60, .63, .99, .99, .68, .66, 0, 0, t_move=3, t_fix=.2, t_dfx=.2)
 
+    ptrn76 = generate_pattern_climb(
+            .60, .63, .9, .9, .68, .66, 0, 0, t_move=3, t_fix=.2, t_dfx=.2)
 
 
-    Ptrn = resample(ptrn)
+
+    Ptrn = resample(ptrn76)
 
     t = [0] + list(np.cumsum([p[-1] for p in ptrn]))
     for idx in range(1):
@@ -134,7 +158,7 @@ if __name__ == '__main__':
         plt.step(t, p1)
 
 
-    save_list_as_csv(ptrn63, 'incl_exp_v40_63.csv')
+    save_list_as_csv(ptrn76, 'incl_exp_v40_76.csv')
 
 
 

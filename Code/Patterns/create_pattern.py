@@ -139,7 +139,7 @@ if __name__ == '__main__':
             .60, .63, .99, .99, .68, .66, 0, 0, t_move=3, t_fix=.2, t_dfx=.2)
 
     ptrn76 = generate_pattern_climb(
-            .60, .63, .9, .9, .68, .66, 0, 0, t_move=3, t_fix=.5, t_dfx=.2)
+            .60, .63, .9, .9, .68, .66, 0, 0, t_move=3, t_fix=.8, t_dfx=.2)
 
 
 

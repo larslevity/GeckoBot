@@ -122,6 +122,10 @@ def resample(ptrn, Ts=.1):
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
+    # SB v11 slow
+    ptrnV11 = generate_pattern_2(
+            .81, .76, .73, .78, .73, .76, 0, 0, t_move=6, t_fix=.2, t_dfx=.2)
+
     # v4.0
     ptrn = generate_pattern(
             .81, .81, .79, .84, .78, .76, 0, 0, t_move=6, t_fix=.2, t_dfx=.2)
@@ -129,23 +133,21 @@ if __name__ == '__main__':
     # v4.0 - 0
     ptrn00 = generate_pattern_2(
             .81, .81, .79, .84, .78, .76, 0, 0, t_move=3, t_fix=.2, t_dfx=.2)
-
-    # v4.0 - 28
     ptrn28 = generate_pattern_2(
             .69, .72, .95, .94, .76, .74, 0, 0, t_move=3, t_fix=.2, t_dfx=.2)
-
     ptrn48 = generate_pattern_2(
             .62, .65, .98, .97, .73, .71, 0, 0, t_move=3, t_fix=.2, t_dfx=.2)
-
     ptrn63 = generate_pattern_2(
             .60, .63, .99, .99, .68, .66, 0, 0, t_move=3, t_fix=.2, t_dfx=.2)
-
     ptrn76 = generate_pattern_climb(
             .60, .63, .9, .9, .68, .66, 0, 0, t_move=3, t_fix=.8, t_dfx=.2)
 
+    # vSB v1.1 - 0
+    ptrn00 = generate_pattern_2(
+            .81, .76, .73, .78, .73, .76, 0, 0, t_move=.8, t_fix=.1, t_dfx=.1)
 
 
-    Ptrn = resample(ptrn76)
+    Ptrn = resample(ptrnV11)
 
     t = [0] + list(np.cumsum([p[-1] for p in ptrn]))
     for idx in range(1):
@@ -160,7 +162,7 @@ if __name__ == '__main__':
         plt.step(t, p1)
 
 
-    save_list_as_csv(ptrn76, 'incl_exp_v40_76.csv')
+    save_list_as_csv(ptrn00, 'A_incl_exp_vS11_00.csv')
 
 
 

@@ -10,20 +10,36 @@ import numpy as np
 
 
 def generate_pattern(p0, p1, p2, p3, p4, p5, p6, p7, t_move=3.0, t_fix=.66,
-                     t_dfx=.25, stiffener=True):
+                     t_dfx=.25, t_hold=.5, stiffener=True):
     p01, p11, p41, p51 = [.25]*4 if stiffener else [.0]*4
 
     data = [
         [p01, p1, p2, 0.0, p41, p5, p6, 0.0, False, True, True, False, t_move],
-        [p01, p1, p2, 0.0, p41, p5, p6, 0.0, False, True, True, False, 1],
+        [p01, p1, p2, 0.0, p41, p5, p6, 0.0, False, True, True, False, t_hold],
         [0.0, p1, p2, 0.0, p41, p5, p6, 0.0, True, True, True, True, t_fix],
         [0.0, p1, p2, 0.0, p41, p5, p6, 0.0, True, False, False, True, t_dfx],
         [p0, p11, 0.0, p3, p4, p51, 0.0, p7, True, False, False, True, t_move],
-        [p0, p11, 0.0, p3, p4, p51, 0.0, p7, True, False, False, True, 1],
+        [p0, p11, 0.0, p3, p4, p51, 0.0, p7, True, False, False, True, t_hold],
         [p0, 0.0, 0.0, p3, p4, p51, 0.0, p7, True, True, True, True, t_fix],
         [p0, 0.0, 0.0, p3, p4, p51, 0.0, p7, False, True, True, False, t_dfx]
     ]
     return data
+
+
+def generate_pattern_2(p0, p1, p2, p3, p4, p5, p6, p7, t_move=3.0, t_fix=.66,
+                     t_dfx=.25, stiffener=False):
+    p01, p11, p41, p51 = [.25]*4 if stiffener else [.0]*4
+
+    data = [
+        [p01, p1, p2, 0.0, p41, p5, p6, 0.0, False, True, True, False, t_move],
+        [0.0, p1, p2, 0.0, p41, p5, p6, 0.0, True, True, True, True, t_fix],
+        [0.0, p1, p2, 0.0, p41, p5, p6, 0.0, True, False, False, True, t_dfx],
+        [p0, p11, 0.0, p3, p4, p51, 0.0, p7, True, False, False, True, t_move],
+        [p0, 0.0, 0.0, p3, p4, p51, 0.0, p7, True, True, True, True, t_fix],
+        [p0, 0.0, 0.0, p3, p4, p51, 0.0, p7, False, True, True, False, t_dfx]
+    ]
+    return data
+
 
 
 def save_list_as_csv(lis, filename='test.csv'):
@@ -87,22 +103,28 @@ if __name__ == '__main__':
     ptrn = generate_pattern(
             .81, .81, .79, .84, .78, .76, 0, 0, t_move=6, t_fix=.2, t_dfx=.2)
 
+    # v4.0 - 0
+    ptrn = generate_pattern_2(
+            .81, .81, .79, .84, .78, .76, 0, 0, t_move=3, t_fix=.2, t_dfx=.2)
+
+
+
     Ptrn = resample(ptrn)
 
-    t = np.cumsum([p[-1] for p in ptrn])
+    t = [0] + list(np.cumsum([p[-1] for p in ptrn]))
     for idx in range(1):
-        p1 = [p[idx] for p in ptrn]
+        p1 = [ptrn[0][idx]]+[p[idx] for p in ptrn]
         plt.step(t, p1)
 
 
     plt.figure()
-    t = np.cumsum([p[-1] for p in Ptrn])
-    for idx in range(10):
-        p1 = [p[idx] for p in Ptrn]
+    t = list([0]+np.cumsum([p[-1] for p in Ptrn]))
+    for idx in range(2):
+        p1 =  [p[idx] for p in Ptrn]
         plt.step(t, p1)
 
 
-    save_list_as_csv(Ptrn, 'slow_v40.csv')
+    save_list_as_csv(ptrn, 'incl_exp_v40_00.csv')
 
 
 

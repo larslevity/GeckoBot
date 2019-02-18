@@ -38,7 +38,7 @@ rootLogger.addHandler(consoleHandler)
 
 # ------------ CAMERA INIT
 
-def init_server_connections(IMGPROC=True):
+def init_server_connections(IMGPROC=False):
     camerasock, imgprocsock, plotsock = None, None, None
     RPi_ip = '134.28.136.49'
     pc_ip = '134.28.136.131'
@@ -93,7 +93,7 @@ PID = [1.05, 0.03, 0.01]    # [1]
 PIDimu = [0.0117, 1.012, 0.31]
 
 START_STATE = 'PAUSE'
-PRINTSTATE = True
+PRINTSTATE = False
 
 
 # ------------ CHANNELS INIT

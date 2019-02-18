@@ -51,6 +51,7 @@ def generate_pattern_climb(p0, p1, p2, p3, p4, p5, p6, p7, t_move=3.0,
         [0.0, p1, p2, 0.0, p41, 0.0, p6, 0.0, False, True, True, True, t_fix],  # 2
         [0.0, p1, p2, 0.0, p41, p5, p6, 0.0, True, True, True, True, t_fix],  # 3
         [p0, p1, p2, 0.0, p41, p5, p6, 0.0, True, True, True, True, t_fix],  # 4
+        [0.0, p1, p2, 0.0, p41, p5, p6, 0.0, True, True, True, True, t_fix],  # 4a
         [0.0, p1, p2, 0.0, p41, p5, p6, 0.0, True, False, False, True, t_dfx],  # 5
 
         [p0, p11, 0.0, p3, p4, p51, 0.0, p7, True, False, False, True, t_move],  # 6
@@ -58,6 +59,7 @@ def generate_pattern_climb(p0, p1, p2, p3, p4, p5, p6, p7, t_move=3.0,
         [p0, 0.0, 0.0, p3, 0.0, p51, 0.0, p7, True, False, True, True, t_fix],  # 8
         [p0, 0.0, 0.0, p3, p4, p51, 0.0, p7, True, True, True, True, t_fix],  # 9
         [p0, p1, 0.0, p3, p4, p51, 0.0, p7, True, True, True, True, t_fix],  # 10
+        [p0, 0.0, 0.0, p3, p4, p51, 0.0, p7, True, True, True, True, t_fix],  # 10a
         [p0, 0.0, 0.0, p3, p4, p51, 0.0, p7, False, True, True, False, t_dfx]  # 11
     ]
     return data

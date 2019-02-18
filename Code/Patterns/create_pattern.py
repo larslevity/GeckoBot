@@ -104,8 +104,12 @@ if __name__ == '__main__':
             .81, .81, .79, .84, .78, .76, 0, 0, t_move=6, t_fix=.2, t_dfx=.2)
 
     # v4.0 - 0
-    ptrn = generate_pattern_2(
+    ptrn00 = generate_pattern_2(
             .81, .81, .79, .84, .78, .76, 0, 0, t_move=3, t_fix=.2, t_dfx=.2)
+
+    # v4.0 - 28
+    ptrn28 = generate_pattern_2(
+            .69, .72, .95, .94, .76, .74, 0, 0, t_move=3, t_fix=.2, t_dfx=.2)
 
 
 
@@ -124,7 +128,7 @@ if __name__ == '__main__':
         plt.step(t, p1)
 
 
-    save_list_as_csv(ptrn, 'incl_exp_v40_00.csv')
+    save_list_as_csv(ptrn28, 'incl_exp_v40_28.csv')
 
 
 

@@ -146,7 +146,9 @@ if __name__ == '__main__':
     ptrn00 = generate_pattern_2(
             .81, .76, .73, .78, .73, .76, 0, 0, t_move=.8, t_fix=.1, t_dfx=.1)
     ptrn48 = generate_pattern_2(
-            .67, .89, .96, .99, .71, .67, 0, 0, t_move=.8, t_fix=.1, t_dfx=.1)
+            .67, .69, .96, .99, .71, .67, 0, 0, t_move=.8, t_fix=.1, t_dfx=.1)
+    ptrn76 = generate_pattern_climb(
+            .67, .69, .96, .99, .71, .67, 0, 0, t_move=.8, t_fix=.4, t_dfx=.2)
 
 
     Ptrn = resample(ptrnV11)

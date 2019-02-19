@@ -145,6 +145,8 @@ if __name__ == '__main__':
     # vSB v1.1 - 0
     ptrn00 = generate_pattern_2(
             .81, .76, .73, .78, .73, .76, 0, 0, t_move=.8, t_fix=.1, t_dfx=.1)
+    ptrn48 = generate_pattern_2(
+            .67, .89, .96, .99, .71, .67, 0, 0, t_move=.8, t_fix=.1, t_dfx=.1)
 
 
     Ptrn = resample(ptrnV11)
@@ -162,7 +164,7 @@ if __name__ == '__main__':
         plt.step(t, p1)
 
 
-    save_list_as_csv(ptrn00, 'A_incl_exp_vS11_00.csv')
+    save_list_as_csv(ptrn48, 'A_incl_vS11_48.csv')
 
 
 

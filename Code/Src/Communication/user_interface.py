@@ -350,6 +350,7 @@ class HUIThread(threading.Thread):
             # always start with ref0
             self.ptrn_idx = 0
             initial_cycle, initial_cycle_idx = True, 0
+            VIDEO = True
             while not mode_changed():
                 change_state_in_main_thread(MODE[3]['main_state'][fun2()])
                 if is_userpattern():
@@ -363,6 +364,8 @@ class HUIThread(threading.Thread):
                         initial_cycle_idx += 1
                         if initial_cycle_idx > 1:
                             initial_cycle = False
+                            if VIDEO and self.camerasock:
+                                self.camerasock.make_video('bastelspass_mit_muc')
                     else:  # normaler style
                         pattern = self.shared_memory.pattern
                         idx = self.ptrn_idx
@@ -376,7 +379,7 @@ class HUIThread(threading.Thread):
                     self.process_time = processtime
                     self.last_process_time = time.time()
                     # capture image?
-                    if self.camerasock:
+                    if self.camerasock and not VIDEO:  # not video but image
                         if idx % 3 == 1:
                             self.camerasock.make_image('test'+str(self.camidx))
                             self.camidx += 1

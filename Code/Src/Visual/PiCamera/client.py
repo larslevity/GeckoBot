@@ -89,8 +89,9 @@ class ClientSocket(Socket):
                    imgformat='.jpg'):
         self.send_all('m{}'.format(folder+filename+imgformat))
 
-    def make_video(self, filename):
-        self.send_all('v{}'.format(filename))
+    def make_video(self, filename, folder='/home/pi/testimages/',
+                   vidformat='.h264'):
+        self.send_all('v{}'.format(folder+filename+vidformat))
 
 
 

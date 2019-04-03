@@ -30,7 +30,7 @@ try:
         # Start a preview and let the camera warm up for 2 seconds
         camera.start_preview()
         time.sleep(2)
-
+        i = 0
         while True:
             task_raw = conn.recv(4096)
             task = pickler.unpickle_data(task_raw)
@@ -40,9 +40,10 @@ try:
             if task[0] == 'v':
                 filename = task[1:]
                 camera.resolution = (640, 480)
-                camera.start_recording(filename)
-                camera.wait_recording(10)
+                camera.start_recording(filename.split('.')[0]+str(i).zfill(2)+'.h264')
+                camera.wait_recording(60)
                 camera.stop_recording()
+                i += 1
 finally:
     connection.close()
 

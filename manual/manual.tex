@@ -57,7 +57,7 @@
 \item Check if 24V Switch is OFF (up)
 \item Check if pressure source is zero (throttle valve turned left, manometer shows 0 bar)
 \item Check if I2C Interface is connected to robot or pull-up circuit board (red face on red face!)
-\item Power on main switch
+\item Power on main switch of ControlBoard
 
 
 
@@ -91,8 +91,15 @@ To run the geckobot code:
 \item on BBB as \texttt{su}
 \begin{lstlisting}
 root@beaglebone:~# cd Git/GeckoBot/Code
-root@beaglebone:~Git/GeckoBot/Code/# python main.py
+root@beaglebone:~Git/GeckoBot/Code/# python3 main.py
 \end{lstlisting}
+
+If you want to run the GUI (to have the ability to save experimental data) run the the following piece of code on \texttt{bianca} with \textbf{python2}:
+\begin{lstlisting}
+bianca@bianca:~ cd Git/GeckoBot/Code
+bianca@bbianca:~Git/GeckoBot/Code/ python pc_liveplotter_main.py
+\end{lstlisting}
+\item \textbf{Note} that you must start both programs more or less at the same time. (main on bbb is tries to connect to bianca. if there is no listing port at bianca, the gui wont start)
 
 \item In case there is an error related to the device tree, just run the code again.
 
@@ -102,11 +109,11 @@ root@beaglebone:~Git/GeckoBot/Code/# python main.py
 
 
 
-\subsection{Enable Power}
+\subsection{Enable Pneumatic Power}
+When control program runs, you can enable the pneumatic energy sources:
 
 \begin{itemize}
-
-\item 24V Switch ON (down)
+\item 24V Switch ON (down) (valves are enabled now)
 \item Pressure Source 1.2 bar (turn throttle valve right until manometer shows the 1.2bar)
 \item Plug in Vacuum Source if needed.
 
@@ -115,15 +122,27 @@ root@beaglebone:~Git/GeckoBot/Code/# python main.py
 
 
 \subsection{When your session is over}
+If you are done with your experiments, first disable the pneumatic power supply, then quit the control program.
 
 \begin{itemize}
-
 \item Pressure Source to 0bar
 \item 24V Switch OFF (up)
 \item All Potentiometer to zero
 \item All small black Switches OFF (up)
 
 
+\item Abort the \texttt{main.py} programm on BBB by hitting \textbf{Ctrl+C}
+\begin{lstlisting}
+root@beaglebone:~Git/GeckoBot/Code/# python3 main.py
+... ^C [a lot of errors]
+root@beaglebone:~Git/GeckoBot/Code/#
+\end{lstlisting}
+
+\textbf{Note} the last line in the listing above. This indicates that the terminal is ready again. This line \textbf{should} be there. Otherwise some process(es) are still running in the background... (You can use \texttt{htop} command and filter (F4) python programs to kill them. You have to use a different terminal for this purpose).
+
+\item Main Switch of ControlBoard off
+
+\item If it's friday or you know that nobody will use the ControlBoard in the next few days, you may shutdown \texttt{bianca} and \texttt{Dell Latitude}.
 
 \end{itemize}
 

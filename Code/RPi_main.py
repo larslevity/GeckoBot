@@ -10,64 +10,155 @@ Created on Mon Jan 21 16:52:37 2019
 import socket
 import time
 import threading
-import cv2
+import errno
+import logging
+import picamera
 
-from Src.Visual.PiCamera import IMGprocessing as img_proc
-from Src.Visual.PiCamera.PiVideoStream import PiVideoStream
 from Src.Visual.PiCamera import pickler
+from Src.Hardware import rpi_imu
+from Src.Math import IMUcalc
+
+
+logPath = "log/"
+fileName = 'rpilog'
+logFormatter = logging.Formatter(
+    "%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
+rootLogger = logging.getLogger()
+rootLogger.setLevel(logging.INFO)
+
+fileHandler = logging.FileHandler("{0}/{1}.log".format(logPath, fileName))
+fileHandler.setFormatter(logFormatter)
+rootLogger.addHandler(fileHandler)
+consoleHandler = logging.StreamHandler()
+consoleHandler.setFormatter(logFormatter)
+rootLogger.addHandler(consoleHandler)
 
 
 
-def main(alpha_memory):
-#    print("[INFO] warm up camera sensor...")
-    vs = PiVideoStream(resolution=(640, 480)).start()
-    # allow the camera sensor to warmup
-    time.sleep(1.0)
-#    print("[INFO] start detect april tags...")
+IMUset = {
+    0: {'id': 0},
+    1: {'id': 1},
+    2: {'id': 2},
+    3: {'id': 3}
+    }
+CHANNELset = {
+    0: {'IMUs': [0, 1], 'IMUrot': 0},
+    1: {'IMUs': [2, 3], 'IMUrot': 0}
+    }
 
+
+def init_IMU():
+    # mplx address for IMU is 0x71
     try:
-        while not alpha_memory.exit_flag:
-            # grab the frame from the threaded video stream 
-            frame = vs.read()
-            # detect pose
-            alpha, eps, positions = img_proc.detect_all(frame)
-            
-            if alpha is not None:
-                alpha_memory.set_alpha(alpha)
-                alpha_memory.set_eps(eps)
-                alpha_memory.set_positions(positions) 
-#                img = img_proc.draw_positions(frame, positions)
-#            else:
-#                img = frame
-            
-#            cv2.imshow("Frame", img)
-#            cv2.waitKey(1) & 0xFF
-    finally:
-        vs.stop()
+        IMU = {}
+        for name in IMUset:
+            IMU[name] = rpi_imu.GY_521(plx_id=IMUset[name]['id'], name=name)
+    except IOError:  # not connected
+        IMU = False
+        rootLogger.exception('IMUs not found')
+    return IMU
+
+
+def main(memory):
+
+    IMU = init_IMU()
+
+    def read_imu(memory):
+        for name in IMU:
+            try:
+                memory.rec_IMU[name] = IMU[name].get_acceleration()
+            except IOError as e:
+                if e.errno == errno.EREMOTEIO:
+                    rootLogger.exception(
+                        'cant read imu device.' +
+                        'Continue anyway ...Fail in [{}]'.format(name))
+                else:
+                    rootLogger.exception('Sensor [{}]'.format(name))
+                    raise e
+        return memory
+
+    def measure_angle(memory):
+        if IMU:
+            memory = read_imu(memory)
+            for name in CHANNELset:
+                idx0, idx1 = CHANNELset[name]['IMUs']
+                rot_angle = CHANNELset[name]['IMUrot']
+                acc0 = memory.rec_IMU[idx0]
+                acc1 = memory.rec_IMU[idx1]
+                sys_out = IMUcalc.calc_angle(acc0, acc1, rot_angle)
+                memory.rec_angle[name] = round(sys_out, 2)
+                #print(name, ':\t', sys_out)
+        return memory
+
+
+    while not memory.exit_flag:
+        # read IMUs
+        memory = measure_angle(memory)
+        time.sleep(.5)
         
-    cv2.destroyAllWindows()
+
+
+class RPi_CameraThread(threading.Thread):
+    def __init__(self, memory):
+        """ """
+        threading.Thread.__init__(self)
+        self.memory = memory
+        self.exit_flag = False
+
+    def run(self):
+        try:
+            with picamera.PiCamera() as camera:
+                camera.resolution = (2592, 1944)
+                # Start a preview and let the camera warm up for 2 seconds
+                camera.start_preview()
+                time.sleep(2)
+                while not self.exit_flag:
+                    task = memory.camera_task
+                    if task[0] == 'm':
+                        camera.resolution = (2592, 1944)
+                        filename = task[1:]
+                        camera.capture(filename)
+                        rootLogger.info('captured image:\t{}'.format(filename))
+                        self.memory.camera_task = 'done'
+                    if task[0] == 'v':
+                        filename = task[1:]
+                        camera.resolution = (640, 480)
+                        camera.start_recording(filename)
+                        camera.wait_recording(10)
+                        camera.stop_recording()
+                        rootLogger.info('recorded video:\t{}'.format(filename))
+                        self.memory.camera_task = 'done'
+                    time.sleep(.1)
+        except Exception as err:
+            rootLogger.error(err, exc_info=True)
+
+    def kill(self):
+        self.exit_flag = True
 
 
 class RPi_CommThread(threading.Thread):
-    def __init__(self, connection, alpha_memory):
+    def __init__(self, connection, memory):
         """ """
         threading.Thread.__init__(self)
         self.connection = connection
-        self.alpha_memory = alpha_memory
+        self.memory = memory
         self.exit_flag = False
 
     # COMM
     def run(self):
-        while not self.exit_flag :
-            task_raw = self.connection.recv(4096)
-            task = pickler.unpickle_data(task_raw)
-            if task[0] == 'get_alpha':
-                self.send_back([self.alpha_memory.get_alpha(),
-                                self.alpha_memory.get_eps(),
-                                self.alpha_memory.get_positions()])
-            if task[0] == 'Exit':
-                self.kill()
-                self.alpha_memory.kill_main()
+        try:
+            while not self.exit_flag :
+                task_raw = self.connection.recv(4096)
+                task = pickler.unpickle_data(task_raw)
+                if task[0] == 'get_alpha':
+                    self.send_back(self.memory.get_alpha())
+                if task[0] in ['m', 'v']:
+                    self.memory.camera_task = task
+                if task[0] == 'Exit':
+                    self.kill()
+                    self.memory.kill_main()
+        except Exception as err:
+            rootLogger.error(err, exc_info=True)
                 
     def send_back(self, data_out):
         data_out_raw = pickler.pickle_data(data_out)
@@ -77,39 +168,24 @@ class RPi_CommThread(threading.Thread):
         self.exit_flag = True
 
 
-class Alpha_Memory(object):
+class Memory(object):
     def __init__(self):
-        self.alpha = [None]*6
-        self.eps = None
-        self.fpos = ([None]*6, [None]*6)
+        self.rec_IMU = {name: None for name in IMUset}
+        self.rec_angle = {name: None for name in CHANNELset}
+        self.camera_task = 'done'
         self.exit_flag = False
+
+    def get_alpha(self):
+        return [self.rec_angle[name] for name in CHANNELset]
     
     def kill_main(self):
         self.exit_flag = True
-
-    def get_alpha(self):
-        return self.alpha
-
-    def get_eps(self):
-        return self.eps
-
-    def set_alpha(self, alpha):
-        self.alpha = alpha
-
-    def set_eps(self, eps):
-        self.eps = eps
-    
-    def set_positions(self, positions):
-        self.fpos = positions
-
-    def get_positions(self):
-        return self.fpos
 
 
 if __name__ == '__main__':
 #    import sys, traceback
 
-    # Start a socket listening for connections on 0.0.0.0:8000
+    # Start a socket listening for connections on 0.0.0.0:12397
     server_socket = socket.socket()
     server_socket.bind(('', 12397))
     server_socket.listen(0)
@@ -119,18 +195,23 @@ if __name__ == '__main__':
     connection = conn.makefile('rb')
 
     # initialize shared memory    
-    alpha_memory = Alpha_Memory()
+    memory = Memory()
     # Initialize and run Comm Thread
-    comm_thread = RPi_CommThread(conn, alpha_memory)
+    comm_thread = RPi_CommThread(conn, memory)
     comm_thread.setDaemon(True)
     comm_thread.start()
-    
+
+    # Initialize and run Comm Thread
+    cam_thread = RPi_CameraThread(memory)
+    cam_thread.setDaemon(True)
+    cam_thread.start()
+
     try:
-        main(alpha_memory)
-#    except Exception as err:
-#        print 'ERROR:'
-#        traceback.print_exc(file=sys.stdout)
+        main(memory)
+    except Exception as err:
+        rootLogger.error(err, exc_info=True)
     finally:
         connection.close()
         comm_thread.kill()
+        cam_thread.kill()
         server_socket.close()

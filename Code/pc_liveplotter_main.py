@@ -22,6 +22,9 @@ from Src.Management import timeout
 from Src.Management import exception
 
 
+
+TSampling = .5
+
 # GTK
 class GuiThread(threading.Thread):
     def __init__(self, data):
@@ -127,7 +130,7 @@ def main(wait=30):
                 save.save_last_sample_as_csv(gui_rec.recorded,
                                              gui_rec.record_filename)
 
-            time.sleep(.03)
+            time.sleep(TSampling)
     except KeyboardInterrupt:
         print('keyboard interrupt')
     finally:

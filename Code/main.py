@@ -38,25 +38,19 @@ rootLogger.addHandler(consoleHandler)
 
 # ------------ CAMERA INIT
 
-def init_server_connections(IMGPROC=True):
+def init_server_connections():
     camerasock, imgprocsock, plotsock = None, None, None
-    RPi_ip = '134.28.136.49'
+    RPi_ip = '134.28.136.118'
     pc_ip = '134.28.136.131'
 
     # RPi connection
     with timeout.timeout(12):
         try:
             rootLogger.info("Try to start server ...")
-            if IMGPROC:
-                client.start_img_processing(RPi_ip)
-                time.sleep(10)
-                imgprocsock = client.IMGProcSocket(RPi_ip)
-                rootLogger.info("RPi Server found: Img Processing is running")
-            else:
-                client.start_server(RPi_ip)
-                time.sleep(3)
-                camerasock = client.ClientSocket(RPi_ip)
-                rootLogger.info("RPi Server found: MakeImageServer is running")
+            client.start_img_processing(RPi_ip)
+            time.sleep(10)
+            imgprocsock = client.IMGProcSocket(RPi_ip)
+            rootLogger.info("RPi Server found: Camera and IMUs can be used")
         except exception.TimeoutError:
             rootLogger.info("Server not found")
         except SocketError as err:
@@ -65,7 +59,7 @@ def init_server_connections(IMGPROC=True):
             elif err.errno == errno.EADDRINUSE:
                 rootLogger.info("RPi Server already in Use")
             else:
-                raise
+                raise err
     # PC Dell Latitude Connection
     with timeout.timeout(2):
         try:
@@ -423,7 +417,7 @@ def main():
             communication_thread.isDaemon()))
 
     camerasock, imgprocsock, plotsock = init_server_connections()
-    communication_thread.set_camera_socket(camerasock)
+    communication_thread.set_camera_socket(imgprocsock)
 
     if PRINTSTATE:
         printer_thread = HUI.Printer(shared_memory, imgprocsock, plotsock, IMU)

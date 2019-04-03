@@ -230,6 +230,9 @@ class HUIThread(threading.Thread):
                     self.fun2 = not state
                     self.rootLogger.info('Fun2 turned {}'.format(not state))
                     self.lastfun2 = time.time()
+                    if self.camerasock:
+                        self.camerasock.make_image('test'+str(self.camidx))
+                        self.camidx += 1
             return self.fun2
 
         def is_userpattern():
@@ -350,7 +353,7 @@ class HUIThread(threading.Thread):
             # always start with ref0
             self.ptrn_idx = 0
             initial_cycle, initial_cycle_idx = True, 0
-            VIDEO = True
+            VIDEO = False
             while not mode_changed():
                 change_state_in_main_thread(MODE[3]['main_state'][fun2()])
                 if is_userpattern():
@@ -455,33 +458,27 @@ class Printer(threading.Thread):
         f = [round(self.shared_memory.dvalve_task[i], 2) for i in range(4)]
 
         if self.imgprocsock:
-            IMG = True
-            alpha, eps, (X, Y) = self.imgprocsock.get_alpha()
-            alpha = alpha + [None, None]
-            aIMG = [round(alpha[i], 2) if alpha[i] else None for i in range(8)]
-            X = X + [None, None]
-            Y = Y + [None, None]
-        else:
-            IMG = False
-            aIMG, eps, X, Y = [None]*4
-        if self.IMU_connected:
-            rec_angle = self.shared_memory.rec_angle
-            aIMU = [
-                round(rec_angle[i], 2)
-                if rec_angle[i]
-                else None for i in range(8)]
-        else:
-            aIMU = None
+            alpha = self.imgprocsock.get_alpha()
+            alpha = alpha + [None]*(8 - len(alpha))
+            aIMU = [round(alpha[i], 2) if alpha[i] else None for i in range(8)]
+            X = [None]*8
+            Y = [None]*8
+            eps = None
 
-        return (p, r, u, f, aIMG, eps, X, Y, aIMU, self.IMU_connected, IMG)
+        IMG = False
+        aIMG, eps, X, Y = [None]*4
+        IMUconnected = True
+
+        return (p, r, u, f, aIMG, eps, X, Y, aIMU, IMUconnected, IMG)
 
     def print_state(self):
         if self.imgprocsock:
-            alpha, eps, (X, Y) = self.imgprocsock.get_alpha()
-            alpha = alpha + [None, None]
-            X = X + [None, None]
-            Y = Y + [None, None]
-            eps = [eps] + [None]*3
+            alpha = self.imgprocsock.get_alpha()
+            alpha = alpha + [None]*(8 - len(alpha))
+            alpha = [round(alpha[i], 2) if alpha[i] else None for i in range(8)]
+            X = [None]*8
+            Y = [None]*8
+            eps = [None]*4
         else:
             alpha, X, Y, eps = [None]*8, [None]*8, [None]*8, [None]*4
         state_str = '\n\t| Ref \t| State \t| epsilon \n'

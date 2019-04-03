@@ -72,13 +72,21 @@ class LivePlotterSocket(Socket):
 
 
 class IMGProcSocket(Socket):
-    def __init__(self, ip='134.28.136.49'):
+    def __init__(self, ip='134.28.136.118'):  # 49
         Socket.__init__(self, ip)
 
     def get_alpha(self):
         self.send_all(['get_alpha'])
         alpha = self.recieve_data()
         return alpha
+    
+    def make_image(self, filename='test', folder='/home/pi/PiCameraImages/',
+                   imgformat='.jpg'):
+        self.send_all('m{}'.format(folder+filename+imgformat))
+
+    def make_video(self, filename, folder='/home/pi/PiCameraImages/',
+                   vidformat='.h264'):
+        self.send_all('v{}'.format(folder+filename+vidformat))
 
 
 class ClientSocket(Socket):

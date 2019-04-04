@@ -374,6 +374,11 @@ class HUIThread(threading.Thread):
                     pattern = self.shared_memory.pattern
                     idx = self.ptrn_idx
                     self.ptrn_idx = idx+1 if idx < len(pattern)-1 else 0
+                    # capture image?
+                    if self.camerasock and not VIDEO:  # not video but image
+                        if idx == 1 and n_cycles % 20 == 1:
+                            self.camerasock.make_image('test'+str(self.camidx))
+                            self.camidx += 1
                     # generate tasks
                     dvtsk, pvtsk, processtime = generate_pose_ref(pattern, idx)
                     # send to main thread
@@ -382,11 +387,7 @@ class HUIThread(threading.Thread):
                     # organisation
                     self.process_time = processtime
                     self.last_process_time = time.time()
-                    # capture image?
-                    if self.camerasock and not VIDEO:  # not video but image
-                        if idx == 0 and n_cycles % 10 == 0:
-                            self.camerasock.make_image('test'+str(self.camidx))
-                            self.camidx += 1
+
                     n_cycles += 1
 
                 time.sleep(UI_TSAMPLING)

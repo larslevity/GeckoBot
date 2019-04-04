@@ -49,6 +49,16 @@
 \clearpage
 \section{Quickstart}
 
+\subsection{Power on bianca (vitual machine)}
+\begin{itemize}
+	\item boot Dell Latitude (no password required)
+	\item boot \texttt{bianca} ($\approx 3 min$) 
+	\item username: bianca
+	\item password: amp
+	\item open terminal (application -> System Tools -> Terminal)
+\end{itemize}
+
+
 \subsection{Power on the Board}
 
 \begin{itemize}
@@ -56,7 +66,7 @@
 \item Check if all small black switches are OFF (switched up)
 \item Check if 24V Switch is OFF (up)
 \item Check if pressure source is zero (throttle valve turned left, manometer shows 0 bar)
-\item Check if I2C Interface is connected to robot or pull-up circuit board (red face on red face!)
+%\item Check if I2C Interface is connected to robot or pull-up circuit board (red face on red face!)
 \item Power on main switch of ControlBoard
 
 
@@ -91,6 +101,16 @@ To run the geckobot code:
 \item on BBB as \texttt{su}
 \begin{lstlisting}
 root@beaglebone:~# cd Git/GeckoBot/Code
+\end{lstlisting}
+
+\item Verify that you are on the right working branch, or change it:
+\begin{lstlisting}
+root@beaglebone:~Git/GeckoBot/Code/# git status
+root@beaglebone:~Git/GeckoBot/Code/# git checkout <your_branch>
+\end{lstlisting}
+
+\item Now you are good to go to run the code:
+\begin{lstlisting}
 root@beaglebone:~Git/GeckoBot/Code/# python3 main.py
 \end{lstlisting}
 

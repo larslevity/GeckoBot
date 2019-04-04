@@ -42,8 +42,8 @@ IMUset = {
     3: {'id': 3}
     }
 CHANNELset = {
-    0: {'IMUs': [0, 1], 'IMUrot': 0},
-    1: {'IMUs': [2, 3], 'IMUrot': 0}
+    0: {'IMUs': [0, 1], 'IMUrot': 180},
+    1: {'IMUs': [2, 3], 'IMUrot': 180}
     }
 
 
@@ -115,7 +115,7 @@ class RPi_CameraThread(threading.Thread):
                 while not self.exit_flag:
                     task = memory.camera_task
                     if task[0] == 'm':
-                        camera.resolution = (2592, 1944)
+                        camera.resolution = (1280, 960)
                         filename = task[1:]
                         camera.capture(filename)
                         rootLogger.info('captured image:\t{}'.format(filename))

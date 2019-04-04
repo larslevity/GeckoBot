@@ -352,27 +352,28 @@ class HUIThread(threading.Thread):
                 self.shared_memory.pattern = pattern
             # always start with ref0
             self.ptrn_idx = 0
-            initial_cycle, initial_cycle_idx = True, 0
+#            initial_cycle, initial_cycle_idx = True, 0
             VIDEO = False
+            n_cycles = 0
             while not mode_changed():
                 change_state_in_main_thread(MODE[3]['main_state'][fun2()])
-                if is_userpattern():
-                    cref = read_potis().values()
-                    self.shared_memory.pattern = generate_pattern(*cref)
+#                if is_userpattern():
+#                    cref = read_potis().values()
+#                    self.shared_memory.pattern = generate_pattern(*cref)
                 if (fun1() and self.last_process_time + self.process_time <
                         time.time()):
-                    if initial_cycle:  # initial cycle
-                        pattern = get_initial_pose(self.shared_memory.pattern)
-                        idx = initial_cycle_idx
-                        initial_cycle_idx += 1
-                        if initial_cycle_idx > 1:
-                            initial_cycle = False
-                            if VIDEO and self.camerasock:
-                                self.camerasock.make_video('bastelspass_mit_muc')
-                    else:  # normaler style
-                        pattern = self.shared_memory.pattern
-                        idx = self.ptrn_idx
-                        self.ptrn_idx = idx+1 if idx < len(pattern)-1 else 0
+#                    if initial_cycle:  # initial cycle
+#                        pattern = get_initial_pose(self.shared_memory.pattern)
+#                        idx = initial_cycle_idx
+#                        initial_cycle_idx += 1
+#                        if initial_cycle_idx > 1:
+#                            initial_cycle = False
+#                            if VIDEO and self.camerasock:
+#                                self.camerasock.make_video('bastelspass_mit_muc')
+#                    else:  # normaler style
+                    pattern = self.shared_memory.pattern
+                    idx = self.ptrn_idx
+                    self.ptrn_idx = idx+1 if idx < len(pattern)-1 else 0
                     # generate tasks
                     dvtsk, pvtsk, processtime = generate_pose_ref(pattern, idx)
                     # send to main thread
@@ -383,9 +384,10 @@ class HUIThread(threading.Thread):
                     self.last_process_time = time.time()
                     # capture image?
                     if self.camerasock and not VIDEO:  # not video but image
-                        if idx % 3 == 1:
+                        if idx == 0 and n_cycles % 10 == 0:
                             self.camerasock.make_image('test'+str(self.camidx))
                             self.camidx += 1
+                    n_cycles += 1
 
                 time.sleep(UI_TSAMPLING)
                 set_leds()

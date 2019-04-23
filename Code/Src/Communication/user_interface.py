@@ -463,7 +463,7 @@ class Printer(threading.Thread):
             Y = Y + [None, None]
         else:
             IMG = False
-            aImg, eps, X, Y = [None]*3
+            aIMG, eps, X, Y = [None]*4
         if self.IMU_connected:
             rec_angle = self.shared_memory.rec_angle
             aIMU = [

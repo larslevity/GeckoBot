@@ -24,7 +24,7 @@ def get_pressure(alpha, version='vS11', max_pressure=1):
 
     def cut_off(p):
         if p > max_pressure:
-            Warning('clb pressure > max_presse: I cutted it off')
+            # Warning('clb pressure > max_presse: I cutted it off')
             p_ = max_pressure
         elif p < 0:
             p_ = 0.00
@@ -46,7 +46,7 @@ def get_pressure(alpha, version='vS11', max_pressure=1):
                 else:
                     p = eval_poly(clb[version][idx], alp)
                     pressure.append(cut_off(p))
-        return pressure
+        return pressure + [0, 0]  # 8 channels
     except KeyError:
         raise NotImplementedError
 
@@ -63,5 +63,5 @@ if __name__ == '__main__':
     alp = [0, 90, 90, 0, 90]
     print('100:', get_pressure(alp))
 
-    alp = [0, 90, -100, 0, 90]
+    alp = [100, 90, -100, 0, 90]
     print('100:', get_pressure(alp, version='vS11'))

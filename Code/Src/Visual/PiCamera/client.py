@@ -13,6 +13,7 @@ try:
 except ImportError:
     print('Relative Import does not work..')
 
+
 def start_server(ip='134.28.136.49'):
     cmd = 'ssh -i ~/.ssh/BBB_key pi@{} nohup python\
         /home/pi/Git/GeckoBot/Code/Src/Visual/PiCamera/server.py &'.format(ip)
@@ -35,8 +36,6 @@ def start_liveplotter(ip='134.28.136.70'):
     cmd = 'ssh -i ~/.ssh/BBB_key pi@{} nohup python\
         /home/pi/Git/GeckoBot/Code/pc_liveplotter_main.py &'.format(ip)
     call(cmd, shell=True)
-
-
 
 
 class Socket(object):  # pragma: no cover

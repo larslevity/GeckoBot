@@ -32,7 +32,10 @@ def read_list_from_csv(filename):
                 elif val == 'False':
                     line.append(False)
                 else:
-                    line.append(float(val))
+                    try:
+                        line.append(float(val))
+                    except ValueError:
+                        line.append(val)
             out.append(line)
     return out
 

@@ -8,6 +8,7 @@ import logging
 import errno
 import numpy as np
 from socket import error as SocketError
+import threading
 
 from Src.Hardware import sensors as sensors
 from Src.Hardware import actuators as actuators
@@ -207,10 +208,16 @@ def main():
             self.ref_task = {name: 0. for name in CHANNELset}
             self.pwm_task = {name: 20. for name in CHANNELset}
 
+            self.xref = (None, None)
+            self.rec_aIMG = {name: None for name in CHANNELset}
+            self.rec_X = {name: None for name in range(8)}  # 6 markers
+            self.rec_Y = {name: None for name in range(8)}
+            self.rec_eps = None
+
             self.rec = {name: 0.0 for name in CHANNELset}
             self.rec_IMU = {name: None for name in IMUset}
             self.rec_u = {name: 0.0 for name in CHANNELset}
-            self.rec_angle = {name: None for name in CHANNELset}
+            self.rec_aIMU = {name: None for name in CHANNELset}
 
             self.ptrndic = {
                 name: ptrn.read_list_from_csv('Patterns/'+name)
@@ -323,7 +330,7 @@ def main():
                     pwm = ctrlib.sys_input(ctr_out_)
                     PValve[name].set_pwm(pwm)
                     shared_memory.rec_u[name] = pwm
-                    shared_memory.rec_angle[name] = round(sys_out, 2)
+                    shared_memory.rec_aIMU[name] = round(sys_out, 2)
 
             time.sleep(shared_memory.sampling_time)
             new_state = shared_memory.task_state_of_mainthread
@@ -422,8 +429,14 @@ def main():
     camerasock, imgprocsock, plotsock = init_server_connections()
     communication_thread.set_camera_socket(camerasock)
 
+    if imgprocsock:
+        camReader = CameraReader(shared_memory, imgprocsock)
+        camReader.setDaemon(True)
+        camReader.start()
+        rootLogger.info('Started the CamReader Thread')
     if PRINTSTATE:
-        printer_thread = HUI.Printer(shared_memory, imgprocsock, plotsock, IMU)
+        IMG = True if imgprocsock else False
+        printer_thread = HUI.Printer(shared_memory, plotsock, IMU, IMG)
         printer_thread.setDaemon(True)
         printer_thread.start()
         rootLogger.info('Started the Printer Thread')
@@ -446,6 +459,7 @@ def main():
             printer_thread.kill()
         if imgprocsock:
             imgprocsock.close()
+            camReader.kill()
         if camerasock:
             camerasock.close()
         if plotsock:
@@ -457,6 +471,31 @@ def main():
         printer_thread.join()
     rootLogger.info('All is done ...')
     sys.exit(0)
+
+
+class CameraReader(threading.Thread):
+    def __init__(self, shared_memory, imgprocsock):
+        threading.Thread.__init__(self)
+        self.shared_memory = shared_memory
+        self.is_running = True
+        self.imgprocsock = imgprocsock
+
+    def run(self):
+        while self.is_running:
+            alpha, eps, (X, Y), xref = self.imgprocsock.get_alpha()
+            alpha = alpha + [None, None]
+            X = X + [None, None]
+            Y = Y + [None, None]
+            for i in range(8):
+                self.shared_memory.rec_X[i] = X[i]
+                self.shared_memory.rec_Y[i] = Y[i]
+                self.shared_memory.rec_aIMG[i] = alpha[i]
+
+            self.shared_memory.rec_eps = eps
+            self.shared_memory.xref = xref
+
+    def kill(self):
+        self.is_running = False
 
 
 if __name__ == '__main__':

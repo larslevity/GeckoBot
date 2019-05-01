@@ -29,12 +29,13 @@ def detect_all(frame):
     # extract pose
     if len(april_result) > 0:
         alpha, eps = extract_alpha(april_result)
-        X, Y = extract_position(april_result)
+        X, Y, xref = extract_position(april_result)
     else:
         alpha, eps = None, None
         X, Y = None, None
+        xref = None
 
-    return alpha, eps, (X, Y)
+    return alpha, eps, (X, Y), xref
 
 
 def calc_pose(alpha, eps, positions):
@@ -61,18 +62,22 @@ def extract_position(april_result):
         5: [1, 0, 10],
             }
     X, Y = [None]*6, [None]*6
+    xref = (None, None)
     for res in april_result:
         tag_id = res.tag_id
-        pc0 = np.array([res.corners[SHIFT[tag_id][0]][0],
-                        res.corners[SHIFT[tag_id][0]][1]])
-        pc1 = np.array([res.corners[SHIFT[tag_id][1]][0],
-                        res.corners[SHIFT[tag_id][1]][1]])
-        shift = (pc1-pc0)/np.linalg.norm(pc1-pc0)*SHIFT[tag_id][2]
-        center = res.center + shift
-        x, y = int(center[0]), int(center[1])
-        X[tag_id] = x
-        Y[tag_id] = y
-    return X, Y
+        if tag_id == 6:
+            xref = (int(res.center[0]), int(res.center[1]))
+        else:
+            pc0 = np.array([res.corners[SHIFT[tag_id][0]][0],
+                            res.corners[SHIFT[tag_id][0]][1]])
+            pc1 = np.array([res.corners[SHIFT[tag_id][1]][0],
+                            res.corners[SHIFT[tag_id][1]][1]])
+            shift = (pc1-pc0)/np.linalg.norm(pc1-pc0)*SHIFT[tag_id][2]
+            center = res.center + shift
+            x, y = int(center[0]), int(center[1])
+            X[tag_id] = x
+            Y[tag_id] = y
+    return X, Y, xref
 
 
 def extract_alpha(april_result):
@@ -89,9 +94,10 @@ def extract_alpha(april_result):
     center = []
     for res in april_result:
         tag_id = res.tag_id
-        ori[tag_id] = res.corners[2] - res.corners[0]
-        if tag_id == 1 or tag_id == 4:
-            center.append(res.center)
+        if tag_id < 6:
+            ori[tag_id] = res.corners[2] - res.corners[0]
+            if tag_id == 1 or tag_id == 4:
+                center.append(res.center)
 
     angle, eps = [None]*6, None
     for tag_id in POSs:

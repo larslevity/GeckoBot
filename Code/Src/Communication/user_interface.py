@@ -42,7 +42,7 @@ MODE = {
     2: {'ui_state': 'USER_REFERENCE',
         'main_state': {0: 'PRESSURE_REFERENCE', 1: 'ANGLE_REFERENCE'},
         'pin': MODE2},
-    3: {'ui_state': 'PATTERN_REFERENCE',
+    3: {'ui_state': 'APRILTAG_REFERENCE',
         'main_state': {0: 'PRESSURE_REFERENCE', 1: 'ANGLE_REFERENCE'},
         'pin': MODE3}
     }
@@ -405,37 +405,49 @@ class HUIThread(threading.Thread):
         def apriltag_reference():
             # first select version
             set_leds()
-            version = select_pattern()[0]
+            version = select_pattern()[0][0]
+#            print(version)
             ref_generator = ref_gen.ReferenceGenerator()
+#            dvtsk, pvtsk = convert_ref(
+#                    clb.get_pressure([0, 0, 0, 0, 0], version), [0, 0, 0, 0])
+#            print(dvtsk)
+#            print(pvtsk)
+#            # send to main thread
+#            self.shared_memory.dvalve_task = dvtsk
+#            self.shared_memory.ref_task = pvtsk
 
             while not mode_changed():
                 change_state_in_main_thread(MODE[3]['main_state'][fun2()])
 
                 if (fun1() and self.last_process_time + self.process_time <
                         time.time()):
-                    # where we are?
-                    act_pos =
-                    act_eps =
-                    
-                    # where should we go?
-                    xref = 
-                    
-                    # generate reference
-                    alpha, foot = ref_generator.get_next_reference(
-                            act_pos, act_eps, xref)
-                    dvtsk, pvtsk = convert_ref(clb.get_pressure(alpha), foot)
-                    processtime = .8
-                    # send to main thread
-                    self.shared_memory.dvalve_task = dvtsk
-                    self.shared_memory.ref_task = pvtsk
-                    # organisation
-                    self.process_time = processtime
-                    self.last_process_time = time.time()
+                    xref = self.shared_memory.xref
+                    act_eps = self.shared_memory.rec_eps
+
+                    # we know everything we have to
+                    if xref[0] and act_eps:
+                        act_pos = (self.shared_memory.rec_X[1],
+                                   -self.shared_memory.rec_Y[1])
+                        xref = (xref[0], -xref[1])
+                        
+                        print(xref, act_eps)
+                        # generate reference
+                        alpha, foot, ptime, pose_id =  \
+                            ref_generator.get_next_reference(
+                                act_pos, act_eps, xref)
+                        print(pose_id)
+                        dvtsk, pvtsk = convert_ref(
+                                clb.get_pressure(alpha, version), foot)
+                        # send to main thread
+                        self.shared_memory.dvalve_task = dvtsk
+                        self.shared_memory.ref_task = pvtsk
+                        # organisation
+                        self.process_time = ptime
+                        self.last_process_time = time.time()
 
                 time.sleep(UI_TSAMPLING)
                 set_leds()
             return (self.ui_state)
-
 
         """ ---------------- ----- ------- ----------------------------- """
         """ ---------------- RUN STATE MACHINE ------------------------- """
@@ -445,7 +457,7 @@ class HUIThread(threading.Thread):
         automat.add_state('PAUSE', pause_state)
         automat.add_state('PWM_FEED_THROUGH', pwm_feed_through)
         automat.add_state('USER_REFERENCE', user_reference)
-        automat.add_state('PATTERN_REFERENCE', pattern_reference)
+        automat.add_state('APRILTAG_REFERENCE', apriltag_reference)
         automat.add_state('EXIT', exit_cleaner)
         automat.add_state('QUIT', None, end_state=True)
         automat.set_start('PAUSE')
@@ -500,14 +512,13 @@ def generate_pose_ref(pattern, idx):
 
 
 class Printer(threading.Thread):
-    def __init__(self, shared_memory, imgprocsock=None, plotsock=None,
-                 IMU=False):
+    def __init__(self, shared_memory, plotsock=None, IMU=False, IMG=False):
         threading.Thread.__init__(self)
         self.shared_memory = shared_memory
         self.state = 'RUN'
-        self.imgprocsock = imgprocsock
         self.plotsock = plotsock
         self.IMU_connected = True if IMU else False
+        self.IMG_connected = True if IMG else False
 
     def prepare_data(self):
         p = [round(self.shared_memory.rec[i], 2) for i in range(8)]
@@ -515,36 +526,32 @@ class Printer(threading.Thread):
         u = [round(self.shared_memory.rec_u[i], 2) for i in range(8)]
         f = [round(self.shared_memory.dvalve_task[i], 2) for i in range(4)]
 
-        if self.imgprocsock:
-            IMG = True
-            alpha, eps, (X, Y) = self.imgprocsock.get_alpha()
-            alpha = alpha + [None, None]
-            aIMG = [round(alpha[i], 2) if alpha[i] else None for i in range(8)]
-            X = X + [None, None]
-            Y = Y + [None, None]
+        if self.IMG_connected:
+            aIMG = [round(self.shared_memory.rec_aIMG[i], 2)
+                    if self.shared_memory.rec_aIMG[i] else None
+                    for i in range(8)]
+            eps = (round(self.shared_memory.rec_eps, 2)
+                   if self.shared_memory.rec_eps else None)
+            X = [round(self.shared_memory.rec_X[i], 2)
+                 if self.shared_memory.rec_X[i] else None for i in range(8)]
+            Y = [round(self.shared_memory.rec_Y[i], 2)
+                 if self.shared_memory.rec_Y[i] else None for i in range(8)]
         else:
-            IMG = False
-            aIMG, eps, X, Y = [None]*4
-        if self.IMU_connected:
-            rec_angle = self.shared_memory.rec_angle
-            aIMU = [
-                round(rec_angle[i], 2)
-                if rec_angle[i]
-                else None for i in range(8)]
-        else:
-            aIMU = None
+            aIMG, eps, X, Y = [None]*8, None, [None]*8, [None]*8
 
-        return (p, r, u, f, aIMG, eps, X, Y, aIMU, self.IMU_connected, IMG)
+        if self.IMU_connected:
+            rec_angle = self.shared_memory.rec_aIMU
+            aIMU = [round(rec_angle[i], 2) if rec_angle[i]
+                    else None for i in range(8)]
+        else:
+            aIMU = [None]*8
+
+        return (p, r, u, f, aIMG, eps, X, Y, aIMU,
+                self.IMU_connected, self.IMG_connected)
 
     def print_state(self):
-        if self.imgprocsock:
-            alpha, eps, (X, Y) = self.imgprocsock.get_alpha()
-            alpha = alpha + [None, None]
-            X = X + [None, None]
-            Y = Y + [None, None]
-            eps = [eps] + [None]*3
-        else:
-            alpha, X, Y, eps = [None]*8, [None]*8, [None]*8, [None]*4
+        p, r, u, f, aIMG, eps, X, Y, aIMU, _, _ = self.prepare_data()
+        eps = [eps] + [None]*3
         state_str = '\n\t| Ref \t| State \t| epsilon \n'
         state_str = state_str + '-------------------------------------------\n'
         for i in range(4):
@@ -557,16 +564,8 @@ class Printer(threading.Thread):
             + '\n\t| Ref \t| p \t| PWM \t| aIMU \t| aIMG \t| POS  \n')
         state_str = state_str + '-'*75 + '\n'
         for i in range(8):
-            rec_angle = self.shared_memory.rec_angle
-            angle = round(rec_angle[i], 2) if rec_angle[i] else None
-            angle_imgProc = round(alpha[i], 2) if alpha[i] else None
-            x = round(X[i], 1) if X[i] else None
-            y = round(Y[i], 1) if Y[i] else None
             s = '{}\t| {}\t| {}\t| {}\t| {}\t| {}\t| ({},{})\n'.format(
-                i, self.shared_memory.ref_task[i],
-                round(self.shared_memory.rec[i], 2),
-                round(self.shared_memory.rec_u[i], 2), angle,
-                angle_imgProc, x, y)
+                i, r[i], p[i], u[i], aIMU[i], aIMG[i], X[i], Y[i])
             state_str = state_str + s
         print(state_str)
 

@@ -23,6 +23,8 @@ import adafruit_character_lcd.character_lcd_rgb_i2c as char_lcd
 
 from Src.Management import state_machine
 from Src.Visual.GUI import datamanagement as mgmt
+from Src.Controller import reference as ref_gen
+from Src.Controller import calibration as clb
 
 UI_TSAMPLING = .1
 
@@ -400,6 +402,41 @@ class HUIThread(threading.Thread):
                 set_leds()
             return (self.ui_state)
 
+        def apriltag_reference():
+            # first select version
+            set_leds()
+            version = select_pattern()[0]
+            ref_generator = ref_gen.ReferenceGenerator()
+
+            while not mode_changed():
+                change_state_in_main_thread(MODE[3]['main_state'][fun2()])
+
+                if (fun1() and self.last_process_time + self.process_time <
+                        time.time()):
+                    # where we are?
+                    act_pos =
+                    act_eps =
+                    
+                    # where should we go?
+                    xref = 
+                    
+                    # generate reference
+                    alpha, foot = ref_generator.get_next_reference(
+                            act_pos, act_eps, xref)
+                    dvtsk, pvtsk = convert_ref(clb.get_pressure(alpha), foot)
+                    processtime = .8
+                    # send to main thread
+                    self.shared_memory.dvalve_task = dvtsk
+                    self.shared_memory.ref_task = pvtsk
+                    # organisation
+                    self.process_time = processtime
+                    self.last_process_time = time.time()
+
+                time.sleep(UI_TSAMPLING)
+                set_leds()
+            return (self.ui_state)
+
+
         """ ---------------- ----- ------- ----------------------------- """
         """ ---------------- RUN STATE MACHINE ------------------------- """
         """ ---------------- ----- ------- ----------------------------- """
@@ -435,6 +472,16 @@ class HUIThread(threading.Thread):
 
 n_dvalves = len(SWITCHES)
 n_pvalves = len(POTIS)
+
+
+def convert_ref(pressure, foot):
+    dv_task, pv_task = {}, {}
+    for jdx, dp in enumerate(foot):
+        dv_task[jdx] = dp
+    for kdx, pp in enumerate(pressure):
+        pv_task[kdx] = pp
+
+    return dv_task, pv_task
 
 
 def generate_pose_ref(pattern, idx):

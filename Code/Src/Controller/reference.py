@@ -245,3 +245,29 @@ class Graph(object):
 
     def get_children(self, vertex):
         return self.__graph_dict[vertex]
+
+
+if __name__ == '__main__':
+    try:
+        from graphviz import Digraph
+
+        def render_graph(graph):
+            """ requirements:
+            pip install graphviz
+            apt-get install graphviz
+            """
+            dot = Digraph()
+            for v in graph.vertices():
+                dot.node(v, v)
+            for e in graph.edges():
+                v = e[0]
+                w = e[1]
+                c = e[2]
+                dot.edge(v, w, label=str(c) if c else None)
+            dot.render('file_name', view=True)
+
+        graph = Graph(g)
+        render_graph(graph)
+    except ImportError:
+        print('Missing package gaphiviz')
+        print('run: "pip install graphviz" and "apt-get install graphviz" ')

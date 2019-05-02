@@ -39,6 +39,9 @@ def get_pressure(alpha, version='vS11', max_pressure=1):
                         p = eval_poly(clb[version][idx], alp)
                         pressure.append(cut_off(p))
                         pressure.append(.00)  # actuator 3 -> right belly
+                    elif alp == 0:
+                        pressure.append(.00)
+                        pressure.append(.00)
                     else:  # right belly actuated
                         pressure.append(.00)  # actuator 2 -> left belly
                         p = eval_poly(clb[version][idx+1], abs(alp))
@@ -63,5 +66,5 @@ if __name__ == '__main__':
     alp = [0, 90, 90, 0, 90]
     print('100:', get_pressure(alp))
 
-    alp = [100, 90, -100, 0, 90]
+    alp = [100, 90, 0, 0, 90]
     print('100:', get_pressure(alp, version='vS11'))

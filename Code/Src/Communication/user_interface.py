@@ -429,8 +429,7 @@ class HUIThread(threading.Thread):
                         act_pos = (self.shared_memory.rec_X[1],
                                    -self.shared_memory.rec_Y[1])
                         xref = (xref[0], -xref[1])
-                        
-                        print(xref, act_eps)
+
                         # generate reference
                         alpha, foot, ptime, pose_id =  \
                             ref_generator.get_next_reference(

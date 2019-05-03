@@ -11,7 +11,7 @@ g = {  # manually tuned
      '000': [('100', ((.0, .0), -1)), ('010', ((0, 0), 1)),
              ('000', ((0, 0), 0))],
 
-     '100': [#('000', ((0, 0), 0)),
+     '100': [  # ('000', ((0, 0), 0)),
              ('100f', ((0, .71), 1)), ('100f', ((0.15, -.2), -80)),
              ('100f', ((.1, .4), -10)), ('102', ((.1, .3), -20))],
      '100f': [('100df', None)],
@@ -24,21 +24,21 @@ g = {  # manually tuned
      '111f': [('111df', None)],
      '111df': [('112', None)],
      '112': [('112f', None)],
-     '112f': [('112df', ((0, 1), 1)), ('110df', ((0.15, -.2), -80))],
+     '112f': [('112df', ((0, 1), -1)), ('110df', ((0.15, -.2), -80)),
+              ('115df', ((0, 1), 1)), ('113df', ((-0.15, -.2), 80))],
      '112df': [('100', None)],
-
-     '104': [('104f', None)],
-     '104f': [('104df', None)],
-     '104df': [('105', None)],
-     '105': [('105f', None)],
-     '105f': [('105df', None)],
-     '105df': [('106', ((0, .2), -130)), ('107', ((0, .4), -70))],
-     '106': [('106f', None)],
-     '106f': [('106df', None)],
-     '106df': [('105', None)],
-     '107': [('107f', None)],
-     '107f': [('107df', None)],
-     '107df': [('100', None)],
+#     '104': [('104f', None)],
+#     '104f': [('104df', None)],
+#     '104df': [('105', None)],
+#     '105': [('105f', None)],
+#     '105f': [('105df', None)],
+#     '105df': [('106', ((0, .2), -130)), ('107', ((0, .4), -70))],
+#     '106': [('106f', None)],
+#     '106f': [('106df', None)],
+#     '106df': [('105', None)],
+#     '107': [('107f', None)],
+#     '107f': [('107df', None)],
+#     '107df': [('100', None)],
      '101': [('101f', None)],
      '101f': [('101df', None)],
      '101df': [('100', None)],
@@ -49,29 +49,33 @@ g = {  # manually tuned
      '103f': [('103df', None)],
      '103df': [('102', ((0, .4), -30)), ('100', ((0, .6), -15))],
 
-     '010': [#('000', ((0, 0), 0)),
-             ('010f', ((0, .71), -1)), ('010f', ((-.2, .2), 90)),
-             ('010f', ((-.1, .53), 30)), ('012', ((-.15, .4), 60))],
+     '010': [  # ('000', ((0, 0), 0)),
+             ('010f', ((0, .71), -1)), ('010f', ((-.15, -.2), 80)),
+             ('010f', ((-.1, .4), 10)), ('012', ((-.1, .4), 20))],
      '010f': [('010df', None)],
-     '010df': [('100', ((0, .71), -1)),  # ('014', ((-.2, .2), 90)),
-               ('011', ((-.1, .53), 30))],
-
+     '010df': [('100', ((0, .71), -1)), ('113', ((-.15, -.2), 80)),
+               ('011', ((-.1, .4), 10))],
      '113': [('113f', None)],
-     '113f': [('113f', None)],
-     '113df': [('100', None)],
-
-     '014': [('014f', None)],
-     '014f': [('014df', None)],
-     '014df': [('015', None)],
-     '015': [('015f', None)],
-     '015f': [('015df', None)],
-     '015df': [('016', ((0, .2), 130)), ('017', ((0, .4), 70))],
-     '016': [('016f', None)],
-     '016f': [('016df', None)],
-     '016df': [('015', None)],
-     '017': [('017f', None)],
-     '017f': [('017df', None)],
-     '017df': [('010', None)],
+     '113f': [('113df', None)],
+     '113df': [('114', None)],
+     '114': [('114f', None)],
+     '114f': [('114df', None)],
+     '114df': [('115', None)],
+     '115': [('112f', None)],
+#     '115f': [('115df', ((0, 1), 1)), ('113df', ((-0.15, -.2), 80))],
+     '115df': [('010', None)],
+#     '014': [('014f', None)],
+#     '014f': [('014df', None)],
+#     '014df': [('015', None)],
+#     '015': [('015f', None)],
+#     '015f': [('015df', None)],
+#     '015df': [('016', ((0, .2), 130)), ('017', ((0, .4), 70))],
+#     '016': [('016f', None)],
+#     '016f': [('016df', None)],
+#     '016df': [('015', None)],
+#     '017': [('017f', None)],
+#     '017f': [('017df', None)],
+#     '017df': [('010', None)],
      '011': [('011f', None)],
      '011f': [('011df', None)],
      '011df': [('010', None)],
@@ -100,7 +104,7 @@ ref = {
 
      '112': [[45, 45, 10, 45, 45], [0, 0, 1, 1], .8],
      '112f': [[45, 45, 0, 45, 45], [1, 1, 1, 1], .1],
-     '112df': [[45, 45, 0, 45, 45], [1, 1, 0, 0], .1],
+     '112df': [[45, 45, 0, 45, 45], [0, 1, 1, 0], .1],
 
      '104': [[50, 30, 90, 30, 150], [1, 0, 0, 1], .8],
      '104f': [[50, 30, 90, 30, 150], [1, 1, 1, 1], .1],
@@ -134,7 +138,19 @@ ref = {
 
      '010': [[90, 0, -90, 90, 0], [1, 0, 0, 1], .8],
      '010f': [[90, 0, -90, 90, 0], [1, 1, 1, 1], .1],
-     '010df': [[90, 0, -90, 90, 0], [0, 1, 1, 1], .1],
+     '010df': [[90, 0, -90, 90, 0], [0, 1, 1, 0], .1],
+
+     '113': [[45, 45, 0, 45, 45], [0, 1, 1, 0], .8],
+     '113f': [[45, 45, 0, 45, 45], [1, 1, 1, 1], .1],
+     '113df': [[45, 45, 0, 45, 45], [1, 1, 0, 0], .1],
+
+     '114': [[45, 45, 90, 45, 45], [1, 1, 0, 0], .8],
+     '114f': [[45, 45, 90, 45, 45], [1, 1, 1, 1], .1],
+     '114df': [[45, 45, 90, 45, 45], [0, 0, 1, 1], .1],
+
+     '115': [[45, 45, -10, 45, 45], [0, 0, 1, 1], .8],
+#     '115f': [[45, 45, 0, 45, 45], [1, 1, 1, 1], .1],
+     '115df': [[45, 45, 0, 45, 45], [1, 0, 0, 1], .1],
 
      '014': [[30, 50, -90, 150, 30], [0, 1, 1, 0], .8],
      '014f': [[30, 50, -90, 150, 30], [1, 1, 1, 1], .1],
@@ -173,6 +189,24 @@ class ReferenceGenerator(object):
         self.ref = ref
         self.idx = 0
         self.last_deps = None
+        self.check_consistency()
+
+    def check_consistency(self):
+        for key in self.graph.vertices():
+            try:
+                self.ref[key]
+            except KeyError as err:
+                print(err, 'there is no ref')
+        for key in self.ref:
+            if key[-1] == 'f' and key[-2] != 'd':
+                assert sum(self.ref[key][1]) == 4  # all feet must be fix
+            if key[-1] == 'f' and key[-2] == 'd':
+                assert sum(self.ref[key][1]) == 2  # 2 feet must be fix
+            if key[-1] != 'f' and key != '000':
+                try:
+                    assert sum(self.ref[key][1]) == 2  # 2 feet must be fix
+                except AssertionError:
+                    print(key, 'sum is not equal 2')
 
     def get_next_reference(self, act_position, act_eps, xref):
         xref = np.r_[xref]
@@ -183,44 +217,42 @@ class ReferenceGenerator(object):
         act_deps = calc_angle(dpos, act_dir)
         act_dist = np.linalg.norm(dpos)
 
-        def suitability(translation_, rotation, v=None):
-            translation_ = np.r_[translation_]
-            # translation is configured for eps=90
-            translation = rotate(translation_, np.radians(act_eps-90))
-            dir_ = np.r_[np.cos(np.radians(act_eps+rotation)),
-                         np.sin(np.radians(act_eps+rotation))]
-            pos_ = act_pos + translation
-            dist_ = np.linalg.norm(xref-pos_)
-            deps_ = calc_angle(xref-pos_, dir_)
-
-            return (dist_, deps_)
-
         if act_dist < 1:
             pose_id = '000'
         else:
             if len(self.graph.get_children(self.pose)) > 1:
-                deps = {}
-                ddist = {}
+                def suitability(translation_, rotation, v=None):
+                    translation_ = np.r_[translation_]
+                    # translation is configured for eps=90
+                    translation = rotate(translation_, np.radians(act_eps-90))
+                    dir_ = np.r_[np.cos(np.radians(act_eps+rotation)),
+                                 np.sin(np.radians(act_eps+rotation))]
+                    pos_ = act_pos + translation
+                    dist_ = np.linalg.norm(xref-pos_)
+                    deps_ = calc_angle(xref-pos_, dir_)
+                    return (dist_, deps_)
+
+                deps = CandidateHandler()
+                ddist = CandidateHandler()
                 for child in self.graph.get_children(self.pose):
                     v, (translation, rotation) = child
                     dist_, deps_ = suitability(translation, rotation, v)
-                    deps[v] = deps_
-                    ddist[v] = dist_
+                    deps[v] = round(deps_, 2)
+                    ddist[v] = round(dist_, 2)
 
-                min_deps = min([abs(deps[key]) for key in deps])
-                max_deps = max([abs(deps[key]) for key in deps])
-                min_ddist = min([ddist[key] for key in ddist])
-                w = .5
-                dec = {key: (w*ddist[key]/min_ddist
-                             + (1-w)*abs(deps[key])/max_deps) for key in deps}
-
-                if min_deps > 70:  # ganz falsche Richtung
-                    deps_ = {key: abs(deps[key]) for key in deps}
-                    pose_id = min(deps_, key=deps_.get)
+                if abs(act_deps) > 70:  # ganz falsche Richtung
+                    _, pose_id = deps.minimum()
                 else:
-                    pose_id = min(dec, key=dec.get)
+                    max_deps, _ = deps.maximum()
+                    min_ddist, _ = ddist.maximum()
 
-                self.last_deps = deps[pose_id]
+                    w = .5
+                    dec = CandidateHandler()
+                    for key in deps:
+                        for dist, eps in zip(ddist[key], deps[key]):
+                            dec[key] = (w*dist/min_ddist
+                                        + (1-w)*abs(eps)/max_deps)
+                    min_dec, pose_id = dec.minimum()
             else:  # only 1 child
                 pose_id, _ = self.graph.get_children(self.pose)[0]
 
@@ -229,8 +261,16 @@ class ReferenceGenerator(object):
 
         alpha, feet, process_time = self.__get_ref(pose_id)
         if pose_id[:3] == '111':
-            if abs(act_deps) < 90:
-                alpha[2] = act_deps
+            if pose_id == '111':
+                self.last_deps = act_deps
+            if abs(self.last_deps) < 90:
+                alpha[2] = self.last_deps
+        if pose_id[:3] == '114':
+            if pose_id == '114':
+                self.last_deps = act_deps
+            if abs(self.last_deps) < 90:
+                alpha[2] = self.last_deps
+
         return alpha, feet, process_time, pose_id
 
     def __get_ref(self, pose_id):
@@ -346,6 +386,31 @@ class Graph(object):
 
     def get_children(self, vertex):
         return self.__graph_dict[vertex]
+
+
+class CandidateHandler(dict):
+    def __setitem__(self, key, value):
+        try:
+            self[key]
+        except KeyError:
+            super(CandidateHandler, self).__setitem__(key, [])
+        self[key].append(value)
+
+    def minimum(self):
+        min_d = {}
+        for key in self:
+            min_d[key] = min([abs(c) for c in self[key]])
+        min_ = min([abs(min_d[key]) for key in min_d])
+        min_key = min(min_d, key=min_d.get)
+        return min_, min_key
+
+    def maximum(self):
+        max_d = {}
+        for key in self:
+            max_d[key] = max([abs(c) for c in self[key]])
+        max_ = min([abs(max_d[key]) for key in max_d])
+        max_key = min(max_d, key=max_d.get)
+        return max_, max_key
 
 
 if __name__ == '__main__':

@@ -148,7 +148,7 @@ ref = {
      '114f': [[45, 45, 90, 45, 45], [1, 1, 1, 1], .1],
      '114df': [[45, 45, 90, 45, 45], [0, 0, 1, 1], .1],
 
-     '115': [[45, 45, -10, 45, 45], [0, 0, 1, 1], .8],
+     '115': [[45, 45, -20, 45, 45], [0, 0, 1, 1], .8],
 #     '115f': [[45, 45, 0, 45, 45], [1, 1, 1, 1], .1],
      '115df': [[45, 45, 0, 45, 45], [1, 0, 0, 1], .1],
 
@@ -269,7 +269,7 @@ class ReferenceGenerator(object):
             if pose_id == '114':
                 self.last_deps = act_deps
             if abs(self.last_deps) < 90:
-                alpha[2] = self.last_deps
+                alpha[3] = self.last_deps
 
         return alpha, feet, process_time, pose_id
 

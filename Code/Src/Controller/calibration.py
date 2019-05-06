@@ -74,5 +74,5 @@ if __name__ == '__main__':
 #    alp = [0, 90, 90, 0, 90]
 #    print('100:', get_pressure(alp))
 
-    alp = [45, 45, -50, 45, 45]
+    alp = [45, 45, -100, 45, 45]
     print('100:', get_pressure(alp, version='vS11'))

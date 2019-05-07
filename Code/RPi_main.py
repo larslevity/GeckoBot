@@ -83,8 +83,8 @@ def main(memory):
             for name in CHANNELset:
                 idx0, idx1 = CHANNELset[name]['IMUs']
                 rot_angle = CHANNELset[name]['IMUrot']
-                acc0 = memory.rec_IMU[idx0]
-                acc1 = memory.rec_IMU[idx1]
+                acc0 = memory.rec_IMU[idx1]
+                acc1 = memory.rec_IMU[idx0]
                 sys_out = IMUcalc.calc_angle(acc0, acc1, rot_angle)
                 memory.rec_angle[name] = round(sys_out, 2)
                 #print(name, ':\t', sys_out)

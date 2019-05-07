@@ -376,7 +376,7 @@ class HUIThread(threading.Thread):
                     self.ptrn_idx = idx+1 if idx < len(pattern)-1 else 0
                     # capture image?
                     if self.camerasock and not VIDEO:  # not video but image
-                        if idx == 1 and n_cycles % 20 == 1:
+                        if idx == 0 and n_cycles % 20 == 0:
                             self.camerasock.make_image('test'+str(self.camidx))
                             self.camidx += 1
                     # generate tasks

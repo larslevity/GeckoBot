@@ -115,6 +115,7 @@ class RPi_CameraThread(threading.Thread):
                 while not self.exit_flag:
                     task = memory.camera_task
                     if task[0] == 'm':
+                        time.sleep(4)
                         camera.resolution = (1280, 960)
                         filename = task[1:]
                         camera.capture(filename)

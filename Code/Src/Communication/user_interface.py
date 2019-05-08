@@ -378,9 +378,10 @@ class HUIThread(threading.Thread):
                     self.ptrn_idx = idx+1 if idx < len(pattern)-1 else 0
                     # capture image?
                     if self.camerasock and not VIDEO:  # not video but image
-                        if n_cycles % 30 == 1:
-                            self.camerasock.make_image('test'+str(self.camidx))
-                            self.camidx += 1
+                        if act_is_connected[0] or act_is_connected[1]:
+                            if n_cycles % 30 == 1:
+                                self.camerasock.make_image('test'+str(self.camidx))
+                                self.camidx += 1
                     # generate tasks
                     dvtsk, pvtsk, processtime = generate_pose_ref(pattern, idx)
                     # check if act is bursted:

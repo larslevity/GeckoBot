@@ -345,6 +345,17 @@ class HUIThread(threading.Thread):
             return (self.ui_state)
 
         def pattern_reference():
+
+            act_is_connected = {}
+            act_is_connected[0] = True
+            act_is_connected[1] = True
+            def check_actuator():
+                for idx in range(2):
+                    if act_is_connected[idx]:
+                        if self.shared_memory.rec[idx] > 0:
+                            if self.shared_memory.rec_angle[idx] < 40:
+                                act_is_connected[idx] = False
+
             # first select pattern
             set_leds()
             pattern = select_pattern()
@@ -362,25 +373,22 @@ class HUIThread(threading.Thread):
 #                    self.shared_memory.pattern = generate_pattern(*cref)
                 if (fun1() and self.last_process_time + self.process_time <
                         time.time()):
-#                    if initial_cycle:  # initial cycle
-#                        pattern = get_initial_pose(self.shared_memory.pattern)
-#                        idx = initial_cycle_idx
-#                        initial_cycle_idx += 1
-#                        if initial_cycle_idx > 1:
-#                            initial_cycle = False
-#                            if VIDEO and self.camerasock:
-#                                self.camerasock.make_video('bastelspass_mit_muc')
-#                    else:  # normaler style
                     pattern = self.shared_memory.pattern
                     idx = self.ptrn_idx
                     self.ptrn_idx = idx+1 if idx < len(pattern)-1 else 0
                     # capture image?
                     if self.camerasock and not VIDEO:  # not video but image
-                        if idx == 0 and n_cycles % 20 == 0:
+                        if n_cycles % 30 == 1:
                             self.camerasock.make_image('test'+str(self.camidx))
                             self.camidx += 1
                     # generate tasks
                     dvtsk, pvtsk, processtime = generate_pose_ref(pattern, idx)
+                    # check if act is bursted:
+                    if idx == 1:
+                        check_actuator()
+                    for idx in range(2):
+                        if not act_is_connected[idx]:
+                            pvtsk[idx] = 0
                     # send to main thread
                     self.shared_memory.dvalve_task = dvtsk
                     self.shared_memory.ref_task = pvtsk
@@ -464,6 +472,8 @@ class Printer(threading.Thread):
             alpha = self.imgprocsock.get_alpha()
             alpha = alpha + [None]*(8 - len(alpha))
             aIMU = [round(alpha[i], 2) if alpha[i] else None for i in range(8)]
+            for i in range(8):
+                self.shared_memory.rec_angle[i] = alpha[i]
             X = [None]*8
             Y = [None]*8
             eps = None
@@ -479,6 +489,8 @@ class Printer(threading.Thread):
             alpha = self.imgprocsock.get_alpha()
             alpha = alpha + [None]*(8 - len(alpha))
             alpha = [round(alpha[i], 2) if alpha[i] else None for i in range(8)]
+            for i in range(8):
+                self.shared_memory.rec_angle[i] = alpha[i]
             X = [None]*8
             Y = [None]*8
             eps = [None]*4

@@ -10,7 +10,7 @@ But in principle, all similar robots can also be operated with it.
 
 ## Walking Performance of the robot
 The following motion picture shows the walking performance of the robot when running straight.
-The whole video can be found <a href="https://github.com/larslevity/GeckoBot/tree/master/Pictures/SmallBot.avi">here</a>
+The whole video can be found <a href="https://github.com/larslevity/GeckoBotVideos">here</a>.
 
 ![Robot walking straight](https://github.com/larslevity/GeckoBot/blob/master/Pictures/smallbot.gif)
 
@@ -18,17 +18,17 @@ Using video analysis, the track of the robots feet can be obtained.
 With the kinematic model (stated below) the best fitting pose is calculated for each frame of one walking cycle.
 The motion picture below shows the result.
 
-![The Track of feet during a straight walking cycle](https://github.com/larslevity/GeckoBot/blob/master/model/track_of_feet.gif)
+![The Track of feet during a straight walking cycle](https://github.com/larslevity/GeckoBot/blob/master/Pictures/track_of_feet.gif)
 
 
 ## Kinematic Model of the Robot
 
-This repository also provides a kinematic model of the robot that is capable of predicting how the robot will deform under a given pressure.
+A kinematic model of the robot that is capable of predicting how the robot will deform under a given pressure can be found <a href="https://github.com/larslevity/GeckoBotModel">here</a>.
 With the help of this model, new gait patterns can be tested much more easily.
 The following figure shows the output of the model for the gait pattern of a curve.
 
 
-![Output of kinematic model, when walking a circle](https://github.com/larslevity/GeckoBot/blob/master/model/circle.gif)
+![Output of kinematic model, when walking a circle](https://github.com/larslevity/GeckoBot/blob/master/Pictures/circle.gif)
 
 
 ## Structure of the Hardware and Code

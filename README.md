@@ -2,7 +2,9 @@
 This repository provides the software for <a href="https://github.com/larslevity/ControlBoard">this Controlboard</a> or a similar device. 
 Pneumatically operated soft robots can be controlled with the ControlBoard.
 The code to be found here is specially tailored to the gecko-inspired soft robot - codenamed Geckobot as seen in the image below.
-But in principle, all similar robots can also be operated with it
+CAD data to build the robot can be found 
+<a href="https://github.com/larslevity/CADGeckoBot">here</a>.
+But in principle, all similar robots can also be operated with it.
 
 ![Image of the gecko inspired soft robot](https://github.com/larslevity/GeckoBot/blob/master/Pictures/robot_cboard.JPG)
 

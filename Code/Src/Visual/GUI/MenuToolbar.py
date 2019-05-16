@@ -10,6 +10,7 @@ http://python-gtk-3-tutorial.readthedocs.io/en/latest/menus.html
 from time import strftime
 import gi
 from gi.repository import Gtk
+
 from Src.Visual.GUI import save
 
 gi.require_version('Gtk', '3.0')
@@ -42,6 +43,7 @@ UI_INFO = """
     <toolitem action='FileSaveRecordedAsCsv' />
     <toolitem action='FileSaveRecordedAsTikz' />
     <toolitem action='FileSaveStartStop' />
+    <toolitem action='FileSaveRecord' />
     <toolitem action='FileQuit' />
   </toolbar>
 </ui>
@@ -110,6 +112,13 @@ class MenuToolbarWindow(Gtk.Bin):
                                 Gtk.STOCK_GO_FORWARD)
         action_new.connect("activate", self.on_save_clicked)
         action_group.add_action_with_accel(action_new, None)
+        # Record
+        action_new = Gtk.Action("FileSaveRecord",
+                                "Start/Stop recording",
+                                ("Start/Stop recording"),
+                                Gtk.STOCK_GO_FORWARD)
+        action_new.connect("activate", self.on_record_clicked)
+        action_group.add_action_with_accel(action_new, None)
         # Save csv
         action_new = Gtk.Action("FileSaveRecordedAsCsv",
                                 "Current Plot as CSV",
@@ -177,7 +186,7 @@ class MenuToolbarWindow(Gtk.Bin):
         """ Save the current state to .h5 """
         target = widget.get_name()
         if target == "FileSaveStartStop":
-            
+
             self.data.StartStop = not self.data.StartStop
             print('Start' if self.data.StartStop else 'Stop')
             if self.data.StartStop:
@@ -187,12 +196,11 @@ class MenuToolbarWindow(Gtk.Bin):
             else:
                 self.toplevel.analyse_win.plot_win.set_look_at_HEAD(False)
                 self.data.StartStopIdx[1] = self.data.max_idx
-#                filename = strftime("%Y_%m_%d__%H_%M_%S")+'-StartStop'+'.csv'
                 filename = None
                 save.save_recorded_data_as_csv(self.data.recorded, filename,
                                                self.data.StartStopIdx)
                 self.data.StartStopIdx = [None]*2
-            return 
+            return
 
         filename = self._select_file('save', target)
         if filename:
@@ -203,6 +211,14 @@ class MenuToolbarWindow(Gtk.Bin):
 
             elif target == 'FileSaveRecorded':
                 save.save_recorded_data(self.data, filename)
+
+    def on_record_clicked(self, widget):
+        if not self.data.record:
+            filename = strftime("%Y_%m_%d__%H_%M_%S")+'-record'+'.csv'
+            self.data.record_filename = filename
+        else:
+            self.data.record_filename = None
+        self.data.record = not self.data.record
 
     def _select_file(self, action, target):
         """ starts the user dialog to select a file """

@@ -16,6 +16,7 @@ import numpy as np
 
 from Src.Visual.GUI import gtk_gui_v2
 from Src.Visual.GUI import datamanagement
+from Src.Visual.GUI import save
 from Src.Visual.PiCamera import pickler
 from Src.Management import timeout
 from Src.Management import exception
@@ -122,6 +123,9 @@ def main(wait=30):
                 get_sample_from_client_and_put_into_gui_rec(conn)
             else:
                 fill_rnd_values()
+            if gui_rec.record:
+                save.save_last_sample_as_csv(gui_rec.recorded,
+                                             gui_rec.record_filename)
 
             time.sleep(.03)
     except KeyboardInterrupt:
@@ -137,4 +141,4 @@ def main(wait=30):
 
 if __name__ == '__main__':
 
-    main(30)
+    main(1)

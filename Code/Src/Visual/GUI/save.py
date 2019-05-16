@@ -28,6 +28,28 @@ def save_recorded_data(data, filename):
     deepdish.io.save(filename, data)
 
 
+def save_last_sample_as_csv(data, filename):
+
+    dirname = os.path.dirname(os.path.realpath(__file__))
+    realpath = '../../../../../GeckoBotExperiments/current_exp/' + filename
+    filename = os.path.join(dirname, realpath)
+    filename = os.path.abspath(os.path.realpath(filename))
+
+    d = {key: data[key]['val'][-1] for key in data}
+    keys = sorted(d.keys())
+
+    if not os.path.isfile(filename):
+        print("New file created")
+        with open(filename, "wb") as outfile:
+            writer = csv.writer(outfile, delimiter="\t")
+            writer.writerow(keys)
+
+    with open(filename, "a") as outfile:
+        writer = csv.writer(outfile, delimiter="\t")
+        writer.writerow([d[key] for key in keys])
+
+
+
 def save_recorded_data_as_csv(data, filename=None, StartStop=None):
     if not filename:
         exp = 'exp--'
@@ -36,7 +58,7 @@ def save_recorded_data_as_csv(data, filename=None, StartStop=None):
     realpath = '../../../../../GeckoBotExperiments/current_exp/' + filename
     filename = os.path.join(dirname, realpath)
     filename = os.path.abspath(os.path.realpath(filename))
- 
+
     if StartStop:
         start, stop = StartStop
     else:

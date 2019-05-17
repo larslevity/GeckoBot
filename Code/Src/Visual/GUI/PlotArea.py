@@ -24,29 +24,19 @@ class PlotArea(Gtk.Bin):
         Args:
             key (str): keyword which data
         """
+        data = list(self.data.recorded[key]['val'])
         if self.look_at_present:
-            val_new = self.data.recorded[key]['val'][-self._bufsize:]
+            val_new = data[-self._bufsize:]
         else:
             start_idx = self.look_at_head - self._bufsize
             start_idx = 0 if start_idx < 0 else start_idx
-            val_new =\
-                self.data.recorded[key]['val'][start_idx:self.look_at_head]
+            val_new = data[start_idx:self.look_at_head]
         return val_new
 
     def update(self, keylist):
         """
         Update the plot
         """
-        # update upper boarder of lookat_head
-        maxidx = self.data.max_idx
-        self.adj_scroll_hist.set_upper(maxidx)
-        # update value
-        if self.look_at_present:
-            self.adj_scroll_hist.set_value(maxidx)
-            
-        # change Buffer size if StartStop
-        if self.data.StartStop:
-            self.BufSizeSpinnBtn.set_value(maxidx-self.data.StartStopIdx[0])
 
         # increase number of plots if neccessary
         while len(keylist)+self.nMarkers > self.nartist:
@@ -210,23 +200,3 @@ class PlotArea(Gtk.Bin):
         # pack SpinButton zu hbox
         hbox.pack_start(self.BufSizeSpinnBtn, expand=False, fill=False,
                         padding=1)
-
-        # #### ScrollBar
-        hbox = Gtk.HBox(homogeneous=False, spacing=1)
-        vbox.pack_start(hbox, expand=True, fill=False, padding=1)
-        self.adj_scroll_hist = Gtk.Adjustment(value=0, lower=0,
-                                              upper=self.look_at_head,
-                                              step_incr=10, page_size=1)
-        scroll_button = Gtk.HScrollbar(adjustment=self.adj_scroll_hist)
-        self.adj_scroll_hist.connect("value_changed", self.change_look_at_hist,
-                                     scroll_button)
-        label = Gtk.Label("Look at:")
-        hbox.pack_start(label, expand=False, fill=False, padding=1)
-        hbox.pack_start(scroll_button, expand=True, fill=True, padding=1)
-        self.check_button = Gtk.CheckButton("HEAD")
-        self.check_button.connect("clicked", self.look_at_present_callback)
-        self.check_button.set_active(True)
-        hbox.pack_start(self.check_button, expand=False, fill=False, padding=1)
-        spinner = Gtk.SpinButton(adjustment=self.adj_scroll_hist, climb_rate=1,
-                                 digits=0)
-        hbox.pack_start(spinner, expand=False, fill=False, padding=1)

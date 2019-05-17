@@ -3,6 +3,8 @@ module for data management
 """
 
 import time
+from collections import deque
+
 
 def merge_multiple_dicts(dicts):
     super_dict = {}
@@ -13,16 +15,16 @@ def merge_multiple_dicts(dicts):
 
 
 def rehash_record(pressure=[None]*8, reference=[None]*8, motor_in=[None]*8,
-                  fixation=[None]*4, alphaIMG=[None]*6, epsilon=None, 
-                  positionx=[None]*6, positiony=[None]*6, 
+                  fixation=[None]*4, alphaIMG=[None]*6, epsilon=None,
+                  positionx=[None]*6, positiony=[None]*6,
                   alphaIMU=[None]*6, IMU=False, IMG=False):
-    
+
     p = {'p{}'.format(idx): px for idx, px in enumerate(pressure)}
     r = {'r{}'.format(idx): px for idx, px in enumerate(reference)}
     u = {'u{}'.format(idx): px for idx, px in enumerate(motor_in)}
     f = {'f{}'.format(idx): px for idx, px in enumerate(fixation)}
     t = {'time': time.time()}
-    
+
     record = merge_multiple_dicts([p, r, u, f, t])
     if IMG:
         aIMG = {'aIMG{}'.format(idx): px for idx, px in enumerate(alphaIMG)}
@@ -53,7 +55,7 @@ class GUIRecorder(object):
         self.record = False
         self.record_file = None
 
-    def append(self, sample):
+    def append(self, sample, maxlen=1000):
         """
         Append a sample to recorder.
 
@@ -63,13 +65,11 @@ class GUIRecorder(object):
         in_rec = True
         for key in sample:
             if key not in self.recorded:
-                self.recorded[key] = {'val': [], 'len': 0}
-#                self.recorded[key+'_t'] = {'val': [], 'len': 0}
+                self.recorded[key] = {'val': deque([], maxlen), 'len': 0}
                 in_rec = False
             self.recorded[key]['val'].append(sample[key])
-#            self.recorded[key+'_t']['val'].append(time.time()-self.start_time)
             self.recorded[key]['len'] += 1
-#            self.recorded[key+'_t']['len'] += 1
             if self.recorded[key]['len'] > self.max_idx:
-                self.max_idx = self.recorded[key]['len']
+                val_len = self.recorded[key]['len']
+                self.max_idx = val_len if val_len < maxlen else maxlen
         return in_rec

@@ -25,7 +25,6 @@ UI_INFO = """
       </menu>
       <menu action='FileSave'>
         <menuitem action='FileSaveRecorded' />
-        <menuitem action='FileSaveStartStop' />
         <menuitem action='FileSaveRecordedAsCsv' />
         <menuitem action='FileSaveRecordedAsTikz' />
       </menu>
@@ -42,7 +41,6 @@ UI_INFO = """
     <toolitem action='FileSaveRecorded' />
     <toolitem action='FileSaveRecordedAsCsv' />
     <toolitem action='FileSaveRecordedAsTikz' />
-    <toolitem action='FileSaveStartStop' />
     <toolitem action='FileSaveRecord' />
     <toolitem action='FileQuit' />
   </toolbar>
@@ -105,13 +103,13 @@ class MenuToolbarWindow(Gtk.Bin):
         action_new.connect("activate", self.on_save_clicked)
         action_group.add_action_with_accel(action_new, None)
         # Save Start/Stop
-        action_new = Gtk.Action("FileSaveStartStop",
-                                "Save sequence between Start/Stop",
-                                ("Save Sequence from first hitting this"
-                                 + " Button until the second hit"),
-                                Gtk.STOCK_GO_FORWARD)
-        action_new.connect("activate", self.on_save_clicked)
-        action_group.add_action_with_accel(action_new, None)
+#        action_new = Gtk.Action("FileSaveStartStop",
+#                                "Save sequence between Start/Stop",
+#                                ("Save Sequence from first hitting this"
+#                                 + " Button until the second hit"),
+#                                Gtk.STOCK_GO_FORWARD)
+#        action_new.connect("activate", self.on_save_clicked)
+#        action_group.add_action_with_accel(action_new, None)
         # Record
         action_new = Gtk.Action("FileSaveRecord",
                                 "Start/Stop recording",
@@ -185,22 +183,6 @@ class MenuToolbarWindow(Gtk.Bin):
     def on_save_clicked(self, widget):
         """ Save the current state to .h5 """
         target = widget.get_name()
-        if target == "FileSaveStartStop":
-
-            self.data.StartStop = not self.data.StartStop
-            print('Start' if self.data.StartStop else 'Stop')
-            if self.data.StartStop:
-                self.data.StartStopIdx[0] = self.data.max_idx
-                # push look at HEAD button
-                self.toplevel.analyse_win.plot_win.set_look_at_HEAD(True)
-            else:
-                self.toplevel.analyse_win.plot_win.set_look_at_HEAD(False)
-                self.data.StartStopIdx[1] = self.data.max_idx
-                filename = None
-                save.save_recorded_data_as_csv(self.data.recorded, filename,
-                                               self.data.StartStopIdx)
-                self.data.StartStopIdx = [None]*2
-            return
 
         filename = self._select_file('save', target)
         if filename:
@@ -216,8 +198,10 @@ class MenuToolbarWindow(Gtk.Bin):
         if not self.data.record:
             filename = strftime("%Y_%m_%d__%H_%M_%S")+'-record'+'.csv'
             self.data.record_filename = filename
+            print('Start recording to file: ', filename)
         else:
             self.data.record_filename = None
+            print('Stop recording')
         self.data.record = not self.data.record
 
     def _select_file(self, action, target):

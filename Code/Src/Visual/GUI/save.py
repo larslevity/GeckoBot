@@ -49,7 +49,6 @@ def save_last_sample_as_csv(data, filename):
         writer.writerow([d[key] for key in keys])
 
 
-
 def save_recorded_data_as_csv(data, filename=None, StartStop=None):
     if not filename:
         exp = 'exp--'

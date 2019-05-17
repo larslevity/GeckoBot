@@ -106,6 +106,7 @@ def main(wait=30):
             server_socket, conn, connection = bind_to_client()
             get_sample_from_client_and_put_into_gui_rec(conn)
             is_client = True
+            print("client DETECTED!")
         except exception.TimeoutError:
             print("There is no client. fill with rnd vals ...")
             fill_rnd_values()
@@ -117,7 +118,6 @@ def main(wait=30):
     print('GUI started .. ')
 
     try:
-        print('begin to fill with samples ...')
         while gui.is_running():
             if is_client:
                 get_sample_from_client_and_put_into_gui_rec(conn)
@@ -141,4 +141,4 @@ def main(wait=30):
 
 if __name__ == '__main__':
 
-    main(1)
+    main(wait=30)

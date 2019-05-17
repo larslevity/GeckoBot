@@ -448,6 +448,7 @@ def main():
             camerasock.close()
         if plotsock:
             plotsock.close()
+            print('Send Exit to plotsocket')
         communication_thread.kill()
         
     communication_thread.join()

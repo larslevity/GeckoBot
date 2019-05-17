@@ -363,21 +363,16 @@ class HUIThread(threading.Thread):
                 self.shared_memory.pattern = pattern
             # always start with ref0
             self.ptrn_idx = 0
-#            initial_cycle, initial_cycle_idx = True, 0
-            VIDEO = False
             n_cycles = 0
             while not mode_changed():
                 change_state_in_main_thread(MODE[3]['main_state'][fun2()])
-#                if is_userpattern():
-#                    cref = read_potis().values()
-#                    self.shared_memory.pattern = generate_pattern(*cref)
                 if (fun1() and self.last_process_time + self.process_time <
                         time.time()):
                     pattern = self.shared_memory.pattern
                     idx = self.ptrn_idx
                     self.ptrn_idx = idx+1 if idx < len(pattern)-1 else 0
                     # capture image?
-                    if self.camerasock and not VIDEO:  # not video but image
+                    if self.camerasock:  # not video but image
                         if act_is_connected[0] or act_is_connected[1]:
                             if n_cycles % 30 == 1:
                                 self.camerasock.make_image('test'+str(self.camidx))
@@ -398,6 +393,11 @@ class HUIThread(threading.Thread):
                     self.last_process_time = time.time()
 
                     n_cycles += 1
+
+                    if not (act_is_connected[0] or act_is_connected[1]):
+                        change_state_in_main_thread('EXIT')
+                        self.ui_state = 'EXIT'
+                        
 
                 time.sleep(UI_TSAMPLING)
                 set_leds()

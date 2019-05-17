@@ -155,6 +155,7 @@ class RPi_CommThread(threading.Thread):
                 if task[0] in ['m', 'v']:
                     self.memory.camera_task = task
                 if task[0] == 'Exit':
+                    self.send_back('ACK')
                     self.kill()
                     self.memory.kill_main()
         except Exception as err:

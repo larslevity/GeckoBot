@@ -13,6 +13,10 @@ try:
 except ImportError:
     print('Relative Import does not work..')
 
+from Src.Management import timeout
+from Src.Management import exception
+
+
 def start_server(ip='134.28.136.49'):
     cmd = 'ssh -i ~/.ssh/BBB_key pi@{} nohup python\
         /home/pi/Git/GeckoBot/Code/Src/Visual/PiCamera/server.py &'.format(ip)
@@ -57,6 +61,12 @@ class Socket(object):  # pragma: no cover
 
     def close(self):
         self.send_all(['Exit'])
+        with timeout.timeout(1):
+            try:
+                resp = self.recieve_data()
+            except exception.TimeoutError:
+                print("sock not responding")
+        
         self.connection.close()
         self.client_socket.close()
 

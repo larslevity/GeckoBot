@@ -329,7 +329,7 @@ class HUIThread(threading.Thread):
 
         def user_reference():
             self.lcd.message = \
-                'PRESSURE REFERENCE MODE\nPress Btn1 to set ref=0'
+                'PRESSURE REFERENCE MODE\nBtn1 -> ref=0, Btn2 -> AngleRef'
             while not mode_changed():
                 change_state_in_main_thread(MODE[2]['main_state'][fun2()])
                 refzero = fun1()
@@ -359,7 +359,7 @@ class HUIThread(threading.Thread):
             while not mode_changed():
                 self.lcd.message = \
                     'PATTERN REFERENCE MODE\nBtn1 -> Start, Btn2 -> IMAGES'
-                change_state_in_main_thread(MODE[3]['main_state'][fun2()])
+                change_state_in_main_thread(MODE[3]['main_state'][0])
                 if is_userpattern():
                     cref = read_potis().values()
                     self.shared_memory.pattern = generate_pattern(*cref)
@@ -524,7 +524,7 @@ class Printer(threading.Thread):
         print(state_str)
 
     def run(self):
-        while self.state is not 'EXIT':
+        while self.state != 'EXIT':
             if self.plotsock:
                 try:
                     sample = mgmt.rehash_record(*self.prepare_data())

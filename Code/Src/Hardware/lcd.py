@@ -47,3 +47,59 @@ class LCD(object):
 
         self.lcd.clear()
         return selected_val
+
+
+def select_val_from_dic(lcd, dic, default_key=None):
+    list_of_keys = [name for name in sorted(iter(dic.keys()))]
+    if 'selected' in list_of_keys:
+        list_of_keys.remove('selected')  # due to api GeckoBot
+    selected_key = None
+    if default_key:
+        idx = list_of_keys.index(default_key)
+    else:
+        idx = 0
+    lcd.message = list_of_keys[idx]
+    while selected_key is None:
+        if lcd.up_button:
+            idx = idx - 1 if idx > 0 else len(list_of_keys) - 1
+            lcd.clear()
+            lcd.message = list_of_keys[idx]
+        elif lcd.down_button:
+            idx = idx + 1 if idx < len(list_of_keys) - 1 else 0
+            lcd.clear()
+            lcd.message = list_of_keys[idx]
+        elif lcd.select_button:
+            lcd.clear()
+            lcd.message = "SELECTED"
+            selected_key = list_of_keys[idx]
+            selected_val = dic[selected_key]
+        time.sleep(.2)
+
+    lcd.clear()
+    return selected_val
+
+
+def select_elem_from_list(lcd, lis, default_key=None):
+    list_of_elems = lis
+    selected_key = None
+    if default_key:
+        idx = list_of_elems.index(default_key)
+    else:
+        idx = 0
+    lcd.message = list_of_elems[idx]
+    while selected_key is None:
+        if lcd.up_button:
+            idx = idx - 1 if idx > 0 else len(list_of_elems) - 1
+            lcd.clear()
+            lcd.message = list_of_elems[idx]
+        elif lcd.down_button:
+            idx = idx + 1 if idx < len(list_of_elems) - 1 else 0
+            lcd.clear()
+            lcd.message = list_of_elems[idx]
+        elif lcd.select_button:
+            lcd.clear()
+            lcd.message = "SELECTED"
+            selected_elem = list_of_elems[idx]
+        time.sleep(.2)
+    lcd.clear()
+    return selected_elem

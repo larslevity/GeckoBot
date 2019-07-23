@@ -25,12 +25,13 @@ from Src.Management import state_machine
 from Src.Visual.GUI import datamanagement as mgmt
 from Src.Controller import reference as ref_gen
 from Src.Controller import calibration as clb
+from Src.Hardware import lcd as LCD
 
 UI_TSAMPLING = .1
 
 MODE1 = "P9_23"
 MODE2 = "P9_27"
-MODE3 = 'P9_30'  # "P9_25" doesnt work.
+MODE3 = "P9_30"  # "P9_25" doesnt work.
 FUN1 = "P9_24"
 FUN2 = "P9_26"
 BTNS = [MODE1, MODE2, MODE3, FUN1, FUN2]
@@ -43,7 +44,7 @@ MODE = {
         'main_state': {0: 'PRESSURE_REFERENCE', 1: 'ANGLE_REFERENCE'},
         'pin': MODE2},
     3: {'ui_state': 'APRILTAG_REFERENCE',
-        'main_state': {0: 'PRESSURE_REFERENCE', 1: 'ANGLE_REFERENCE'},
+        'main_state': {'PRESSURE_REFERENCE'},
         'pin': MODE3}
     }
 
@@ -361,7 +362,7 @@ class HUIThread(threading.Thread):
             while not mode_changed():
                 self.lcd.message = \
                     'PATTERN REFERENCE MODE\nBtn1 -> Start, Btn2 -> IMAGES'
-                change_state_in_main_thread(MODE[3]['main_state'][0])
+                change_state_in_main_thread(MODE[3]['main_state'])
                 if is_userpattern():
                     cref = read_potis().values()
                     self.shared_memory.pattern = generate_pattern(*cref)
@@ -402,29 +403,20 @@ class HUIThread(threading.Thread):
                 set_leds()
             return (self.ui_state)
 
-        def apriltag_reference():
+        def searchtree_pathplanner():
             # first select version
             set_leds()
             version = select_pattern()[0][0]
-#            print(version)
             ref_generator = ref_gen.ReferenceGenerator()
-#            dvtsk, pvtsk = convert_ref(
-#                    clb.get_pressure([0, 0, 0, 0, 0], version), [0, 0, 0, 0])
-#            print(dvtsk)
-#            print(pvtsk)
-#            # send to main thread
-#            self.shared_memory.dvalve_task = dvtsk
-#            self.shared_memory.ref_task = pvtsk
 
             while not mode_changed():
-                change_state_in_main_thread(MODE[3]['main_state'][fun2()])
+                change_state_in_main_thread(MODE[3]['main_state'])
 
                 if (fun1() and self.last_process_time + self.process_time <
                         time.time()):
                     xref = self.shared_memory.xref
                     act_eps = self.shared_memory.rec_eps
 
-                    # we know everything we have to
                     if xref[0] and act_eps:
                         act_pos = (self.shared_memory.rec_X[1],
                                    -self.shared_memory.rec_Y[1])
@@ -448,6 +440,11 @@ class HUIThread(threading.Thread):
                 set_leds()
             return (self.ui_state)
 
+        def select_mode():
+            lis = ['PATTERN_REFERENCE', 'SEARCHTREE_PATHPLANNER',
+                   'OPTIMAL_PATHPLANNER']
+            LCD.select_elem_from_list(lcd, lis)
+
         """ ---------------- ----- ------- ----------------------------- """
         """ ---------------- RUN STATE MACHINE ------------------------- """
         """ ---------------- ----- ------- ----------------------------- """
@@ -456,7 +453,9 @@ class HUIThread(threading.Thread):
         automat.add_state('PAUSE', pause_state)
         automat.add_state('PWM_FEED_THROUGH', pwm_feed_through)
         automat.add_state('USER_REFERENCE', user_reference)
-        automat.add_state('APRILTAG_REFERENCE', apriltag_reference)
+        automat.add_state('PATTERN_REFERENCE', pattern_reference)
+        automat.add_state('SEARCHTREE_PATHPLANNER', searchtree_pathplanner)
+        automat.add_state('OPTIMAL_PATHPLANNER', optimal_pathplanner)
         automat.add_state('EXIT', exit_cleaner)
         automat.add_state('QUIT', None, end_state=True)
         automat.set_start('PAUSE')

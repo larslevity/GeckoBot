@@ -224,7 +224,6 @@ def main():
     rootLogger.info('Initialize the shared variables, i.e. cargo ...')
     shared_memory = SharedMemory()
 
-
     """ ---------------- Sensor  Evaluation ------------------------- """
     def read_sens(shared_memory):
         for name in PSens:
@@ -419,8 +418,6 @@ def main():
     communication_thread = HUI.HUIThread(shared_memory, rootLogger)
     communication_thread.setDaemon(True)
     communication_thread.start()
-    rootLogger.info('started UI Thread as daemon?: {}'.format(
-            communication_thread.isDaemon()))
 
     camerasock, imgprocsock, plotsock = init_server_connections()
     communication_thread.set_camera_socket(camerasock)
@@ -430,14 +427,13 @@ def main():
         printer_thread.setDaemon(True)
         printer_thread.start()
         rootLogger.info('Started the Printer Thread')
-    
 
     try:
         rootLogger.info('Run the StateMachine ...')
         automat.run(shared_memory)
     except KeyboardInterrupt:
         rootLogger.exception('keyboard interrupt detected...   killing UI')
-       
+
     except Exception as err:
         rootLogger.exception(
             '\n----------caught exception! in Main Thread----------------\n')
@@ -455,7 +451,7 @@ def main():
         if plotsock:
             plotsock.close()
         communication_thread.kill()
-        
+
     communication_thread.join()
     if PRINTSTATE:
         printer_thread.join()

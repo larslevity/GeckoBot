@@ -131,7 +131,8 @@ def init_lcd_display():
     rows = 2
     i2c = busio.I2C(board.SCL, board.SDA)
     lcd = char_lcd.Character_LCD_RGB_I2C(i2c, cols, rows)
-    lcd.clear()
+    lcd.color = [100, 0, 0]
+    lcd.message = 'Display initialized!'
     return lcd
 
 
@@ -210,8 +211,10 @@ class HUIThread(threading.Thread):
                     self.rootLogger.info("UI goes to: {}".format(new_state))
                     reset_events()
                     self.lastchange = time.time()
+                    self.lcd.message = new_state + 'SELECTED'
                 else:
                     flicker_leds()
+                    self.lcd.message = 'Potis not zero ...'
             return change
 
         def fun1():
@@ -264,12 +267,12 @@ class HUIThread(threading.Thread):
 
         def select_pattern():
             patterns = [
-                name for name in sorted(iter(self.shared_memory.ptrndic.keys()))]
+                name for name in sorted(
+                        iter(self.shared_memory.ptrndic.keys()))]
             patterns.remove('selected')
             current_selection = self.shared_memory.ptrndic['selected']
             select = None
             idx = patterns.index(current_selection)
-            self.lcd.color = [100, 0, 0]
             self.lcd.message = patterns[idx]
             while not mode_changed() and select is None:
                 if self.lcd.up_button:
@@ -288,7 +291,6 @@ class HUIThread(threading.Thread):
                 time.sleep(.2)
 
             self.lcd.clear()
-            self.lcd.color = [0, 0, 0]
 
             if select:
                 return self.shared_memory.ptrndic[
@@ -311,6 +313,7 @@ class HUIThread(threading.Thread):
             return (self.ui_state)
 
         def pwm_feed_through():
+            self.lcd.message = 'PWM FEED THROUGH MODE'
             change_state_in_main_thread(MODE[1]['main_state'])
             while not mode_changed():
                 cref = read_potis()
@@ -325,6 +328,8 @@ class HUIThread(threading.Thread):
             return (self.ui_state)
 
         def user_reference():
+            self.lcd.message = \
+                'PRESSURE REFERENCE MODE\nPress Btn1 to set ref=0'
             while not mode_changed():
                 change_state_in_main_thread(MODE[2]['main_state'][fun2()])
                 refzero = fun1()
@@ -342,6 +347,7 @@ class HUIThread(threading.Thread):
             return (self.ui_state)
 
         def pattern_reference():
+            IMAGES = False
             # first select pattern
             set_leds()
             pattern = select_pattern()
@@ -350,8 +356,9 @@ class HUIThread(threading.Thread):
             # always start with ref0
             self.ptrn_idx = 0
             initial_cycle, initial_cycle_idx = True, 0
-            VIDEO = True
             while not mode_changed():
+                self.lcd.message = \
+                    'PATTERN REFERENCE MODE\nBtn1 -> Start, Btn2 -> IMAGES'
                 change_state_in_main_thread(MODE[3]['main_state'][fun2()])
                 if is_userpattern():
                     cref = read_potis().values()
@@ -364,8 +371,6 @@ class HUIThread(threading.Thread):
                         initial_cycle_idx += 1
                         if initial_cycle_idx > 1:
                             initial_cycle = False
-                            if VIDEO and self.camerasock:
-                                self.camerasock.make_video('bastelspass_mit_muc')
                     else:  # normaler style
                         pattern = self.shared_memory.pattern
                         idx = self.ptrn_idx
@@ -379,10 +384,17 @@ class HUIThread(threading.Thread):
                     self.process_time = processtime
                     self.last_process_time = time.time()
                     # capture image?
-                    if self.camerasock and not VIDEO:  # not video but image
+                    if self.camerasock and IMAGES:
                         if idx % 3 == 1:
-                            self.camerasock.make_image('test'+str(self.camidx))
+                            self.camerasock.make_image('img'+str(self.camidx))
                             self.camidx += 1
+
+                if fun2() and not IMAGES:
+                    IMAGES = True
+                    self.lcd.message = 'RPi takes photos now'
+                elif not fun2() and IMAGES:
+                    IMAGES = False
+                    self.lcd.message = 'RPi stop to take photos'
 
                 time.sleep(UI_TSAMPLING)
                 set_leds()
@@ -402,6 +414,7 @@ class HUIThread(threading.Thread):
         automat.set_start('PAUSE')
 
         try:
+            self.lcd.message('Select Operating Mode')
             automat.run()
         except Exception as err:
             self.rootLogger.exception('\n exception HUI Thread \n')
@@ -416,6 +429,7 @@ class HUIThread(threading.Thread):
         self.rootLogger.info('HUI Thread is done ...')
 
     def kill(self):
+        self.lcd.message = 'Bye Bye ...'
         self.ui_state = 'EXIT'
 
 

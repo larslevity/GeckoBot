@@ -6,18 +6,15 @@ import sys
 import time
 import logging
 import errno
-import numpy as np
+
 from socket import error as SocketError
 import threading
 
-from Src.Hardware import sensors as sensors
-from Src.Hardware import actuators as actuators
-from Src.Management import state_machine
+
 from Src.Management import timeout
 from Src.Management import exception
 from Src.Communication import user_interface as HUI
-from Src.Math import IMUcalc
-from Src.Controller import controller as ctrlib
+
 from Src.Visual.PiCamera import client
 from Src.Management import load_pattern as ptrn
 
@@ -85,105 +82,6 @@ def init_server_connections(IMGPROC=True):
     return camerasock, imgprocsock, plotsock
 
 
-# ------------ PATTERN INIT
-
-MAX_PRESSURE = 1.   # bar
-MAX_CTROUT = 0.50     # [10V]
-TSAMPLING = 0.001     # [sec]
-PID = [1.05, 0.03, 0.01]    # [1]
-PIDimu = [0.0117, 1.012, 0.31]
-
-START_STATE = 'PAUSE'
-PRINTSTATE = True
-
-
-# ------------ CHANNELS INIT
-
-'''
-Positions of IMUs:
-<       ^       >
-0 ----- 1 ----- 2
-        |
-        |
-        |
-3 ------4 ------5
-<       v       >
-In IMUcalc.calc_angle(acc0, acc1, rot_angle), "acc0" is turned by rot_angle
-'''
-
-IMUset = {
-    0: {'id': 0},
-    1: {'id': 1},
-    2: {'id': 2},
-    3: {'id': 3},
-    4: {'id': 4},
-    5: {'id': 5}
-    }
-CHANNELset = {
-    0: {'PSensid': 4, 'pin': 'P9_22', 'ctr': PID, 'IMUs': [0, 1], 'IMUrot': -90, 'ctrIMU': PIDimu},
-    1: {'PSensid': 5, 'pin': 'P8_19', 'ctr': PID, 'IMUs': [1, 2], 'IMUrot': -90, 'ctrIMU': PIDimu},
-    2: {'PSensid': 2, 'pin': 'P9_21', 'ctr': PID, 'IMUs': [1, 4], 'IMUrot': 180, 'ctrIMU': PIDimu},
-    3: {'PSensid': 3, 'pin': 'P8_13', 'ctr': PID, 'IMUs': [4, 1], 'IMUrot': 180, 'ctrIMU': PIDimu},
-    4: {'PSensid': 0, 'pin': 'P9_14', 'ctr': PID, 'IMUs': [4, 3], 'IMUrot': -90, 'ctrIMU': PIDimu},
-    5: {'PSensid': 1, 'pin': 'P9_16', 'ctr': PID, 'IMUs': [5, 4], 'IMUrot': -90, 'ctrIMU': PIDimu},
-    6: {'PSensid': 7, 'pin': 'P9_28', 'ctr': PID, 'IMUs': [None], 'IMUrot': None, 'ctrIMU': None},
-    7: {'PSensid': 6, 'pin': 'P9_42', 'ctr': PID, 'IMUs': [None], 'IMUrot': None, 'ctrIMU': None}
-    }
-DiscreteCHANNELset = {
-    0: {'pin': 'P8_10'},
-    1: {'pin': 'P8_7'},
-    2: {'pin': 'P8_8'},
-    3: {'pin': 'P8_9'}
-    }
-
-
-def init_channels():
-    """
-    Initialize the software representation of the hardware, i.e.
-    Sensors, Proportional Valves, and Discrete Valves
-    """
-    rootLogger.info("Initialize IMUs ...")
-    # mplx address for IMU is 0x71
-
-    imu_set = [imu for imu in IMUset]
-    imu_used_ = [CHANNELset[name]['IMUs'] for name in CHANNELset]
-    while [None] in imu_used_:
-        imu_used_.remove([None])
-    imu_used = list(np.unique([imu for subl in imu_used_ for imu in subl]))
-    for imu in imu_used:
-        if imu not in imu_set and imu is not None:
-            raise KeyError(
-                'IMU with name "{}"'.format(imu) + ' is used for angle' +
-                'calculation, but is not in the set of connected IMUs')
-    try:
-        IMU = {}
-        for name in IMUset:
-            IMU[name] = sensors.MPU_9150(
-                name=name, mplx_id=IMUset[name]['id'])
-    except IOError:  # not connected
-        IMU = False
-    rootLogger.info("IMU detected?: {}".format(not(not(IMU))))
-
-    rootLogger.info("Initialize Channels ...")
-    PSens, PValve, DValve, Controller, Imu_controller = {}, {}, {}, {}, {}
-    for name in CHANNELset:
-        PSens[name] = sensors.DPressureSens(
-            name=name, mplx_id=CHANNELset[name]['PSensid'],
-            maxpressure=MAX_PRESSURE)
-        PValve[name] = actuators.Valve(
-                name=name, pwm_pin=CHANNELset[name]['pin'])
-        Controller[name] = ctrlib.PidController(
-                CHANNELset[name]['ctr'], TSAMPLING, MAX_CTROUT)
-        if CHANNELset[name]['IMUs'][-1]:
-            Imu_controller[name] = ctrlib.PidController(
-                CHANNELset[name]['ctrIMU'], TSAMPLING, MAX_CTROUT)
-
-    for name in DiscreteCHANNELset:
-        DValve[name] = actuators.DiscreteValve(
-            name=name, pin=DiscreteCHANNELset[name]['pin'])
-
-    return PSens, PValve, DValve, IMU, Controller, Imu_controller
-
 
 def main():
     """
@@ -200,13 +98,9 @@ def main():
     class SharedMemory(object):
         """ Data, which is shared between Threads """
         def __init__(self):
-            self.task_state_of_mainthread = START_STATE
-            self.actual_state_of_mainthread = START_STATE
             self.sampling_time = TSAMPLING
 
-            self.dvalve_task = {name: 0. for name in DiscreteCHANNELset}
-            self.ref_task = {name: 0. for name in CHANNELset}
-            self.pwm_task = {name: 20. for name in CHANNELset}
+            
 
             self.xref = (None, None)
             self.rec_aIMG = {name: None for name in CHANNELset}
@@ -214,9 +108,6 @@ def main():
             self.rec_Y = {name: None for name in range(8)}
             self.rec_eps = None
 
-            self.rec = {name: 0.0 for name in CHANNELset}
-            self.rec_IMU = {name: None for name in IMUset}
-            self.rec_u = {name: 0.0 for name in CHANNELset}
             self.rec_aIMU = {name: None for name in CHANNELset}
 
             self.ptrndic = {
@@ -231,195 +122,12 @@ def main():
     rootLogger.info('Initialize the shared variables, i.e. cargo ...')
     shared_memory = SharedMemory()
 
-    """ ---------------- Sensor  Evaluation ------------------------- """
-    def read_sens(shared_memory):
-        for name in PSens:
-            try:
-                shared_memory.rec[name] = PSens[name].get_value()
-            except IOError as e:
-                if e.errno == errno.EREMOTEIO:
-                    rootLogger.info(
-                        'cant read pressure sensor.' +
-                        ' Continue anyway ... Fail in [{}]'.format(name))
-                else:
-                    rootLogger.exception('Sensor [{}]'.format(name))
-                    rootLogger.error(e, exc_info=True)
-                    raise e
-        return shared_memory
-
-    def read_imu(shared_memory):
-        for name in IMU:
-            try:
-                shared_memory.rec_IMU[name] = IMU[name].get_acceleration()
-            except IOError as e:
-                if e.errno == errno.EREMOTEIO:
-                    rootLogger.exception(
-                        'cant read imu device.' +
-                        'Continue anyway ...Fail in [{}]'.format(name))
-                else:
-                    rootLogger.exception('Sensor [{}]'.format(name))
-                    rootLogger.error(e, exc_info=True)
-                    raise e
-        return shared_memory
-
-    """ ---------------- HELP FUNCTIONS ------------------------- """
-
-    def set_dvalve():
-        for name in DValve:
-            state = shared_memory.dvalve_task[name]
-            DValve[name].set_state(state)
-
-    def init_output():
-        for name in PValve:
-            PValve[name].set_pwm(20.)
-
-    def pressure_check(pressure, pressuremax, cutoff):
-        if pressure <= cutoff:
-            out = 0
-        elif pressure >= pressuremax:
-            out = -MAX_CTROUT
-        else:
-            out = -MAX_CTROUT/(pressuremax-cutoff)*(pressure-cutoff)
-        return out
-
-    def cutoff(x, minx=-MAX_PRESSURE, maxx=MAX_PRESSURE):
-        if x < minx:
-            out = minx
-        elif x > maxx:
-            out = maxx
-        else:
-            out = x
-        return out
 
     """ ---------------- ----- ------- ------------------------- """
     """ ---------------- State Handler ------------------------- """
     """ ---------------- ----- ------- ------------------------- """
 
-    def angle_reference(shared_memory):
-        rootLogger.info("Arriving in ANGLE_REFERENCE State. ")
-        shared_memory.actual_state_of_mainthread = 'ANGLE_REFERENCE'
 
-        init_output()
-        while shared_memory.task_state_of_mainthread == 'ANGLE_REFERENCE':
-            shared_memory = read_sens(shared_memory)
-            if IMU:
-                set_dvalve()
-                shared_memory = read_imu(shared_memory)
-                imu_rec = shared_memory.rec_IMU
-                for name in ImuCtr:
-                    ref = shared_memory.ref_task[name]*90.
-                    idx0, idx1 = CHANNELset[name]['IMUs']
-                    rot_angle = CHANNELset[name]['IMUrot']
-                    acc0 = imu_rec[idx0]
-                    acc1 = imu_rec[idx1]
-                    sys_out = IMUcalc.calc_angle(acc0, acc1, rot_angle)
-                    ctr_out = ImuCtr[name].output(ref, sys_out)
-                    pressure = shared_memory.rec[name]
-                    pressure_bound = pressure_check(
-                            pressure, 1.5*MAX_PRESSURE, 1*MAX_PRESSURE)
-                    ctr_out_ = cutoff(ctr_out+pressure_bound)
-                    # for torso, set pwm to 0 if other ref is higher:
-                    if name in [2, 3]:
-                        other = 2 if name == 3 else 3
-                        other_ref = shared_memory.ref_task[other]*90
-                        if ref == 0 and ref == other_ref:
-                            if pressure > .5:
-                                ctr_out_ = -MAX_CTROUT
-                        elif ref < other_ref or (ref == other_ref and ref > 0):
-                            ctr_out_ = -MAX_CTROUT
-                    pwm = ctrlib.sys_input(ctr_out_)
-                    PValve[name].set_pwm(pwm)
-                    shared_memory.rec_u[name] = pwm
-                    shared_memory.rec_aIMU[name] = round(sys_out, 2)
-
-            time.sleep(shared_memory.sampling_time)
-            new_state = shared_memory.task_state_of_mainthread
-        return (new_state, shared_memory)
-
-    def feed_through(shared_memory):
-        """
-        Set the valves to the data recieved by the comm_tread
-        """
-        rootLogger.info("Arriving in FEED_THROUGH State: ")
-        shared_memory.actual_state_of_mainthread = 'FEED_THROUGH'
-
-        while shared_memory.task_state_of_mainthread == 'FEED_THROUGH':
-            # read
-            shared_memory = read_sens(shared_memory)
-            # write
-            for name in PValve:
-                pwm = shared_memory.pwm_task[name]
-                PValve[name].set_pwm(pwm)
-                shared_memory.rec_u[name] = pwm
-            set_dvalve()
-            # meta
-            time.sleep(shared_memory.sampling_time)
-            new_state = shared_memory.task_state_of_mainthread
-        return (new_state, shared_memory)
-
-    def pressure_reference(shared_memory):
-        """
-        Set the references for each valves to the data recieved by the UI_tread
-        """
-        rootLogger.info("Arriving in PRESSURE_REFERENCE State: ")
-        shared_memory.actual_state_of_mainthread = 'PRESSURE_REFERENCE'
-
-        while shared_memory.task_state_of_mainthread == 'PRESSURE_REFERENCE':
-            # read
-            shared_memory = read_sens(shared_memory)
-            # write
-            for name in PValve:
-                ref = shared_memory.ref_task[name]
-                sys_out = shared_memory.rec[name]
-                ctr_out = Ctr[name].output(ref, sys_out)
-                pwm = ctrlib.sys_input(ctr_out)
-                PValve[name].set_pwm(pwm)
-                shared_memory.rec_u[name] = pwm
-            set_dvalve()
-            # meta
-            time.sleep(shared_memory.sampling_time)
-            new_state = shared_memory.task_state_of_mainthread
-        return (new_state, shared_memory)
-
-    def exit_cleaner(shared_memory):
-        """ Clean everything up """
-        rootLogger.info("cleaning ...")
-        shared_memory.actual_state_of_mainthread = 'EXIT'
-        shared_memory.task_state_of_mainthread = 'EXIT'
-
-        for name in PValve:
-            PValve[name].set_pwm(0.)
-        PValve[name].cleanup()
-        for name in DValve:
-            DValve[name].cleanup()
-
-        return ('QUIT', shared_memory)
-
-    def pause_state(shared_memory):
-        """ do nothing. waiting for tasks """
-        rootLogger.info("Arriving in PAUSE State: ")
-        shared_memory.actual_state_of_mainthread = 'PAUSE'
-        init_output()
-
-        while shared_memory.task_state_of_mainthread == 'PAUSE':
-            shared_memory = read_sens(shared_memory)
-            time.sleep(shared_memory.sampling_time)
-            new_state = shared_memory.task_state_of_mainthread
-        return (new_state, shared_memory)
-
-    """ ---------------- ----- ------- ----------------------------- """
-    """ ---------------- RUN STATE MACHINE ------------------------- """
-    """ ---------------- ----- ------- ----------------------------- """
-
-    rootLogger.info('Setting up the StateMachine ...')
-    automat = state_machine.StateMachine()
-    automat.add_state('PAUSE', pause_state)
-    automat.add_state('ANGLE_REFERENCE', angle_reference)
-    automat.add_state('FEED_THROUGH', feed_through)
-    automat.add_state('PRESSURE_REFERENCE', pressure_reference)
-    automat.add_state('EXIT', exit_cleaner)
-    automat.add_state('QUIT', None, end_state=True)
-    automat.set_start(START_STATE)
 
     rootLogger.info('Starting Communication Thread ...')
     communication_thread = HUI.HUIThread(shared_memory, rootLogger)

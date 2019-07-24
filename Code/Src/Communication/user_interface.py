@@ -16,16 +16,14 @@ import Adafruit_BBIO.ADC as ADC
 import errno
 from socket import error as SocketError
 
-# lcd stuff ...
-import board
-import busio
-import adafruit_character_lcd.character_lcd_rgb_i2c as char_lcd
 
 from Src.Management import state_machine
 from Src.Visual.GUI import datamanagement as mgmt
 from Src.Controller import reference as ref_gen
 from Src.Controller import calibration as clb
-from Src.Hardware import lcd as LCD
+from Src.Hardware import lcd as lcd_module
+
+
 
 UI_TSAMPLING = .1
 
@@ -137,6 +135,9 @@ def init_lcd_display():
     lcd.color = [100, 0, 0]
     lcd.message = 'Display initialized!'
     return lcd
+
+
+
 
 
 class HUIThread(threading.Thread):
@@ -509,79 +510,3 @@ def generate_pose_ref(pattern, idx):
     return dv_task, pv_task, local_min_process_time
 
 
-class Printer(threading.Thread):
-    def __init__(self, shared_memory, plotsock=None, IMU=False, IMG=False):
-        threading.Thread.__init__(self)
-        self.shared_memory = shared_memory
-        self.state = 'RUN'
-        self.plotsock = plotsock
-        self.IMU_connected = True if IMU else False
-        self.IMG_connected = True if IMG else False
-
-    def prepare_data(self):
-        p = [round(self.shared_memory.rec[i], 2) for i in range(8)]
-        r = [round(self.shared_memory.ref_task[i], 2) for i in range(8)]
-        u = [round(self.shared_memory.rec_u[i], 2) for i in range(8)]
-        f = [round(self.shared_memory.dvalve_task[i], 2) for i in range(4)]
-
-        if self.IMG_connected:
-            aIMG = [round(self.shared_memory.rec_aIMG[i], 2)
-                    if self.shared_memory.rec_aIMG[i] else None
-                    for i in range(8)]
-            eps = (round(self.shared_memory.rec_eps, 2)
-                   if self.shared_memory.rec_eps else None)
-            X = [round(self.shared_memory.rec_X[i], 2)
-                 if self.shared_memory.rec_X[i] else None for i in range(8)]
-            Y = [round(self.shared_memory.rec_Y[i], 2)
-                 if self.shared_memory.rec_Y[i] else None for i in range(8)]
-        else:
-            aIMG, eps, X, Y = [None]*8, None, [None]*8, [None]*8
-
-        if self.IMU_connected:
-            rec_angle = self.shared_memory.rec_aIMU
-            aIMU = [round(rec_angle[i], 2) if rec_angle[i]
-                    else None for i in range(8)]
-        else:
-            aIMU = [None]*8
-
-        return (p, r, u, f, aIMG, eps, X, Y, aIMU,
-                self.IMU_connected, self.IMG_connected)
-
-    def print_state(self):
-        p, r, u, f, aIMG, eps, X, Y, aIMU, _, _ = self.prepare_data()
-        eps = [eps] + [None]*3
-        state_str = '\n\t| Ref \t| State \t| epsilon \n'
-        state_str = state_str + '-------------------------------------------\n'
-        for i in range(4):
-            s = '{}\t| {}\t| {} \t\t| {}\n'.format(
-                i, 1.0 if GPIO.input(SWITCHES[i]) else 0.0,
-                self.shared_memory.dvalve_task[i], eps[i])
-            state_str = state_str + s
-        state_str = (
-            state_str
-            + '\n\t| Ref \t| p \t| PWM \t| aIMU \t| aIMG \t| POS  \n')
-        state_str = state_str + '-'*75 + '\n'
-        for i in range(8):
-            s = '{}\t| {}\t| {}\t| {}\t| {}\t| {}\t| ({},{})\n'.format(
-                i, r[i], p[i], u[i], aIMU[i], aIMG[i], X[i], Y[i])
-            state_str = state_str + s
-        print(state_str)
-
-    def run(self):
-        while self.state != 'EXIT':
-            if self.plotsock:
-                try:
-                    sample = mgmt.rehash_record(*self.prepare_data())
-                    _ = self.plotsock.send_sample(sample)
-                except SocketError as err:
-                    if err.errno != errno.ECONNRESET:
-                        raise
-                    print(err)
-                    self.plotsock = None
-
-            else:
-                self.print_state()
-                time.sleep(.1)
-
-    def kill(self):
-        self.state = 'EXIT'

@@ -52,7 +52,7 @@ class StateMachine(object):
         """
         try:
             handler = self.handlers[self.start_state]
-        except:
+        except Exception:
             raise exception.InitializationError(
                 "must call .set_start() before .run()")
         if not self.end_states:
@@ -65,7 +65,6 @@ class StateMachine(object):
             else:
                 new_state = handler()
             if new_state.upper() in self.end_states:
-                print("reached ", new_state)
                 break
             else:
                 handler = self.handlers[new_state.upper()]

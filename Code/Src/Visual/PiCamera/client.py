@@ -8,6 +8,10 @@ Created on Fri Jul 20 15:18:21 2018
 import socket
 import abc
 from subprocess import call
+import threading
+
+from Src.Management.thread_communication import imgproc_rec
+
 try:
     from Src.Visual.PiCamera import pickler
 except ImportError:
@@ -93,11 +97,33 @@ class ClientSocket(Socket):
         self.send_all('v{}'.format(folder+filename+vidformat))
 
 
+class ImgProcReader(threading.Thread):
+    def __init__(self, imgprocsock):
+        threading.Thread.__init__(self)
+        self.is_running = True
+        self.imgprocsock = imgprocsock
+
+    def run(self):
+        while self.is_running:
+            alpha, eps, (X, Y), xref = self.imgprocsock.get_alpha()
+            print('X received:', X)
+            for i in range(len(X)):
+                imgproc_rec.X[i] = X[i]
+                imgproc_rec.Y[i] = Y[i]
+            for i in range(len(alpha)):
+                imgproc_rec.aIMG[i] = alpha[i]
+
+            imgproc_rec.eps = eps
+            imgproc_rec.xref = xref
+
+    def kill(self):
+        self.is_running = False
+        self.imgprocsock.close()
+
 
 if __name__ == "__main__":
     import time
     import pickler
-
 
 #    start_img_processing_from_bianca()
     start_img_processing()
@@ -117,13 +143,7 @@ if __name__ == "__main__":
         sock.close()
     finally:
         sock.close()
-        
-    
-    
-    
-    
-    
-    
+
 #    sock = ClientSocket()
 #    for foo in range(3):
 #        sock.get_image('image{}'.format(foo))

@@ -39,7 +39,7 @@ def main(alpha_memory):
 #                img = img_proc.draw_positions(frame, positions)
 #            else:
 #                img = frame
-
+#
 #            cv2.imshow("Frame", img)
 #            cv2.waitKey(1) & 0xFF
     finally:

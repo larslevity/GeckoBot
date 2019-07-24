@@ -32,9 +32,6 @@ class Valve(object):
 
     def cleanup(self):
         """Stop pwm services."""
-        print(
-            'stop PWM duty cycle 0 Prportional Valve ', self.name)
-
         PWM.stop(self.pwm_pin)
         PWM.cleanup()
 

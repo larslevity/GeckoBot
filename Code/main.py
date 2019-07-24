@@ -8,15 +8,16 @@ import logging
 import errno
 
 from socket import error as SocketError
-import threading
 
 
 from Src.Management import timeout
 from Src.Management import exception
-from Src.Communication import user_interface as HUI
 
 from Src.Visual.PiCamera import client
-from Src.Management import load_pattern as ptrn
+from Src.Controller import lowlevel_controller
+from Src.Hardware import lcd as lcd_module
+from Src.Hardware import user_interface as UI
+from Src.Communication import printer
 
 
 logPath = "log/"
@@ -44,7 +45,6 @@ def init_server_connections(IMGPROC=True):
     # RPi connection
     with timeout.timeout(12):
         try:
-            rootLogger.info("Try to start server ...")
             if IMGPROC:
                 client.start_img_processing(RPi_ip)
                 time.sleep(10)
@@ -54,9 +54,9 @@ def init_server_connections(IMGPROC=True):
                 client.start_server(RPi_ip)
                 time.sleep(3)
                 camerasock = client.ClientSocket(RPi_ip)
-                rootLogger.info("RPi Server found: MakeImageServer is running")
+                rootLogger.info("RPi Server found: Camera is running")
         except exception.TimeoutError:
-            rootLogger.info("Server not found")
+            rootLogger.info("RPi Server not found")
         except SocketError as err:
             if err.errno == errno.ECONNREFUSED:
                 rootLogger.info("RPi Server refused connection")
@@ -68,9 +68,9 @@ def init_server_connections(IMGPROC=True):
     with timeout.timeout(2):
         try:
             plotsock = client.LivePlotterSocket(pc_ip)
-            rootLogger.info("Connected to LivePlot Server")
+            rootLogger.info("Connected to LivePlotter Server")
         except exception.TimeoutError:
-            rootLogger.info("Live Plot Server not found")
+            rootLogger.info("LivePlotter Server not found")
         except SocketError as err:
             if err.errno == errno.ECONNREFUSED:
                 rootLogger.info("LivePlotter Server refused connection")
@@ -81,6 +81,23 @@ def init_server_connections(IMGPROC=True):
 
     return camerasock, imgprocsock, plotsock
 
+
+class SystemConfig(object):
+    def __init__(self):
+        self.IMUsConnected = None
+        self.Camera = None
+        self.ImgProc = None
+        self.LivePlotter = None
+        self.ConsolePrinter = False
+
+    def __str__(self):
+        return ('System Configuration as follows:\n'
+                + 'IMUs:\t\t {}connected\n'.format('' if self.IMUsConnected else 'not ')
+                + 'Camera:\t\t {}connected\n'.format('' if self.Camera else 'not ')
+                + 'ImgProc:\t {}connected\n'.format('' if self.ImgProc else 'not ')
+                + 'LivePlotter:\t {}connected\n'.format('' if self.LivePlotter else 'not ')
+                + 'ConsolePrinter:\t {}'.format('enabled' if self.ConsolePrinter else 'disabled')
+                )
 
 
 def main():
@@ -95,115 +112,84 @@ def main():
             - EXIT (Cleaning..)
     - wait for communication thread to join
     """
-    class SharedMemory(object):
-        """ Data, which is shared between Threads """
-        def __init__(self):
-            self.sampling_time = TSAMPLING
-
-            
-
-            self.xref = (None, None)
-            self.rec_aIMG = {name: None for name in CHANNELset}
-            self.rec_X = {name: None for name in range(8)}  # 6 markers
-            self.rec_Y = {name: None for name in range(8)}
-            self.rec_eps = None
-
-            self.rec_aIMU = {name: None for name in CHANNELset}
-
-            self.ptrndic = {
-                name: ptrn.read_list_from_csv('Patterns/'+name)
-                for name in ptrn.get_csv_files()}
-            self.ptrndic['selected'] = sorted(list(self.ptrndic.keys()))[0]
-            self.pattern = self.ptrndic[self.ptrndic['selected']]
-
-    rootLogger.info('Initialize Hardware ...')
-    PSens, PValve, DValve, IMU, Ctr, ImuCtr = init_channels()
-
-    rootLogger.info('Initialize the shared variables, i.e. cargo ...')
-    shared_memory = SharedMemory()
-
-
-    """ ---------------- ----- ------- ------------------------- """
-    """ ---------------- State Handler ------------------------- """
-    """ ---------------- ----- ------- ------------------------- """
-
-
-
-    rootLogger.info('Starting Communication Thread ...')
-    communication_thread = HUI.HUIThread(shared_memory, rootLogger)
-    communication_thread.setDaemon(True)
-    communication_thread.start()
-
-    camerasock, imgprocsock, plotsock = init_server_connections()
-    communication_thread.set_camera_socket(camerasock)
-
-    if imgprocsock:
-        camReader = CameraReader(shared_memory, imgprocsock)
-        camReader.setDaemon(True)
-        camReader.start()
-        rootLogger.info('Started the CamReader Thread')
-    if PRINTSTATE:
-        IMG = True if imgprocsock else False
-        printer_thread = HUI.Printer(shared_memory, plotsock, IMU, IMG)
-        printer_thread.setDaemon(True)
-        printer_thread.start()
-        rootLogger.info('Started the Printer Thread')
+    sys_config = SystemConfig()
+    lcd = lcd_module.getlcd()
 
     try:
-        rootLogger.info('Run the StateMachine ...')
-        automat.run(shared_memory)
+
+        rootLogger.info('Starting LowLevelController ...')
+        lowlevelctr = lowlevel_controller.LowLevelController()
+        lowlevelctr.start()
+        time.sleep(.2)  # wait to init
+        sys_config.IMUsConnected = lowlevelctr.is_imu_in_use()
+
+        rootLogger.info('Searching for external devices in periphere...')
+        camerasock, imgprocsock, plotsock = init_server_connections()
+        sys_config.Camera = camerasock
+        sys_config.ImgProc = imgprocsock
+        sys_config.LivePlotter = plotsock
+
+        rootLogger.info('Determinig System Configuartion ...')
+        if not sys_config.LivePlotter:
+            with timeout.timeout(3):
+                try:
+                    Q = 'Print States?'
+                    ans = lcd.select_elem_from_list(['Yes', 'No '], Quest=Q)
+                except exception.TimeoutError:
+                    ans = 'No'
+            sys_config.ConsolePrinter = True if ans == 'Yes' else False
+        rootLogger.info(sys_config)
+
+        rootLogger.info('Starting UserInterface ...')
+        ui_thread = UI.UserInterface()
+        ui_thread.setDaemon(True)
+        ui_thread.start()
+
+        if sys_config.ConsolePrinter:
+            rootLogger.info('Starting Console Printer ...')
+            cPrinter = printer.ConsolePrinter()
+            cPrinter.setDaemon(True)
+            cPrinter.start()
+
+        if sys_config.LivePlotter:
+            rootLogger.info('Starting GUI Printer ...')
+            guiPrinter = printer.GUIPrinter(sys_config.LivePlotter,
+                                            IMU=sys_config.IMUsConnected,
+                                            IMG=sys_config.ImgProc)
+            guiPrinter.setDaemon(True)
+            guiPrinter.start()
+
+        if sys_config.ImgProc:
+            rootLogger.info('Starting Camera Reader ...')
+            imgReader = client.ImgProcReader(imgprocsock)
+            imgReader.setDaemon(True)
+            imgReader.start()
+
+        ui_thread.join()
+        lowlevelctr.join()
+        if sys_config.ConsolePrinter:
+            cPrinter.join()
+        if sys_config.LivePlotter:
+            guiPrinter.join()
+        if sys_config.ImgProc:
+            imgReader.join()
+
     except KeyboardInterrupt:
-        rootLogger.exception('keyboard interrupt detected...   killing UI')
+        rootLogger.info('KeyboardInterrupt ...')
 
-    except Exception as err:
-        rootLogger.exception(
-            '\n----------caught exception! in Main Thread----------------\n')
-        rootLogger.exception("Unexpected error:\n", sys.exc_info()[0])
-        rootLogger.exception(sys.exc_info()[1])
-        rootLogger.error(err, exc_info=True)
-        rootLogger.info('\n ----------------------- killing UI --')
     finally:
-        if PRINTSTATE:
-            printer_thread.kill()
-        if imgprocsock:
-            imgprocsock.close()
-            camReader.kill()
-        if camerasock:
-            camerasock.close()
-        if plotsock:
-            plotsock.close()
-        communication_thread.kill()
+        ui_thread.kill()
+        lowlevelctr.kill()
+        if sys_config.ConsolePrinter:
+            cPrinter.kill()
+        if sys_config.LivePlotter:
+            guiPrinter.kill()
+        if sys_config.ImgProc:
+            imgReader.kill()
 
-    communication_thread.join()
-    if PRINTSTATE:
-        printer_thread.join()
     rootLogger.info('All is done ...')
+    lcd.display('Bye Bye')
     sys.exit(0)
-
-
-class CameraReader(threading.Thread):
-    def __init__(self, shared_memory, imgprocsock):
-        threading.Thread.__init__(self)
-        self.shared_memory = shared_memory
-        self.is_running = True
-        self.imgprocsock = imgprocsock
-
-    def run(self):
-        while self.is_running:
-            alpha, eps, (X, Y), xref = self.imgprocsock.get_alpha()
-            alpha = alpha + [None, None]
-            X = X + [None, None]
-            Y = Y + [None, None]
-            for i in range(8):
-                self.shared_memory.rec_X[i] = X[i]
-                self.shared_memory.rec_Y[i] = Y[i]
-                self.shared_memory.rec_aIMG[i] = alpha[i]
-
-            self.shared_memory.rec_eps = eps
-            self.shared_memory.xref = xref
-
-    def kill(self):
-        self.is_running = False
 
 
 if __name__ == '__main__':

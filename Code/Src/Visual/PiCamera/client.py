@@ -84,11 +84,11 @@ class IMGProcSocket(Socket):
         return alpha
 
 
-class ClientSocket(Socket):
+class CameraSocket(Socket):
     def __init__(self, ip='134.28.136.49'):
         Socket.__init__(self, ip)
 
-    def make_image(self, filename='test', folder='/home/pi/testimages/',
+    def make_image(self, filename='test', folder='/home/pi/CBoardImgs/',
                    imgformat='.jpg'):
         self.send_all('m{}'.format(folder+filename+imgformat))
 
@@ -106,7 +106,6 @@ class ImgProcReader(threading.Thread):
     def run(self):
         while self.is_running:
             alpha, eps, (X, Y), xref = self.imgprocsock.get_alpha()
-            print('X received:', X)
             for i in range(len(X)):
                 imgproc_rec.X[i] = X[i]
                 imgproc_rec.Y[i] = Y[i]

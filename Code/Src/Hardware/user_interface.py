@@ -7,21 +7,15 @@ Created on Wed Jul 24 15:23:07 2019
 
 from __future__ import print_function
 
-# import __builtin__
+
 import threading
 import time
 import sys
 import Adafruit_BBIO.GPIO as GPIO
 import Adafruit_BBIO.ADC as ADC
-import errno
-from socket import error as SocketError
 import logging
 
 from Src.Management import state_machine
-from Src.Visual.GUI import datamanagement as mgmt
-from Src.Controller import reference as ref_gen
-from Src.Controller import calibration as clb
-
 from Src.Controller.UserControl import default as feature
 from Src.Hardware import lcd as lcd_module
 

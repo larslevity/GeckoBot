@@ -27,11 +27,12 @@ class _LCD(object):
 
     def select_from_dic(self, dic, default_key=None):
         list_of_keys = [name for name in sorted(iter(dic.keys()))]
-        if 'selected' in list_of_keys:
-            list_of_keys.remove('selected')  # due to api GeckoBot
         selected_key = None
         if default_key:
-            idx = list_of_keys.index(default_key)
+            if default_key in list_of_keys:
+                idx = list_of_keys.index(default_key)
+            else:
+                idx = 0
         else:
             idx = 0
         self.display(list_of_keys[idx])
@@ -45,17 +46,19 @@ class _LCD(object):
             elif self.lcd.select_button:
                 self.display("SELECTED")
                 selected_key = list_of_keys[idx]
-                selected_val = dic[selected_key]
             time.sleep(.1)
 
         self.lcd.clear()
-        return selected_val
+        return selected_key
 
     def select_elem_from_list(self, lis, default_key=None, Quest=''):
         list_of_elems = lis
         selected_elem = None
         if default_key:
-            idx = list_of_elems.index(default_key)
+            if default_key in list_of_elems:
+                idx = list_of_elems.index(default_key)
+            else:
+                idx = 0
         else:
             idx = 0
         self.display(Quest+'\n'+list_of_elems[idx])

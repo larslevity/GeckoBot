@@ -40,7 +40,7 @@ def read_list_from_csv(filename):
     return out
 
 
-def get_local_dir():
+def get_pattern_dir():
     dirname = path.dirname(path.realpath(__file__))
     realpath = '../../Patterns/'
     filename = path.join(dirname, realpath)
@@ -48,9 +48,44 @@ def get_local_dir():
     return base_dir
 
 
-def get_csv_files():
-    for entry in scandir(get_local_dir()):
+def get_csv_files(rel_dir=''):
+    search_dir = path.join(get_pattern_dir(), rel_dir)
+    for entry in scandir(search_dir):
         if entry.is_file() and entry.name.endswith('.csv'):
-            yield entry.name
-        else:
-            print('No *.csv available')
+            yield (entry.name, entry.path)
+
+
+def get_dirs():
+    pattern_dir = get_pattern_dir()
+    for dir_ in scandir(pattern_dir):
+        if dir_.is_dir():
+            contain_csv = False
+            for dir_entry in scandir(dir_.path):
+                if dir_entry.is_file() and dir_entry.name.endswith('.csv'):
+                    contain_csv = True
+                    break
+            if contain_csv:
+                yield dir_.name
+
+
+def get_pattern_dic():
+    patterns = {}
+    for dir_name in get_dirs():
+        patterns[dir_name] = {}
+        for csv_name, csv_path in get_csv_files(dir_name):
+            patterns[dir_name][csv_name[:-4]] = read_list_from_csv(csv_path)
+    return patterns
+
+
+def get_clb_dic():
+    clbs = {}
+    for csv_name, csv_path in get_csv_files(dir_name):
+        clbs[csv_name[:-4]] = read_list_from_csv(csv_path) 
+
+
+if __name__ == '__main__':
+    print('is main')
+    __file__ = path.join(path.abspath(''), 'load_pattern.py')
+    print(__file__)
+
+    patterns = get_pattern_dic()

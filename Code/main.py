@@ -18,6 +18,7 @@ from Src.Controller import lowlevel_controller
 from Src.Hardware import lcd as lcd_module
 from Src.Hardware import user_interface as UI
 from Src.Communication import printer
+from Src.Management.thread_communication import sys_config
 
 
 logPath = "log/"
@@ -53,7 +54,7 @@ def init_server_connections(IMGPROC=True):
             else:
                 client.start_server(RPi_ip)
                 time.sleep(3)
-                camerasock = client.ClientSocket(RPi_ip)
+                camerasock = client.CameraSocket(RPi_ip)
                 rootLogger.info("RPi Server found: Camera is running")
         except exception.TimeoutError:
             rootLogger.info("RPi Server not found")
@@ -82,24 +83,6 @@ def init_server_connections(IMGPROC=True):
     return camerasock, imgprocsock, plotsock
 
 
-class SystemConfig(object):
-    def __init__(self):
-        self.IMUsConnected = None
-        self.Camera = None
-        self.ImgProc = None
-        self.LivePlotter = None
-        self.ConsolePrinter = False
-
-    def __str__(self):
-        return ('System Configuration as follows:\n'
-                + 'IMUs:\t\t {}connected\n'.format('' if self.IMUsConnected else 'not ')
-                + 'Camera:\t\t {}connected\n'.format('' if self.Camera else 'not ')
-                + 'ImgProc:\t {}connected\n'.format('' if self.ImgProc else 'not ')
-                + 'LivePlotter:\t {}connected\n'.format('' if self.LivePlotter else 'not ')
-                + 'ConsolePrinter:\t {}'.format('enabled' if self.ConsolePrinter else 'disabled')
-                )
-
-
 def main():
     """
     - Run the State Machine
@@ -112,7 +95,6 @@ def main():
             - EXIT (Cleaning..)
     - wait for communication thread to join
     """
-    sys_config = SystemConfig()
     lcd = lcd_module.getlcd()
 
     try:
@@ -160,10 +142,16 @@ def main():
             guiPrinter.start()
 
         if sys_config.ImgProc:
-            rootLogger.info('Starting Camera Reader ...')
-            imgReader = client.ImgProcReader(imgprocsock)
+            rootLogger.info('Starting ImgProc Reader ...')
+            imgReader = client.ImgProcReader(sys_config.ImgProc)
             imgReader.setDaemon(True)
             imgReader.start()
+
+#        if sys_config.Camera:
+#            rootLogger.info('Starting Camera Trigger ...')
+#            camTrigger = client.CameraTrigger(sys_config.Camera)
+#            camTrigger.setDaemon(True)
+#            camTrigger.start()
 
         ui_thread.join()
         lowlevelctr.join()
@@ -186,6 +174,8 @@ def main():
             guiPrinter.kill()
         if sys_config.ImgProc:
             imgReader.kill()
+        if sys_config.Camera:
+            sys_config.Camera.close()
 
     rootLogger.info('All is done ...')
     lcd.display('Bye Bye')

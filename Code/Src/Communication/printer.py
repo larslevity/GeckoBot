@@ -115,3 +115,4 @@ class GUIPrinter(threading.Thread):
 
     def kill(self):
         self.state = 'EXIT'
+        self.plotsock.close()

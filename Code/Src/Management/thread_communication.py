@@ -64,7 +64,36 @@ class IMGProcRecorder(Borg):
         self.eps = None
         self.xref = (None, None)
 
+
 imgproc_rec = IMGProcRecorder()
+
+
+class SystemConfig(Borg):
+    def __init__(self):
+        Borg.__init__(self)
+
+        self.IMUsConnected = None
+        self.Camera = None
+        self.ImgProc = None
+        self.LivePlotter = None
+        self.ConsolePrinter = False
+
+    def __str__(self):
+        return (
+"""
+System Configuration as follows:
+IMUs:\t\t {}connected
+Camera:\t\t {}connected
+ImgProc:\t {}connected
+LivePlotter:\t {}connected
+ConsolePrinter:\t {}abled
+""".format(
+    '' if self.IMUsConnected else 'not ', '' if self.Camera else 'not ',
+    '' if self.ImgProc else 'not ', '' if self.LivePlotter else 'not ',
+    'en' if self.ConsolePrinter else 'dis'))
+
+
+sys_config = SystemConfig()
 
 
 #class LLCRecorder(object):

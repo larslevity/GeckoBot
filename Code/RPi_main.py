@@ -17,9 +17,9 @@ from Src.Visual.PiCamera.PiVideoStream import PiVideoStream
 from Src.Visual.PiCamera import pickler
 
 
-def main(alpha_memory):
+def main(alpha_memory, resolution=(640, 480)):
 #    print("[INFO] warm up camera sensor...")
-    vs = PiVideoStream(resolution=(640, 480)).start()
+    vs = PiVideoStream(resolution=resolution).start()
     # allow the camera sensor to warmup
     time.sleep(1.0)
 #    print("[INFO] start detect april tags...")

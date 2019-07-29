@@ -17,8 +17,7 @@ import cv2
 import apriltag
 import numpy as np
 
-from Src.Math import IMUcalc
-from Src.Math import kinematic_model_fun as kin_mod
+#from Src.Math import kinematic_model_fun as kin_mod
 
 
 detector = apriltag.Detector()
@@ -31,17 +30,17 @@ def detect_all(frame):
         alpha, eps = extract_alpha(april_result)
         X, Y, xref = extract_position(april_result)
     else:
-        alpha, eps = None, None
-        X, Y = None, None
+        alpha, eps = [None]*6, None
+        X, Y = [None]*6, [None]*6
         xref = None
 
     return alpha, eps, (X, Y), xref
 
 
-def calc_pose(alpha, eps, positions):
-    alpha_ = alpha[0:3] + alpha[4:6]
-    pose_coords, ell, bet = kin_mod.extract_pose(alpha_, eps, positions)
-    return pose_coords, ell, bet
+#def calc_pose(alpha, eps, positions):
+#    alpha_ = alpha[0:3] + alpha[4:6]
+#    pose_coords, ell, bet = kin_mod.extract_pose(alpha_, eps, positions)
+#    return pose_coords, ell, bet
 
 
 def detect_apriltags(frame):
@@ -67,7 +66,7 @@ def extract_position(april_result):
         tag_id = res.tag_id
         if tag_id == 6:
             xref = (int(res.center[0]), int(res.center[1]))
-        else:
+        elif tag_id in SHIFT:
             pc0 = np.array([res.corners[SHIFT[tag_id][0]][0],
                             res.corners[SHIFT[tag_id][0]][1]])
             pc1 = np.array([res.corners[SHIFT[tag_id][1]][0],
@@ -101,16 +100,18 @@ def extract_alpha(april_result):
 
     angle, eps = [None]*6, None
     for tag_id in POSs:
-        if ori[POSs[tag_id][0]] is not None and ori[POSs[tag_id][1]] is not None:
+        if (
+         ori[POSs[tag_id][0]] is not None
+         and ori[POSs[tag_id][1]] is not None):
             p0, p1 = (np.append(ori[POSs[tag_id][0]], 0),
                       np.append(ori[POSs[tag_id][1]], 0))
 
-            angle[tag_id] = round(IMUcalc.calc_angle(p0, p1, jump=jump), 1)
+            angle[tag_id] = round(calc_angle(p0, p1, jump=jump), 1)
 
     # calc eps
     if len(center) == 2:
         p0, p1 = np.append(center[0], 0), np.append(center[1], 0)
-        eps = np.mod(-round(IMUcalc.calc_angle(p1-p0, [1, 0, 0]) + 180, 1), 360)
+        eps = np.mod(-round(calc_angle(p1-p0, [1, 0, 0]) + 180, 1), 360)
 
     return angle, eps
 
@@ -149,3 +150,59 @@ def draw_pose(img, pose_coords):
     for x, y in zip(X, Y):
         cv2.circle(img, (int(x), int(y)), 1, (255, 255, 255))
     return img
+
+
+def calc_angle(vec1, vec2, rotate_angle=0., jump=np.pi*.5):
+    theta = np.radians(rotate_angle)
+    vec1 = rotate(vec1, theta)
+    x1, y1, z1 = normalize(vec1)
+    x2, y2, z2 = normalize(vec2)
+    phi1 = np.arctan2(y1, x1)
+    vec2 = rotate([x2, y2, 0], -phi1+jump)
+    phi2 = np.degrees(np.arctan2(vec2[1], vec2[0]) - jump)
+
+    return -phi2
+
+
+def normalize(vec):
+    x, y, z = vec
+    l = np.sqrt(x**2 + y**2 + z**2)
+    return x/l, y/l, z/l
+
+
+def rotate(vec, theta):
+    c, s = np.cos(theta), np.sin(theta)
+    return (c*vec[0]-s*vec[1], s*vec[0]+c*vec[1], vec[2])
+
+
+if __name__ == '__main__':
+    import time
+    from PIL import Image
+    from PiVideoStream import PiVideoStream
+
+    resolution = (1280, 960)
+    vs = PiVideoStream(resolution=resolution).start()
+    time.sleep(1.0)
+    try:
+        while True:
+            frame = vs.read()
+            alpha, eps, positions, xref = detect_all(frame)
+            print('Alpha:\t', alpha)
+            print('Epsilon:\t', eps)
+            print('Positions:\t', positions)
+            print('Xref:\t', xref)
+
+            if alpha:
+                img = draw_positions(frame, positions)
+            else:
+                img = frame
+
+#            cv2.imshow("Frame", img)
+#            cv2.waitKey(1) & 0xFF
+
+            # ssh-hack: add: 'DISPLAY=localhost:0.0' to your system-variables
+            img2 = Image.fromarray(img, 'RGB')
+            img2.show()
+
+    finally:
+        vs.stop()

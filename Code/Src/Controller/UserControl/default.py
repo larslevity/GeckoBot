@@ -191,3 +191,8 @@ def generate_pose_ref(pattern, idx):
         pv_task[kdx] = pp
 
     return dv_task, pv_task, local_min_process_time
+
+
+def optimal_pathplanner(fun):
+    pass
+

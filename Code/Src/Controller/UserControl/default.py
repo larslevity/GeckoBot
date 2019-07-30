@@ -89,7 +89,15 @@ def mode2(switches, potis, fun):
 
 def mode3(switches, potis, fun):
     llc_ref.set_state('PRESSURE_REFERENCE')
-    searchtree_pathplanner(fun)
+    if not st_mgmt.init:  # first select version
+        choice = list(clb.clb.keys())
+        std = 'vS11' if 'vS11' in choice else None
+        st_mgmt.version = lcd.select_elem_from_list(choice, std, 'Version?')
+        st_mgmt.init = True
+    if fun[1]:
+        searchtree_pathplanner(fun)
+    else:
+        optimal_pathplanner(fun)
 
 
 def pattern_ref(fun):
@@ -133,12 +141,6 @@ def pattern_ref(fun):
 
 
 def searchtree_pathplanner(fun):
-    if not st_mgmt.init:  # first select version
-        choice = list(clb.clb.keys())
-        std = 'vS11' if 'vS11' in choice else None
-        st_mgmt.version = lcd.select_elem_from_list(choice, std, 'Version?')
-        st_mgmt.init = True
-
     if (fun[0] and st_mgmt.last_process_time + st_mgmt.process_time <
             time.time()):
         xref = imgproc_rec.xref

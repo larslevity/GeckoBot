@@ -16,7 +16,7 @@ from Src.Management.thread_communication import sys_config
 
 from Src.Controller import searchtree
 from Src.Controller import calibration as clb
-from Src.Controller import gait_law_planner
+#from Src.Controller import gait_law_planner
 
 
 n_pc = len(llc_ref.pressure)
@@ -96,8 +96,8 @@ def mode3(switches, potis, fun):
         st_mgmt.init = True
     if fun[1]:
         searchtree_pathplanner(fun)
-    else:
-        optimal_pathplanner(fun)
+#    else:
+#        optimal_pathplanner(fun)
 
 
 def pattern_ref(fun):
@@ -206,36 +206,36 @@ def generate_pose_ref(pattern, idx):
     return dv_task, pv_task, local_min_process_time
 
 
-def optimal_pathplanner(fun):
-    n = 1
-    if (fun[0] and st_mgmt.last_process_time + st_mgmt.process_time <
-            time.time()):
-        # collect measurements
-        position = (imgproc_rec.X[1], imgproc_rec.Y[1])
-        eps = imgproc_rec.eps
-        xref = imgproc_rec.xref
-        if xref[0] and position[0] and eps:
-            # convert measurements
-            xbar = gait_law_planner.xbar(xref, position, eps)
-            pressure_ref, feet = convert_rec(llc_ref.dv_task, llc_ref.pressure)
-            alp_act = clb.get_alpha(pressure_ref, st_mgmt.version)
-            # calc ref
-            alpha, feet = gait_law_planner.optimal_planner(
-                    xbar, alp_act, feet, n)
-            # convert ref
-            dvtsk, pvtsk = convert_ref(
-                    clb.get_pressure(alpha, st_mgmt.version), feet)
-            # switch feet
-            llc_ref.dvalve = {idx: True for idx in range(4)}
-            time.sleep(.1)
-            llc_ref.dvalve = dvtsk
-            time.sleep(.1)
-            # set ref
-            llc_ref.pressure = pvtsk
-            # organisation
-            ptime = 2
-            st_mgmt.process_time = ptime
-            st_mgmt.last_process_time = time.time()
+#def optimal_pathplanner(fun):
+#    n = 1
+#    if (fun[0] and st_mgmt.last_process_time + st_mgmt.process_time <
+#            time.time()):
+#        # collect measurements
+#        position = (imgproc_rec.X[1], imgproc_rec.Y[1])
+#        eps = imgproc_rec.eps
+#        xref = imgproc_rec.xref
+#        if xref[0] and position[0] and eps:
+#            # convert measurements
+#            xbar = gait_law_planner.xbar(xref, position, eps)
+#            pressure_ref, feet = convert_rec(llc_ref.dv_task, llc_ref.pressure)
+#            alp_act = clb.get_alpha(pressure_ref, st_mgmt.version)
+#            # calc ref
+#            alpha, feet = gait_law_planner.optimal_planner(
+#                    xbar, alp_act, feet, n)
+#            # convert ref
+#            dvtsk, pvtsk = convert_ref(
+#                    clb.get_pressure(alpha, st_mgmt.version), feet)
+#            # switch feet
+#            llc_ref.dvalve = {idx: True for idx in range(4)}
+#            time.sleep(.1)
+#            llc_ref.dvalve = dvtsk
+#            time.sleep(.1)
+#            # set ref
+#            llc_ref.pressure = pvtsk
+#            # organisation
+#            ptime = 2
+#            st_mgmt.process_time = ptime
+#            st_mgmt.last_process_time = time.time()
 
 #
 #def calc_dist(position, xref):

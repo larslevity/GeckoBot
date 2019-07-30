@@ -32,7 +32,7 @@ def detect_all(frame):
     else:
         alpha, eps = [None]*6, None
         X, Y = [None]*6, [None]*6
-        xref = None
+        xref = (None, None)
 
     return alpha, eps, (X, Y), xref
 
@@ -116,8 +116,10 @@ def extract_alpha(april_result):
     return angle, eps
 
 
-def draw_positions(img, position_coords):
+def draw_positions(img, position_coords, xref):
     X, Y = position_coords
+    X = X + [xref[0]]
+    Y = Y + [xref[1]]
     for tag_id, coords in enumerate(zip(X, Y)):
         x, y = coords
         if x is not None:
@@ -193,16 +195,16 @@ if __name__ == '__main__':
             print('Xref:\t', xref)
 
             if alpha:
-                img = draw_positions(frame, positions)
+                img = draw_positions(frame, positions, xref)
             else:
                 img = frame
 
-#            cv2.imshow("Frame", img)
-#            cv2.waitKey(1) & 0xFF
+            cv2.imshow("Frame", img)
+            cv2.waitKey(1) & 0xFF
 
             # ssh-hack: add: 'DISPLAY=localhost:0.0' to your system-variables
-            img2 = Image.fromarray(img, 'RGB')
-            img2.show()
+            #img2 = Image.fromarray(img, 'RGB')
+            #img2.show()
 
     finally:
         vs.stop()

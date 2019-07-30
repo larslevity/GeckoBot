@@ -9,6 +9,7 @@ import socket
 import abc
 from subprocess import call
 import threading
+import time
 
 from Src.Management.thread_communication import imgproc_rec
 
@@ -114,6 +115,7 @@ class ImgProcReader(threading.Thread):
 
             imgproc_rec.eps = eps
             imgproc_rec.xref = xref
+            time.sleep(.2)
 
     def kill(self):
         self.is_running = False
@@ -121,7 +123,6 @@ class ImgProcReader(threading.Thread):
 
 
 if __name__ == "__main__":
-    import time
     import pickler
 
 #    start_img_processing_from_bianca()

@@ -17,7 +17,10 @@ from Src.Visual.PiCamera.PiVideoStream import PiVideoStream
 from Src.Visual.PiCamera import pickler
 
 
-def main(alpha_memory, resolution=(640, 480)):
+#resolution = (640, 480)  # DINA0
+resolution = (1280, 960)  # Halle
+
+def main(alpha_memory, resolution=resolution):
 #    print("[INFO] warm up camera sensor...")
     vs = PiVideoStream(resolution=resolution).start()
     # allow the camera sensor to warmup
@@ -31,11 +34,12 @@ def main(alpha_memory, resolution=(640, 480)):
             # detect pose
             alpha, eps, positions, xref = img_proc.detect_all(frame)
 
-            if alpha is not None:
-                alpha_memory.set_alpha(alpha)
-                alpha_memory.set_eps(eps)
-                alpha_memory.set_positions(positions)
-                alpha_memory.set_xref(xref)
+        
+            alpha_memory.set_alpha(alpha)
+            alpha_memory.set_eps(eps)
+            alpha_memory.set_positions(positions)
+            alpha_memory.set_xref(xref)
+#            if alpha[0] is not None:
 #                img = img_proc.draw_positions(frame, positions)
 #            else:
 #                img = frame

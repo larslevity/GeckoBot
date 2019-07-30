@@ -85,17 +85,14 @@ def main(wait=30):
         if task[0] == 'sample':
             send_back(connection, 'ACK')
             return task[1]
+        elif task[0] == 'Exit':
+            return 'Exit'
         else:
             return 0
 
     def send_back(connection, data_out):
         data_out_raw = pickler.pickle_data(data_out)
         connection.sendall(data_out_raw)
-
-    def get_sample_from_client_and_put_into_gui_rec(connection):
-        sample = recv_sample(connection)
-        if sample:
-            gui_rec.append(sample)
 
     gui_rec = datamanagement.GUIRecorder()
 
@@ -104,7 +101,9 @@ def main(wait=30):
     with timeout.timeout(wait):
         try:
             server_socket, conn, connection = bind_to_client()
-            get_sample_from_client_and_put_into_gui_rec(conn)
+            sample = recv_sample(conn)
+            if sample:
+                gui_rec.append(sample)
             is_client = True
             print("client DETECTED!")
         except exception.TimeoutError:
@@ -120,7 +119,11 @@ def main(wait=30):
     try:
         while gui.is_running():
             if is_client:
-                get_sample_from_client_and_put_into_gui_rec(conn)
+                sample = recv_sample(conn)
+                if sample and sample != 'Exit':
+                    gui_rec.append(sample)
+                elif sample == 'Exit':
+                    gui.kill()
             else:
                 fill_rnd_values()
             if gui_rec.record:

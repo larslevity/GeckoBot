@@ -26,7 +26,7 @@ clb = {
     }
 
 
-def get_pressure(alpha, version='vS11', max_pressure=1):
+def get_pressure(alpha, version, max_pressure=1):
     pressure = []
     alpha_ = alpha[0:3] + [None] + alpha[3:]
 
@@ -62,17 +62,54 @@ def get_pressure(alpha, version='vS11', max_pressure=1):
         raise NotImplementedError
 
 
+def get_alpha(pressure, version):
+    pressure = pressure[:6]  # 6 clbs
+    sign_alp = -1 if pressure[2] == 0 else 1
+
+    alp = []
+    for idx, p in enumerate(pressure):
+        coeff = clb[version][idx]
+        poly = np.poly1d(coeff)
+        roots = (poly - p).roots
+        roots = roots[~np.iscomplex(roots)].real
+        roots = roots[roots > 0]
+        roots = roots[roots < 120]
+        if len(roots) == 1:
+            alp.append(roots[0])
+        elif len(roots) == 0:
+            alp.append(0)
+        else:
+            alp.append(np.mean(roots))
+    if sign_alp < 0:
+        alp = alp[:2] + alp[-3:]
+    else:
+        alp = alp[:3] + alp[-2:]
+    alp[2] *= sign_alp
+
+    return alp
+
+
 def eval_poly(coef, x):
     poly = np.poly1d(coef)
     return poly(x)
 
 
 if __name__ == '__main__':
-#    alp = [90, 0, -90, 90, 0]
-#    print('010:', get_pressure(alp))
-#
-#    alp = [0, 90, 90, 0, 90]
-#    print('100:', get_pressure(alp))
+    from matplotlib import pyplot as plt
 
-    alp = [45, 45, -100, 45, 45]
-    print('100:', get_pressure(alp, version='vS11'))
+    version = 'vS11'
+    alp = [30, 45, -100, 45, 45]
+    print('alp:\t', alp)
+    p = get_pressure(alp, version=version)
+    print('p:\t', p)
+    alp_ = get_alpha(p, version)
+    print('alp_:\t', alp_)
+
+    for alpha in np.arange(-90, 90, 1):
+        alp = [alpha]*5
+        p = get_pressure(alp, version=version)
+        alp_ = get_alpha(p, version)
+
+        for idx, pp in enumerate(alp_):
+            plt.figure(idx)
+            plt.plot(alp[idx], pp, 'k.')

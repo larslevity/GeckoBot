@@ -855,7 +855,25 @@ fi
 
 
 
+\subsection{Disable Webserver on BBB}
 
+Webserver
+
+\begin{lstlisting}[language=bash]
+root@BBB: systemctl stop apache2.service
+root@BBB: systemctl disable apache2.service
+
+\end{lstlisting}
+
+
+NodeJS:
+
+
+\begin{lstlisting}[language=bash]
+root@BBB: systemctl stop bonescript-autorun.service
+root@BBB: systemctl disable bonescript-autorun.service
+
+\end{lstlisting}
 
 
 \bibliography{bib}

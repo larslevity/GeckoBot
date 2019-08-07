@@ -24,11 +24,18 @@ detector = apriltag.Detector()
 
 
 def detect_all(frame):
+    yshift, _, _ = frame.shape
     april_result = detect_apriltags(frame)
     # extract pose
     if len(april_result) > 0:
         alpha, eps = extract_alpha(april_result)
         X, Y, xref = extract_position(april_result)
+        # coordinate transform:
+        for idx, y in enumerate(Y):
+            if y:
+                Y[idx] = yshift - y
+        if xref[1]:
+            xref = (xref[0], yshift - xref[1])
     else:
         alpha, eps = [None]*6, None
         X, Y = [None]*6, [None]*6
@@ -116,13 +123,15 @@ def extract_alpha(april_result):
     return angle, eps
 
 
-def draw_positions(img, position_coords, xref):
+def draw_positions(img, position_coords, xref, yshift=None):
     X, Y = position_coords
     X = X + [xref[0]]
     Y = Y + [xref[1]]
     for tag_id, coords in enumerate(zip(X, Y)):
         x, y = coords
         if x is not None:
+            if yshift:
+                y = yshift - y
             cv2.rectangle(img, (x-5, y-5), (x+5, y+5), (0, 128, 255), -1)
             font = cv2.FONT_HERSHEY_SIMPLEX
             fontscale = .8
@@ -195,7 +204,7 @@ if __name__ == '__main__':
             print('Xref:\t', xref)
 
             if alpha:
-                img = draw_positions(frame, positions, xref)
+                img = draw_positions(frame, positions, xref, yshift=resolution[1])
             else:
                 img = frame
 

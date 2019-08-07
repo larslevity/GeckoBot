@@ -237,7 +237,7 @@ def optimal_pathplanner(fun):
         if xref[0] and position[0] and eps:
             # convert measurements
             xbar = gait_law_planner.xbar(xref, position, eps)
-            pressure_ref, feet = convert_rec(llc_ref.dv_task, llc_ref.pressure)
+            pressure_ref, feet = convert_rec(llc_ref.dvalve, llc_ref.pressure)
             alp_act = clb.get_alpha(pressure_ref, gl_mgmt.version)
             # calc ref
             alpha, feet = gait_law_planner.optimal_planner(

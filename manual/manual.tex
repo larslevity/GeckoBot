@@ -411,6 +411,50 @@ Robert C Nelson seems to be the only one, who has an idea whats going on...
 
 
 
+\textbf{Debian 9 / Kernel v4.14.71-ti-r80}:
+
+\begin{itemize}
+\item Note: you might need to disable HDMI with \texttt{disable\_uboot\_overlay\_video=1} in \texttt{/boot/uEnv.txt} if the pins are already in use.
+
+\item update bootloader (\url{https://elinux.org/Beagleboard:BeagleBoneBlack_Debian#U-Boot_Overlays})
+
+Check version (19-08-07):
+\begin{lstlisting}
+root@beaglebone:~$ cd /opt/scripts/tools/
+root@beaglebone:/opt/scripts/tools$ git pull
+root@beaglebone:/opt/scripts/tools$ ./version.sh | grep bootloader
+bootloader:[eMMC-(default)]:[/dev/mmcblk1]:[U-Boot 2016.01-00001-g4eb802e]:[location: dd MBR]
+\end{lstlisting}
+
+To upgrade your version of U-Boot: 
+\begin{lstlisting}
+root@beaglebone:~$ cd /opt/scripts/tools/developers/
+root@beaglebone:/opt/scripts/tools/developers$ ./update_bootloader.sh
+root@beaglebone:/opt/scripts/tools/developers$ reboot
+
+...
+
+root@beaglebone:/opt/scripts/tools$ ./version.sh | grep bootloader
+bootloader:[microSD-(push-button)]:[/dev/mmcblk0]:[U-Boot 2019.04-00002-gbb4af0f50f]:[location: dd MBR]
+bootloader:[eMMC-(default)]:[/dev/mmcblk1]:[U-Boot 2016.01-00001-g4eb802e]:[location: dd MBR]
+\end{lstlisting}
+
+Delete the old version:
+\begin{lstlisting}
+root@beaglebone:/opt/scripts/tools$ dd if=/dev/zero of=/dev/mmcblk1 bs=1M count=10
+\end{lstlisting}
+
+
+also make sure the bb-cape-overlays package is upto date
+\begin{lstlisting}
+apt update
+apt install --only-upgrade bb-cape-overlays
+\end{lstlisting}
+
+
+
+
+\end{itemize}
 
 
 
@@ -434,14 +478,19 @@ Robert C Nelson seems to be the only one, who has an idea whats going on...
 
 \subsection{Set I2C Bus to FastMode (400kHz)}
 \begin{itemize}
+\item \textbf{Kernel version 4.14.xx}
+
+\item For Kernel version $<$ 4.4.xx replace
+\texttt{am335x-boneblack.dtb} with \texttt{am335x-boneblack-overlay.dtb}
+
 \item Backup the original \texttt{.dtb}:
 \begin{lstlisting}
-root@beaglebone: /boot/dtbs/4.4.54-ti-r93# cp am335x-boneblack-overlay.dtb am335x-boneblack-overlay.dtb.orig
+root@beaglebone: /boot/dtbs/4.14.71-ti-r80# cp am335x-boneblack.dtb am335x-boneblack.dtb.orig
 \end{lstlisting}
 
 \item Generate source device tree (\texttt{.dts}) from  binary block device tree (\texttt{.dtb}) with device tree compiler (\texttt{dtc}):
 \begin{lstlisting}
-root@beaglebone: /boot/dtbs/4.4.54-ti-r93# dtc -I dtb -O dts -o am335x-boneblack-overlay.dts am335x-boneblack-overlay.dtb
+root@beaglebone: /boot/dtbs/4.14.71-ti-r80# dtc -I dtb -O dts -o am335x-boneblack.dts am335x-boneblack.dtb
 \end{lstlisting}
 
 \item There are 3 diffrent i2c-buses in the \texttt{.dts}:
@@ -476,7 +525,7 @@ This we gonna use.
 
 \item Generate the \texttt{.dtb} from this modified .dts:
 \begin{lstlisting}
-root@beaglebone: /boot/dtbs/4.4.54-ti-r93# dtc -I dts -O dtb -o am335x-boneblack-overlay.dtb am335x-boneblack-overlay.dts
+root@beaglebone: /boot/dtbs/4.14.71-ti-r80# dtc -I dts -O dtb -o am335x-boneblack.dtb am335x-boneblack.dts
 \end{lstlisting}
 
 \item reboot and check:
@@ -511,7 +560,29 @@ should be the output.
 \subsection{Installing Software on BBB}
 In order to run the \texttt{GeckoBot} software on the BBB install following packages:
 \begin{itemize}
-\item on BBB as \texttt{su}
+
+
+\item \textbf{python3}: on BBB as \texttt{su}
+\begin{lstlisting}
+root@beaglebone:# apt-get update
+root@beaglebone:# apt-get install ntpdate
+root@beaglebone:# ntpdate pool.ntp.org
+root@beaglebone:# apt-get install build-essential python3-pip python3-scipy python3-numpy -y
+
+root@beaglebone:# pip3.5 install Adafruit_BBIO Adafruit_GPIO board Adafruit-Blinka adafruit-circuitpython-charlcd
+
+
+root@beaglebone:~# mkdir Git
+root@beaglebone:~# cd Git
+root@beaglebone:~/Git/# git clone https://github.com/larslevity/GeckoBot.git
+
+\end{lstlisting}
+
+
+
+\item \begin{footnotesize}
+\textbf{python2}:
+on BBB as \texttt{su}
 \begin{lstlisting}
 root@beaglebone:# apt-get update
 root@beaglebone:# apt-get install ntpdate
@@ -528,6 +599,9 @@ root@beaglebone:~# cd Git
 root@beaglebone:~/Git/# git clone https://github.com/larslevity/GeckoBot.git
 
 \end{lstlisting}
+\end{footnotesize}
+
+
 \end{itemize}
 
 
@@ -646,7 +720,8 @@ VR - Bianca	& 134 &.& 28  &.& 136 &.& 131 \\
 RaspPi IMUCam 	& 134 &.& 28  &.& 136 &.& 49 \\
 RaspPi GeckoCam	& 134 &.& 28  &.& 136 &.& 118 \\
 DellLat CBoard 	& 134 &.& 28  &.& 136 &.& 70 \\
-
+BBB Rohat 	& - &.& -  &.& - &.& 110 \\
+BBB experiment 	& - &.& -  &.& - &.& 55 \\
 
 \end{tabular}
 

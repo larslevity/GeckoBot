@@ -154,22 +154,21 @@ def searchtree_pathplanner(fun):
         std = 'vS11' if 'vS11' in choice else None
         st_mgmt.version = lcd.select_elem_from_list(choice, std, 'Version?')
         st_mgmt.init = True
-  
+
     if (fun[0] and st_mgmt.last_process_time + st_mgmt.process_time <
             time.time()):
         xref = imgproc_rec.xref
         act_eps = imgproc_rec.eps
 
         if xref[0] and act_eps:
-            act_pos = (imgproc_rec.X[1], -imgproc_rec.Y[1])
-            xref = (xref[0], -xref[1])
+            act_pos = (imgproc_rec.X[1], imgproc_rec.Y[1])
 
             # generate reference
             alpha, foot, ptime, pose_id =  \
                 st_mgmt.ref_generator.get_next_reference(
                     act_pos, act_eps, xref)
             print(pose_id)
-            dvtsk, pvtsk = convert_ref(
+            pvtsk, dvtsk = convert_ref(
                     clb.get_pressure(alpha, st_mgmt.version), foot)
             # send to main thread
             llc_ref.dvalve = dvtsk
@@ -193,10 +192,10 @@ def convert_ref(pressure, foot):
     for kdx, pp in enumerate(pressure):
         pv_task[kdx] = pp
 
-    return dv_task, pv_task
+    return pv_task, dv_task
 
 
-def convert_rec(dv_task, pv_task):
+def convert_rec(pv_task, dv_task):
     pressure, foot = [], []
     for key in dv_task:
         foot.append(dv_task[key])
@@ -225,6 +224,14 @@ def optimal_pathplanner(fun):
         choice = list(clb.clb.keys())
         std = 'vS11' if 'vS11' in choice else None
         gl_mgmt.version = lcd.select_elem_from_list(choice, std, 'Version?')
+
+        # feasible start pose:
+        pvtsk, dvtsk = convert_ref(
+                clb.get_pressure([90, 0, -90, 90, 0], gl_mgmt.version),
+                [1, 0, 0, 1])
+        llc_ref.dvalve = dvtsk
+        llc_ref.pressure = pvtsk
+
         gl_mgmt.init = True
 
     n = 1
@@ -237,14 +244,22 @@ def optimal_pathplanner(fun):
         if xref[0] and position[0] and eps:
             # convert measurements
             xbar = gait_law_planner.xbar(xref, position, eps)
-            pressure_ref, feet = convert_rec(llc_ref.dvalve, llc_ref.pressure)
+
+            print('\n\nxbar:\t', xbar)
+
+            pressure_ref, feet = convert_rec(llc_ref.pressure, llc_ref.dvalve)
             alp_act = clb.get_alpha(pressure_ref, gl_mgmt.version)
             # calc ref
             alpha, feet = gait_law_planner.optimal_planner(
                     xbar, alp_act, feet, n)
             # convert ref
-            dvtsk, pvtsk = convert_ref(
+            pvtsk, dvtsk = convert_ref(
                     clb.get_pressure(alpha, gl_mgmt.version), feet)
+
+            print('alpha:\t', alpha)
+            print('pres:\t', clb.get_pressure(alpha, gl_mgmt.version))
+            print('feet:\t', feet)
+
             # switch feet
             llc_ref.dvalve = {idx: True for idx in range(4)}
             time.sleep(.1)
@@ -253,7 +268,7 @@ def optimal_pathplanner(fun):
             # set ref
             llc_ref.pressure = pvtsk
             # organisation
-            ptime = 2
+            ptime = 1.5
             gl_mgmt.process_time = ptime
             gl_mgmt.last_process_time = time.time()
 

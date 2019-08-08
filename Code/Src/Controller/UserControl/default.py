@@ -67,9 +67,10 @@ class GaitLawMGMT(object):
 
         self.version = None
         self.init = False
+        self.round = 0
 
 
-gl_mgmt = SearchTreeMGMT()
+gl_mgmt = GaitLawMGMT()
 
 
 
@@ -224,15 +225,19 @@ def optimal_pathplanner(fun):
         choice = list(clb.clb.keys())
         std = 'vS11' if 'vS11' in choice else None
         gl_mgmt.version = lcd.select_elem_from_list(choice, std, 'Version?')
+        gl_mgmt.init = True
 
+    if not fun[0]:
+        gl_mgmt.round = 0
+
+    if gl_mgmt.round == 0:
+        print('Set start Pose')
         # feasible start pose:
         pvtsk, dvtsk = convert_ref(
                 clb.get_pressure([90, 0, -90, 90, 0], gl_mgmt.version),
                 [1, 0, 0, 1])
         llc_ref.dvalve = dvtsk
         llc_ref.pressure = pvtsk
-
-        gl_mgmt.init = True
 
     n = 1
     if (fun[0] and gl_mgmt.last_process_time + gl_mgmt.process_time <
@@ -244,8 +249,9 @@ def optimal_pathplanner(fun):
         if xref[0] and position[0] and eps:
             # convert measurements
             xbar = gait_law_planner.xbar(xref, position, eps)
+            xbar = xbar/30
 
-            print('\n\nxbar:\t', xbar)
+            print('\n\nxbar:\t', [round(x) for x in xbar])
 
             pressure_ref, feet = convert_rec(llc_ref.pressure, llc_ref.dvalve)
             alp_act = clb.get_alpha(pressure_ref, gl_mgmt.version)
@@ -256,13 +262,13 @@ def optimal_pathplanner(fun):
             pvtsk, dvtsk = convert_ref(
                     clb.get_pressure(alpha, gl_mgmt.version), feet)
 
-            print('alpha:\t', alpha)
-            print('pres:\t', clb.get_pressure(alpha, gl_mgmt.version))
+            print('alpha:\t', [round(a) for a in alpha])
+            print('pres:\t', [round(p) for p in clb.get_pressure(alpha, gl_mgmt.version)])
             print('feet:\t', feet)
 
             # switch feet
             llc_ref.dvalve = {idx: True for idx in range(4)}
-            time.sleep(.1)
+            time.sleep(.3)
             llc_ref.dvalve = dvtsk
             time.sleep(.1)
             # set ref
@@ -271,6 +277,7 @@ def optimal_pathplanner(fun):
             ptime = 1.5
             gl_mgmt.process_time = ptime
             gl_mgmt.last_process_time = time.time()
+            gl_mgmt.round += 1
 
 
 #def calc_dist(position, xref):

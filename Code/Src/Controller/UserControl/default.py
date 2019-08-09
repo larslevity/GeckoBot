@@ -7,6 +7,7 @@ Created on Wed Jul 24 15:51:41 2019
 
 import time
 import logging
+import numpy as np
 
 from Src.Management.thread_communication import llc_ref
 from Src.Management.thread_communication import imgproc_rec
@@ -234,7 +235,7 @@ def optimal_pathplanner(fun):
         print('Set start Pose')
         # feasible start pose:
         pvtsk, dvtsk = convert_ref(
-                clb.get_pressure([90, 0, -90, 90, 0], gl_mgmt.version),
+                clb.get_pressure([30, 0, -30, 30, 0], gl_mgmt.version),
                 [1, 0, 0, 1])
         llc_ref.dvalve = dvtsk
         llc_ref.pressure = pvtsk
@@ -250,8 +251,10 @@ def optimal_pathplanner(fun):
             # convert measurements
             xbar = gait_law_planner.xbar(xref, position, eps)
             xbar = xbar/30
+            deps = np.rad2deg(np.arctan2(xbar[1], xbar[0]))
 
-            print('\n\nxbar:\t', [round(x) for x in xbar])
+            print('\n\nxbar:\t', [round(x,2) for x in xbar])
+            print('deps:\t', round(deps,2))
 
             pressure_ref, feet = convert_rec(llc_ref.pressure, llc_ref.dvalve)
             alp_act = clb.get_alpha(pressure_ref, gl_mgmt.version)
@@ -262,8 +265,8 @@ def optimal_pathplanner(fun):
             pvtsk, dvtsk = convert_ref(
                     clb.get_pressure(alpha, gl_mgmt.version), feet)
 
-            print('alpha:\t', [round(a) for a in alpha])
-            print('pres:\t', [round(p) for p in clb.get_pressure(alpha, gl_mgmt.version)])
+            print('alpha:\t', [round(a,2) for a in alpha])
+            print('pres:\t', [round(p,2) for p in clb.get_pressure(alpha, gl_mgmt.version)])
             print('feet:\t', feet)
 
             # switch feet

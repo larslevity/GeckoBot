@@ -105,6 +105,13 @@ def optimal_planner(xbar, alp_act, feet_act, n=2, dist_min=.1):
         feet_ref = feet_act
         return [alp_ref, feet_ref]
 
+    deps = np.rad2deg(np.arctan2(xbar[1], xbar[0]))
+    if abs(deps) > 70:
+        torso_act = alp_act[2]
+        alp_ref = [45, 45, torso, 45, 45]
+        
+
+
     # Not the case -> lets optimize
     feet_ref = [not(foot) for foot in feet_act]
     x1opt, x2opt = find_opt_x(xbar, n)

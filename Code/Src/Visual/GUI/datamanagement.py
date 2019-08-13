@@ -16,7 +16,7 @@ def merge_multiple_dicts(dicts):
 
 def rehash_record(pressure=[None]*8, reference=[None]*8, motor_in=[None]*8,
                   fixation=[None]*4, alphaIMG=[None]*6, epsilon=None,
-                  positionx=[None]*6, positiony=[None]*6,
+                  positionx=[None]*7, positiony=[None]*7,
                   alphaIMU=[None]*6, IMU=False, IMG=False):
 
     p = {'p{}'.format(idx): px for idx, px in enumerate(pressure)}

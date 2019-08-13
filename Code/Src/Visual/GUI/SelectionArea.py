@@ -18,7 +18,7 @@ class SelectionArea(Gtk.Bin):
         keylist = []
         if modus == 'pos':
             recorded_data = sorted(self.data.recorded.iterkeys())
-            for idx in range(6):
+            for idx in range(6) + [8]:
                 if 'x{}'.format(idx) in recorded_data:
                     if 'y{}'.format(idx) in recorded_data:
                         keylist.append(('x{}'.format(idx), 'y{}'.format(idx)))

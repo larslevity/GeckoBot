@@ -33,8 +33,10 @@ def prepare_data():
     eps = (round(imgproc_rec.eps, 2) if imgproc_rec.eps else None)
     X = [round(imgproc_rec.X[i], 2) if imgproc_rec.X[i] else None
          for i in range(len(imgproc_rec.X))]
+    X = X + [round(imgproc_rec.xref[0], 2) if imgproc_rec.xref[1] else None]
     Y = [round(imgproc_rec.Y[i], 2) if imgproc_rec.Y[i] else None
          for i in range(len(imgproc_rec.Y))]
+    Y = Y + [round(imgproc_rec.xref[1], 2) if imgproc_rec.xref[1] else None]
 
     rec_angle = llc_rec.aIMU
     aIMU = [round(rec_angle[i], 2) if rec_angle[i] else None

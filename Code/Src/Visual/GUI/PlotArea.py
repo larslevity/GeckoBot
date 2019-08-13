@@ -54,6 +54,8 @@ class PlotArea(Gtk.Bin):
             if elem[0][0] == 'x' and elem[1][0] == 'y':  # key = (x?, y?)
                 if elem[0][1] == elem[1][1]:    # (? = ?)
                     artist = int(elem[0][1])  # idx = ?
+                    if artist == 8:  # xref - special care
+                        artist = 6
                     mark.append(artist)
                     ord_val = [ord_val[-1]]
                     abs_val = [abs_val[-1]]
@@ -139,8 +141,8 @@ class PlotArea(Gtk.Bin):
         # init plots
         self.points = {}
         self.nartist = 16
-        self.nMarkers = 6
-        # set the first 6 artists as Markers instead of lines
+        self.nMarkers = 7
+        # set the first 7 artists as Markers instead of lines
         for artist in range(self.nMarkers):
             self.points[artist] = self.axx.plot(nan, nan, 'ko')[0]
         for artist in range(self.nMarkers, self.nartist):

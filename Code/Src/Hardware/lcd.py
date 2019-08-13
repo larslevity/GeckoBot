@@ -10,6 +10,8 @@ import busio
 import adafruit_character_lcd.character_lcd_rgb_i2c as char_lcd
 import time
 
+from Src.Management.thread_communication import ui_state
+
 
 class _LCD(object):
     def __init__(self):
@@ -26,6 +28,9 @@ class _LCD(object):
         self.lcd.message = msg
 
     def select_from_dic(self, dic, default_key=None):
+
+        ui_mode_start = ui_state.mode
+
         list_of_keys = [name for name in sorted(iter(dic.keys()))]
         selected_key = None
         if default_key:
@@ -43,9 +48,11 @@ class _LCD(object):
             elif self.lcd.down_button:
                 idx = idx + 1 if idx < len(list_of_keys) - 1 else 0
                 self.display(list_of_keys[idx], clear=0)
-            elif self.lcd.select_button:
+            elif self.lcd.select_button or ui_state.fun[0]:
                 self.display("SELECTED")
                 selected_key = list_of_keys[idx]
+            elif ui_mode_start != ui_state.mode:
+                break
             time.sleep(.1)
 
         self.lcd.clear()

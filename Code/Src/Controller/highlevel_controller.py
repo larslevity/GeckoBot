@@ -8,12 +8,15 @@ Created on Wed Jul 24 15:51:41 2019
 import time
 import logging
 import numpy as np
+import threading
 
 from Src.Management.thread_communication import llc_ref
 from Src.Management.thread_communication import imgproc_rec
+from Src.Management.thread_communication import ui_state
 from Src.Management import load_pattern as load_ptrn
 from Src.Hardware import lcd as lcd_module
 from Src.Management.thread_communication import sys_config
+from Src.Management import state_machine
 
 from Src.Controller import searchtree
 from Src.Controller import calibration as clb
@@ -27,7 +30,11 @@ lcd = lcd_module.getlcd()
 rootLogger = logging.getLogger()
 
 # Names of Modes
-NAMES = ['PRESSURE / PWM', 'PATTERN', 'GECKO']
+NAMES = {'MODE1': 'PRESSURE / PWM',
+         'MODE2': 'PATTERN',
+         'MODE3': 'GECKO'}
+
+TSAMPLING = .1
 
 
 class PatternMGMT(object):
@@ -36,13 +43,23 @@ class PatternMGMT(object):
         self.process_time = 0
         self.initial_cycle = True
         self.pattern = None
+        self.version = None
         self.idx = 0
         self.IMAGES = False
         self.init = False
 
         self.ptrndic = load_ptrn.get_pattern_dic()
         self.default_version = 'vS11' if 'vS11' in self.ptrndic else None
-        self.default_pattern = None
+        self.pattern_name = None
+
+    def select_version(self):
+        self.version = lcd.select_from_dic(self.ptrndic, self.default_version)
+        return self.version
+
+    def select_pattern_name(self):
+        self.pattern_name = lcd.select_from_dic(
+                self.ptrndic[mgmt.version], self.pattern_name)
+        return self.pattern_name
 
 
 mgmt = PatternMGMT()
@@ -54,9 +71,6 @@ class SearchTreeMGMT(object):
         self.last_process_time = time.time()
         self.process_time = 0
 
-        self.version = None
-        self.init = False
-
 
 st_mgmt = SearchTreeMGMT()
 
@@ -65,60 +79,80 @@ class GaitLawMGMT(object):
     def __init__(self):
         self.last_process_time = time.time()
         self.process_time = 0
-
-        self.version = None
-        self.init = False
         self.round = 0
 
 
 gl_mgmt = GaitLawMGMT()
 
 
+def mode1():
+    lcd.display(NAMES['MODE1'])
 
-def mode1(switches, potis, fun):
-    mgmt.initial_cycle = True
-    mgmt.init = False
-    st_mgmt.init = False
+    while ui_state.mode == 'MODE1':
+        switches, potis, fun = ui_state.switches, ui_state.potis, ui_state.fun
+        if fun[1]:  # PWM Mode
+            llc_ref.set_state('FEED_THROUGH')
+            if not fun[0]:  # pwm = potis*100
+                for idx in potis:
+                    potis[idx] = potis[idx]*100
+                llc_ref.pwm = potis
+            else:  # pwm = 0
+                llc_ref.pwm = {idx: 0.0 for idx in range(n_pc)}
+        else:  # Pressure Mode
+            llc_ref.set_state('PRESSURE_REFERENCE')
+            if not fun[0]:  # ref = potis
+                llc_ref.pressure = potis
+            else:  # ref = 0
+                llc_ref.pressure = {idx: 0.0 for idx in range(n_pc)}
+        llc_ref.dvalve = switches
+        time.sleep(TSAMPLING)
 
-    if fun[1]:  # PWM Mode
-        llc_ref.set_state('FEED_THROUGH')
-        if not fun[0]:  # pwm = potis*100
-            for idx in potis:
-                potis[idx] = potis[idx]*100
-            llc_ref.pwm = potis
-        else:  # pwm = 0
-            llc_ref.pwm = {idx: 0.0 for idx in range(n_pc)}
-    else:  # Pressure Mode
-        llc_ref.set_state('PRESSURE_REFERENCE')
-        if not fun[0]:  # ref = potis
-            llc_ref.pressure = potis
-        else:  # ref = 0
-            llc_ref.pressure = {idx: 0.0 for idx in range(n_pc)}
-    llc_ref.dvalve = switches
+    return ui_state.mode
 
 
 def mode2(switches, potis, fun):
+    lcd.display(NAMES['MODE2'])
     llc_ref.set_state('PRESSURE_REFERENCE')
-    pattern_ref(fun)
+
+    # init Pattern mgmt
+    if not mgmt.version:
+        mgmt.select_version()
+    if not mgmt.pattern_name:
+        mgmt.select_pattern_name()
+
+    mgmt.pattern = mgmt.ptrndic[mgmt.version][mgmt.pattern_name]
+    mgmt.initial_cycle = True
+
+    while ui_state.mode == 'MODE2':
+        pattern_ref()
+        time.sleep(TSAMPLING)
+
+    return ui_state.mode
 
 
-def mode3(switches, potis, fun):
+def mode3():
+    lcd.display(NAMES['MODE3'])
     llc_ref.set_state('PRESSURE_REFERENCE')
-    if fun[1]:
-        searchtree_pathplanner(fun)
-    else:
-        optimal_pathplanner(fun)
+
+    choices = list(clb.clb.keys())
+    std = 'vS11' if 'vS11' in choices else None
+    if not mgmt.version:
+        mgmt.select_version()
+
+    if mgmt.version not in choices:
+        mgmt.version = lcd.select_elem_from_list(choices, std, 'Version?')
+
+    while ui_state.mode == 'MODE2':
+        if ui_state.fun[1]:
+            searchtree_pathplanner()
+        else:
+            optimal_pathplanner()
+        time.sleep(TSAMPLING)
+    return ui_state.mode
 
 
-def pattern_ref(fun):
-    if not mgmt.init:  # Ask which version
-        mgmt.default_version = lcd.select_from_dic(
-                mgmt.ptrndic, mgmt.default_version)
-        mgmt.default_pattern = lcd.select_from_dic(
-                mgmt.ptrndic[mgmt.default_version], mgmt.default_pattern)
-        mgmt.pattern = mgmt.ptrndic[mgmt.default_version][mgmt.default_pattern]
-        mgmt.init = True
-
+def pattern_ref():
+    fun = ui_state.fun
     if (fun[0] and mgmt.last_process_time + mgmt.process_time < time.time()):
         if mgmt.initial_cycle:  # initial cycle
             pattern = get_initial_pose(mgmt.pattern)
@@ -150,12 +184,8 @@ def pattern_ref(fun):
         rootLogger.info('RPi stop to take photos')
 
 
-def searchtree_pathplanner(fun):
-    if not st_mgmt.init:  # first select version
-        choice = list(clb.clb.keys())
-        std = 'vS11' if 'vS11' in choice else None
-        st_mgmt.version = lcd.select_elem_from_list(choice, std, 'Version?')
-        st_mgmt.init = True
+def searchtree_pathplanner():
+    fun = ui_state.fun
 
     if (fun[0] and st_mgmt.last_process_time + st_mgmt.process_time <
             time.time()):
@@ -253,8 +283,8 @@ def optimal_pathplanner(fun):
             xbar = xbar/30
             deps = np.rad2deg(np.arctan2(xbar[1], xbar[0]))
 
-            print('\n\nxbar:\t', [round(x,2) for x in xbar])
-            print('deps:\t', round(deps,2))
+            print('\n\nxbar:\t', [round(x, 2) for x in xbar])
+            print('deps:\t', round(deps, 2))
 
             pressure_ref, feet = convert_rec(llc_ref.pressure, llc_ref.dvalve)
             alp_act = clb.get_alpha(pressure_ref, gl_mgmt.version)
@@ -265,8 +295,9 @@ def optimal_pathplanner(fun):
             pvtsk, dvtsk = convert_ref(
                     clb.get_pressure(alpha, gl_mgmt.version), feet)
 
-            print('alpha:\t', [round(a,2) for a in alpha])
-            print('pres:\t', [round(p,2) for p in clb.get_pressure(alpha, gl_mgmt.version)])
+            print('alpha:\t', [round(a, 2) for a in alpha])
+            print('pres:\t', [round(p, 2) for p in clb.get_pressure(
+                    alpha, gl_mgmt.version)])
             print('feet:\t', feet)
 
             # switch feet
@@ -283,7 +314,39 @@ def optimal_pathplanner(fun):
             gl_mgmt.round += 1
 
 
-#def calc_dist(position, xref):
+def exit_cleaner():
+    # Clean?
+    return ('QUIT')
+
+
+class HighLevelController(threading.Thread):
+    def __init__(self):
+        """ """
+        threading.Thread.__init__(self)
+
+    def run(self):
+        """ run HUI """
+        rootLogger.info('Running HUI Thread ...')
+        automat = state_machine.StateMachine()
+        automat.add_state('MODE1', mode1)
+        automat.add_state('MODE2', mode1)
+        automat.add_state('MODE3', mode1)
+        automat.add_state('EXIT', exit_cleaner)
+        automat.add_state('QUIT', None, end_state=True)
+        automat.set_start('MODE1')
+
+        try:
+            automat.run()
+        except Exception as err:
+            rootLogger.exception('\n exception HIGHLEVEL CTR Thread \n')
+            rootLogger.error(err, exc_info=True)
+        rootLogger.info('HIGHLEVEL CTR Thread is done ...')
+
+    def kill(self):
+        ui_state.mode = 'EXIT'
+
+
+# def calc_dist(position, xref):
 #    mx, my = position
 #    act_pos = np.r_[mx[1], my[1]]
 #    dpos = xref - act_pos

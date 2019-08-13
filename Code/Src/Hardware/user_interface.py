@@ -16,11 +16,10 @@ import Adafruit_BBIO.ADC as ADC
 import logging
 
 from Src.Management import state_machine
-from Src.Controller.UserControl import default as feature
-from Src.Hardware import lcd as lcd_module
+from Src.Management.thread_communication import ui_state
+
 
 rootLogger = logging.getLogger()
-lcd = lcd_module.getlcd()
 
 UI_TSAMPLING = .1
 
@@ -194,46 +193,43 @@ class UserInterface(threading.Thread):
             return ('QUIT')
 
         def mode1():
-            lcd.display(feature.NAMES[0])
+            ui_state.mode = self.state
             while not mode_changed():
-
-                fun = [fun1(), fun2()]
-                switches = read_switches()
-                potis = read_potis()
-
-                feature.mode1(switches, potis, fun)
+                ui_state.fun = [fun1(), fun2()]
+                ui_state.switches = read_switches()
+                ui_state.potis = read_potis()
 
                 time.sleep(UI_TSAMPLING)
                 set_leds()
             return self.state
 
-        def mode2():
-            lcd.display(feature.NAMES[1])
-            while not mode_changed():
-
-                fun = [fun1(), fun2()]
-                switches = read_switches()
-                potis = read_potis()
-
-                feature.mode2(switches, potis, fun)
-
-                time.sleep(UI_TSAMPLING)
-                set_leds()
-            return self.state
-
-        def mode3():
-            lcd.display(feature.NAMES[2])
-            while not mode_changed():
-
-                fun = [fun1(), fun2()]
-                switches = read_switches()
-                potis = read_potis()
-
-                feature.mode3(switches, potis, fun)
-
-                time.sleep(UI_TSAMPLING)
-                set_leds()
-            return self.state
+#        def mode2():
+#            lcd.display(feature.NAMES[1])
+#            while not mode_changed():
+#
+#                fun = [fun1(), fun2()]
+#                switches = read_switches()
+#                potis = read_potis()
+#
+#                feature.mode2(switches, potis, fun)
+#
+#                time.sleep(UI_TSAMPLING)
+#                set_leds()
+#            return self.state
+#
+#        def mode3():
+#            lcd.display(feature.NAMES[2])
+#            while not mode_changed():
+#
+#                fun = [fun1(), fun2()]
+#                switches = read_switches()
+#                potis = read_potis()
+#
+#                feature.mode3(switches, potis, fun)
+#
+#                time.sleep(UI_TSAMPLING)
+#                set_leds()
+#            return self.state
 
         """ ---------------- ----- ------- ----------------------------- """
         """ ---------------- RUN STATE MACHINE ------------------------- """
@@ -241,8 +237,8 @@ class UserInterface(threading.Thread):
 
         automat = state_machine.StateMachine()
         automat.add_state('MODE1', mode1)
-        automat.add_state('MODE2', mode2)
-        automat.add_state('MODE3', mode3)
+        automat.add_state('MODE2', mode1)
+        automat.add_state('MODE3', mode1)
         automat.add_state('EXIT', exit_cleaner)
         automat.add_state('QUIT', None, end_state=True)
         automat.set_start('MODE1')

@@ -15,6 +15,7 @@ from Src.Management import exception
 
 from Src.Visual.PiCamera import client
 from Src.Controller import lowlevel_controller
+from Src.Controller import highlevel_controller
 from Src.Hardware import lcd as lcd_module
 from Src.Hardware import user_interface as UI
 from Src.Communication import printer
@@ -127,6 +128,11 @@ def main():
         ui_thread.setDaemon(True)
         ui_thread.start()
 
+        rootLogger.info('Starting HighLevelController ...')
+        highlevelctr = highlevel_controller.HighLevelController()
+        highlevelctr.setDaemon(True)
+        highlevelctr.start()
+
         if sys_config.ConsolePrinter:
             rootLogger.info('Starting Console Printer ...')
             cPrinter = printer.ConsolePrinter()
@@ -155,6 +161,7 @@ def main():
 
         ui_thread.join()
         lowlevelctr.join()
+        highlevelctr.join()
         if sys_config.ConsolePrinter:
             cPrinter.join()
         if sys_config.LivePlotter:
@@ -168,6 +175,7 @@ def main():
     finally:
         ui_thread.kill()
         lowlevelctr.kill()
+        highlevelctr.kill()
         if sys_config.ConsolePrinter:
             cPrinter.kill()
         if sys_config.LivePlotter:

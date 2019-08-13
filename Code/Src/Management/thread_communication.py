@@ -96,6 +96,19 @@ ConsolePrinter:\t {}abled
 sys_config = SystemConfig()
 
 
+class UIState(Borg):
+    def __init__(self):
+        Borg.__init__(self)
+
+        self.fun = [False, False]
+        self.mode = 'MODE1'
+        self.switches = {idx: False for idx in range(4)}
+        self.potis = {idx: 0.0 for idx in range(7)}
+
+
+ui_state = UIState()
+
+
 #class LLCRecorder(object):
 #    def __init__(self):
 #        self.rec_p = Queue(1)

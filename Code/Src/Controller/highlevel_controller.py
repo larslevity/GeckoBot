@@ -21,6 +21,7 @@ from Src.Management import state_machine
 from Src.Controller import searchtree
 from Src.Controller import calibration as clb
 from Src.Controller import gait_law_planner
+from Src.Controller import rotate_on_spot as rotspot
 
 
 n_pc = len(llc_ref.pressure)
@@ -57,8 +58,9 @@ class PatternMGMT(object):
         return self.version
 
     def select_pattern_name(self):
-        self.pattern_name = lcd.select_from_dic(
-                self.ptrndic[mgmt.version], self.pattern_name)
+        if self.version:
+            self.pattern_name = lcd.select_from_dic(
+                    self.ptrndic[mgmt.version], self.pattern_name)
         return self.pattern_name
 
 
@@ -110,17 +112,18 @@ def mode1():
     return ui_state.mode
 
 
-def mode2(switches, potis, fun):
+def mode2():
     lcd.display(NAMES['MODE2'])
     llc_ref.set_state('PRESSURE_REFERENCE')
 
     # init Pattern mgmt
     if not mgmt.version:
         mgmt.select_version()
-    if not mgmt.pattern_name:
-        mgmt.select_pattern_name()
+#    if not mgmt.pattern_name: Always select pattern
+    mgmt.select_pattern_name()
+    if mgmt.version and mgmt.pattern_name:
+        mgmt.pattern = mgmt.ptrndic[mgmt.version][mgmt.pattern_name]
 
-    mgmt.pattern = mgmt.ptrndic[mgmt.version][mgmt.pattern_name]
     mgmt.initial_cycle = True
 
     while ui_state.mode == 'MODE2':
@@ -135,14 +138,17 @@ def mode3():
     llc_ref.set_state('PRESSURE_REFERENCE')
 
     choices = list(clb.clb.keys())
-    std = 'vS11' if 'vS11' in choices else None
     if not mgmt.version:
         mgmt.select_version()
+    while mgmt.version not in choices:
+        if ui_state.mode != 'MODE3':
+            break
+        lcd.display('selected version\nnot calibrated')
+        mgmt.select_version()
 
-    if mgmt.version not in choices:
-        mgmt.version = lcd.select_elem_from_list(choices, std, 'Version?')
+    gl_mgmt.round = 0
 
-    while ui_state.mode == 'MODE2':
+    while ui_state.mode == 'MODE3':
         if ui_state.fun[1]:
             searchtree_pathplanner()
         else:
@@ -201,7 +207,7 @@ def searchtree_pathplanner():
                     act_pos, act_eps, xref)
             print(pose_id)
             pvtsk, dvtsk = convert_ref(
-                    clb.get_pressure(alpha, st_mgmt.version), foot)
+                    clb.get_pressure(alpha, mgmt.version), foot)
             # send to main thread
             llc_ref.dvalve = dvtsk
             llc_ref.pressure = pvtsk
@@ -225,6 +231,13 @@ def convert_ref(pressure, foot):
         pv_task[kdx] = pp
 
     return pv_task, dv_task
+
+
+def convert_lis2dic(arg):
+    out = {}
+    for idx, elem in enumerate(arg):
+        out[idx] = elem
+    return out
 
 
 def convert_rec(pv_task, dv_task):
@@ -251,21 +264,13 @@ def generate_pose_ref(pattern, idx):
     return dv_task, pv_task, local_min_process_time
 
 
-def optimal_pathplanner(fun):
-    if not gl_mgmt.init:  # first select version
-        choice = list(clb.clb.keys())
-        std = 'vS11' if 'vS11' in choice else None
-        gl_mgmt.version = lcd.select_elem_from_list(choice, std, 'Version?')
-        gl_mgmt.init = True
-
-    if not fun[0]:
-        gl_mgmt.round = 0
+def optimal_pathplanner():
+    fun = ui_state.fun
 
     if gl_mgmt.round == 0:
-        print('Set start Pose')
         # feasible start pose:
         pvtsk, dvtsk = convert_ref(
-                clb.get_pressure([30, 0, -30, 30, 0], gl_mgmt.version),
+                clb.get_pressure([30, 0, -30, 30, 0], mgmt.version),
                 [1, 0, 0, 1])
         llc_ref.dvalve = dvtsk
         llc_ref.pressure = pvtsk
@@ -286,32 +291,42 @@ def optimal_pathplanner(fun):
             print('\n\nxbar:\t', [round(x, 2) for x in xbar])
             print('deps:\t', round(deps, 2))
 
-            pressure_ref, feet = convert_rec(llc_ref.pressure, llc_ref.dvalve)
-            alp_act = clb.get_alpha(pressure_ref, gl_mgmt.version)
-            # calc ref
-            alpha, feet = gait_law_planner.optimal_planner(
-                    xbar, alp_act, feet, n)
-            # convert ref
-            pvtsk, dvtsk = convert_ref(
-                    clb.get_pressure(alpha, gl_mgmt.version), feet)
+            pressure_ref, feet_act = convert_rec(
+                    llc_ref.pressure, llc_ref.dvalve)
+            alp_act = clb.get_alpha(pressure_ref, mgmt.version)
 
-            print('alpha:\t', [round(a, 2) for a in alpha])
-            print('pres:\t', [round(p, 2) for p in clb.get_pressure(
-                    alpha, gl_mgmt.version)])
+            # calc ref
+            if abs(deps) > 70:
+                pattern = rotspot.rotate_on_spot(xbar, alp_act, feet_act)
+            else:
+                alpha, feet = gait_law_planner.optimal_planner(
+                        xbar, alp_act, feet_act, n)
+                pattern = [[alp_act, [1, 1, 1, 1], .2],
+                           [alp_act, feet, .1],
+                           [alpha, feet, 1.5]]
+            for idx, pose in enumerate(pattern):
+                alpha, feet, ptime = pose
+                # convert ref
+                pvtsk, dvtsk = convert_ref(
+                        clb.get_pressure(alpha, mgmt.version), feet)
+
+                # set ref
+                llc_ref.dvalve = dvtsk
+                llc_ref.pressure = pvtsk
+                if idx != len(pattern)-1:  # last pose -> no sleep
+                    time.sleep(ptime)
+
+            print('alpha:\t', [round(a, 1) for a in alpha])
+            print('pres:\t', [round(p, 1) for p in clb.get_pressure(
+                    alpha, mgmt.version)])
             print('feet:\t', feet)
 
-            # switch feet
-            llc_ref.dvalve = {idx: True for idx in range(4)}
-            time.sleep(.3)
-            llc_ref.dvalve = dvtsk
-            time.sleep(.1)
-            # set ref
-            llc_ref.pressure = pvtsk
             # organisation
-            ptime = 1.5
             gl_mgmt.process_time = ptime
             gl_mgmt.last_process_time = time.time()
             gl_mgmt.round += 1
+        else:
+            print('No detection ...')
 
 
 def exit_cleaner():
@@ -326,11 +341,11 @@ class HighLevelController(threading.Thread):
 
     def run(self):
         """ run HUI """
-        rootLogger.info('Running HUI Thread ...')
+        rootLogger.info('Running HIGHLEVEL CTR Thread ...')
         automat = state_machine.StateMachine()
         automat.add_state('MODE1', mode1)
-        automat.add_state('MODE2', mode1)
-        automat.add_state('MODE3', mode1)
+        automat.add_state('MODE2', mode2)
+        automat.add_state('MODE3', mode3)
         automat.add_state('EXIT', exit_cleaner)
         automat.add_state('QUIT', None, end_state=True)
         automat.set_start('MODE1')

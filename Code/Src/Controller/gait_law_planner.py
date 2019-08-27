@@ -21,16 +21,15 @@ def xbar(xref, xbot, epsbot):
     return rotate(xref - xbot, np.deg2rad(-epsbot))
 
 
-def dx(x1, x2):  # Symmetric Fit
+def dx(x1, x2):  # analytic_model6
     return np.array([
-            [.02*x1 + .13*abs(x2) - .47*x2**2],
-            [-(.07*x2 - .29*x2**2*np.sign(x2) + .02*x1*(x2))]
+            [.016*x1 - .113*x2**2],
+            [-(.044*x2 - .001*x2**2 + .022*x1*x2)]
         ])
 
 
-def deps(x1, x2):  # Symmetric Fit
-    return np.deg2rad(-.005*x1 - 10.85*x2 - 2.55*x2**2*np.sign(x2)
-                      - .835*x1*x2)
+def deps(x1, x2):  # analytic_model6
+    return np.deg2rad(-.001*x1 + 10.188*x2 + .019*x2**2 - .936*x1*x2)
 
 
 def sumsin(x, n):
@@ -66,11 +65,11 @@ def cut(x):
 
 
 def alpha(x1, x2, f):
-    alpha = [cut(45 - x1/2. + (f[0] ^ 1)*x1*x2 + f[0]*abs(x1)*x2/2.),
-             cut(45 + x1/2. + (f[1] ^ 1)*x1*x2 + f[1]*abs(x1)*x2/2.),
+    alpha = [cut(45 - x1/2. - abs(x1)*x2/2. + (f[0])*x1*x2),
+             cut(45 + x1/2. + abs(x1)*x2/2. + (f[1])*x1*x2),
              x1 + x2*abs(x1),
-             cut(45 - x1/2. + (f[2] ^ 1)*x1*x2 + f[2]*abs(x1)*x2/2.),
-             cut(45 + x1/2. + (f[3] ^ 1)*x1*x2 + f[3]*abs(x1)*x2/2.)
+             cut(45 - x1/2. - abs(x1)*x2/2. + (f[2])*x1*x2),
+             cut(45 + x1/2. + abs(x1)*x2/2. + (f[3])*x1*x2)
              ]
     return alpha
 
@@ -105,14 +104,6 @@ def optimal_planner(xbar, alp_act, feet_act, n=2, dist_min=.1):
         feet_ref = feet_act
         return [alp_ref, feet_ref]
 
-    deps = np.rad2deg(np.arctan2(xbar[1], xbar[0]))
-    if abs(deps) > 70:
-        torso_act = alp_act[2]
-        alp_ref = [45, 45, torso, 45, 45]
-        
-
-
-    # Not the case -> lets optimize
     feet_ref = [not(foot) for foot in feet_act]
     x1opt, x2opt = find_opt_x(xbar, n)
     if alp_act[2] > 0:

@@ -276,6 +276,7 @@ def optimal_pathplanner():
         llc_ref.pressure = pvtsk
 
     n = 1
+    max_step_length = 50
     if (fun[0] and gl_mgmt.last_process_time + gl_mgmt.process_time <
             time.time()):
         # collect measurements
@@ -300,7 +301,7 @@ def optimal_pathplanner():
                 pattern = rotspot.rotate_on_spot(xbar, alp_act, feet_act)
             else:
                 alpha, feet = gait_law_planner.optimal_planner(
-                        xbar, alp_act, feet_act, n)
+                        xbar, alp_act, feet_act, n, max_step_length)
                 pattern = [[alp_act, [1, 1, 1, 1], .2],
                            [alp_act, feet, .1],
                            [alpha, feet, 1.5]]

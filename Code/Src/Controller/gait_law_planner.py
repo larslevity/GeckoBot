@@ -81,20 +81,20 @@ def Jd(x1, x2, xbar, n, h=.001):
     return np.array([(dx1 - d0)/h, (dx2 - d0)/h]), d0
 
 
-def find_opt_x(xbar, n):
+def find_opt_x(xbar, n, max_step_length):
     def objective(x):
         x1, x2 = x
         Jac, d = Jd(x1, x2, xbar, n)
         return d, Jac
 
     x0 = [90, 0]
-    bnds = [(0, 90), (-.5, .5)]
+    bnds = [(0, max_step_length), (-.5, .5)]
     solution = minimize(objective, x0, method='L-BFGS-B', bounds=bnds,
                         jac=True, tol=1e-7)
     return solution.x
 
 
-def optimal_planner(xbar, alp_act, feet_act, n=2, dist_min=.1):
+def optimal_planner(xbar, alp_act, feet_act, n=2, max_step_length=90, dist_min=.1):
     """
     opt planner
     """
@@ -105,7 +105,7 @@ def optimal_planner(xbar, alp_act, feet_act, n=2, dist_min=.1):
         return [alp_ref, feet_ref]
 
     feet_ref = [not(foot) for foot in feet_act]
-    x1opt, x2opt = find_opt_x(xbar, n)
+    x1opt, x2opt = find_opt_x(xbar, n, max_step_length)
     if alp_act[2] > 0:
         x1opt *= -1
     alpha_ref = alpha(x1opt, x2opt, feet_ref)

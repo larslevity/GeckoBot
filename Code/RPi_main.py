@@ -19,7 +19,7 @@ from Src.Visual.PiCamera import pickler
 
 #resolution = (640, 480)  # DINA0
 # resolution = (1280, 960)  # Halle
-resolution = (1640, 922)  # Halle
+resolution = (1648, 928)  # Halle
 
 def main(alpha_memory, resolution=resolution):
 #    print("[INFO] warm up camera sensor...")

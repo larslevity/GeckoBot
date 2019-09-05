@@ -61,10 +61,10 @@ def detect_apriltags(frame):
 def extract_position(april_result):
     SHIFT = {
         0: [0, 1, 10],
-        1: [0, 3, 16],
+        1: [0, 3, 26],
         2: [1, 0, 10],
         3: [0, 1, 10],
-        4: [3, 0, 5],
+        4: [3, 0, -5],
         5: [1, 0, 10],
             }
     X, Y = [None]*6, [None]*6

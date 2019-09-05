@@ -318,7 +318,7 @@ def optimal_pathplanner():
                     time.sleep(ptime)
 
             print('alpha:\t', [round(a, 1) for a in alpha])
-            print('pres:\t', [round(p, 1) for p in clb.get_pressure(
+            print('pres:\t', [round(p, 2) for p in clb.get_pressure(
                     alpha, mgmt.version)])
 #            print('feet:\t', feet)
             print('\n\n---------------------------------\n\n')

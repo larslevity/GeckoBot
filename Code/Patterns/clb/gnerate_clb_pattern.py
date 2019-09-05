@@ -38,24 +38,25 @@ def read_list_from_csv(filename):
 
 
 if __name__ == '__main__':
-    #import matplotlib.pyplot as plt
+    import matplotlib.pyplot as plt
 
     ptrn = []
-    for p in np.arange(0, 1, .01):
-        ptrn.append(generate_pattern(p, 0, 0, p, p, 0, t_move=2))
+    for p, p_high in zip(np.linspace(0, 1, 101), np.linspace(0, 1.2, 101)):
+        p, p_high = round(p, 2), round(p_high, 2)
+        ptrn.append(generate_pattern(p_high, 0, 0, p_high, p, 0, t_move=2.5))
         ptrn.append(generate_pattern(0, 0, 0, 0, 0, 0, t_move=1.5))
-        ptrn.append(generate_pattern(0, p, p, 0, 0, p, t_move=2))
+        ptrn.append(generate_pattern(0, p, p, 0, 0, p, t_move=2.5))
         ptrn.append(generate_pattern(0, 0, 0, 0, 0, 0, t_move=1.5))
 
     t = [0] + list(np.cumsum([p[-1] for p in ptrn]))
     for idx in range(1):
         p1 = [ptrn[0][idx]]+[p[idx] for p in ptrn]
-        #plt.step(t, p1)
+        plt.step(t, p1)
 
-    #plt.figure()
+    plt.figure()
     t = list([0]+np.cumsum([p[-1] for p in ptrn]))
-    for idx in range(2):
+    for idx in range(6):
         p1 = [p[idx] for p in ptrn]
-        #plt.step(t, p1)
+        plt.step(t, p1)
 
-    save_list_as_csv(ptrn, 'special2.csv')
+    save_list_as_csv(ptrn, 'special3.csv')

@@ -106,6 +106,8 @@ def optimal_planner(xbar, alp_act, feet_act, n=2, max_step_length=90, dist_min=.
 
     feet_ref = [not(foot) for foot in feet_act]
     x1opt, x2opt = find_opt_x(xbar, n, max_step_length)
+    print('x1: \t', x1opt)
+    print('x2: \t', x2opt)
     if alp_act[2] > 0:
         x1opt *= -1
     alpha_ref = alpha(x1opt, x2opt, feet_ref)

@@ -317,8 +317,8 @@ def optimal_pathplanner():
                 if idx != len(pattern)-1:  # last pose -> no sleep
                     time.sleep(ptime)
 
-            print('alpha:\t', [round(a, 1) for a in alpha])
-            print('pres:\t', [round(p, 2) for p in clb.get_pressure(
+            print('alpha:\t', [int(a) for a in alpha])
+            print('pres:\t', [int(p*100)/100. for p in clb.get_pressure(
                     alpha, mgmt.version)])
 #            print('feet:\t', feet)
             print('\n\n---------------------------------\n\n')

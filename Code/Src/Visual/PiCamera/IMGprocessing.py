@@ -191,7 +191,9 @@ if __name__ == '__main__':
     from PIL import Image
     from PiVideoStream import PiVideoStream
 
-    resolution = (1280, 960)
+    resolution = (1280, 720)
+    #resolution = (1920, 1080)
+    resolution = (1640, 922)
     vs = PiVideoStream(resolution=resolution).start()
     time.sleep(1.0)
     try:

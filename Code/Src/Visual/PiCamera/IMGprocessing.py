@@ -28,8 +28,9 @@ def detect_all(frame):
     april_result = detect_apriltags(frame)
     # extract pose
     if len(april_result) > 0:
-        alpha, eps = extract_alpha(april_result)
+        alpha = extract_alpha(april_result)
         X, Y, xref = extract_position(april_result)
+        eps = extract_eps(X, Y)
         # coordinate transform:
         for idx, y in enumerate(Y):
             if y:
@@ -42,12 +43,6 @@ def detect_all(frame):
         xref = (None, None)
 
     return alpha, eps, (X, Y), xref
-
-
-#def calc_pose(alpha, eps, positions):
-#    alpha_ = alpha[0:3] + alpha[4:6]
-#    pose_coords, ell, bet = kin_mod.extract_pose(alpha_, eps, positions)
-#    return pose_coords, ell, bet
 
 
 def detect_apriltags(frame):
@@ -105,7 +100,7 @@ def extract_alpha(april_result):
             if tag_id == 1 or tag_id == 4:
                 center.append(res.center)
 
-    angle, eps = [None]*6, None
+    angle = [None]*6
     for tag_id in POSs:
         if (
          ori[POSs[tag_id][0]] is not None
@@ -115,12 +110,16 @@ def extract_alpha(april_result):
 
             angle[tag_id] = round(calc_angle(p0, p1, jump=jump), 1)
 
-    # calc eps
-    if len(center) == 2:
-        p0, p1 = np.append(center[0], 0), np.append(center[1], 0)
-        eps = np.mod(-round(calc_angle(p1-p0, [1, 0, 0]) + 180, 1), 360)
+    return angle
 
-    return angle, eps
+
+def extract_eps(X, Y):
+    # calc eps
+    eps = None
+    if X[1] and X[4]:
+        p0, p1 = np.array([X[1], Y[1], 0]), np.array([X[4], Y[4], 0])
+        eps = np.mod(-round(calc_angle(p1-p0, [1, 0, 0]) + 180, 1), 360)
+    return eps
 
 
 def draw_positions(img, position_coords, xref, yshift=None):
@@ -144,7 +143,7 @@ def draw_positions(img, position_coords, xref, yshift=None):
                  (0, 255, 0), thick)
     if X[1] and xref[0]:
         thick = 2
-        cv2.line((X[1], yshift-Y[1]), (xref[0], yshift-xref[1]),
+        cv2.line(img, (X[1], yshift-Y[1]), (xref[0], yshift-xref[1]),
                  (0, 255, 255), thick)
 
     return img
@@ -172,6 +171,13 @@ def draw_pose(img, pose_coords):
     return img
 
 
+def draw_eps(img, X1, eps, color=(0, 0, 255), dist=100):
+    (h, w) = img.shape[:2]
+    X2 = (int(X1[0] + np.cos(np.deg2rad(eps))*dist),
+          h-int(X1[1] + np.sin(np.deg2rad(eps))*dist))
+    cv2.line(img, (int(X1[0]), h-int(X1[1])), X2, color, 3)
+
+
 def calc_angle(vec1, vec2, rotate_angle=0., jump=np.pi*.5):
     theta = np.radians(rotate_angle)
     vec1 = rotate(vec1, theta)
@@ -197,12 +203,12 @@ def rotate(vec, theta):
 
 if __name__ == '__main__':
     import time
-    from PIL import Image
     from PiVideoStream import PiVideoStream
     import imutils
+    import inverse_kinematics as inv_kin
 
-    #resolution = (1280, 720)
-    #resolution = (1920, 1080)
+    # resolution = (1280, 720)
+    # resolution = (1920, 1080)
     resolution = (1648, 928)
     vs = PiVideoStream(resolution=resolution).start()
     time.sleep(1.0)
@@ -216,11 +222,18 @@ if __name__ == '__main__':
             print('Xref:\t', xref)
 
             if alpha:
-                img = draw_positions(frame, positions, xref, yshift=resolution[1])
+                yshift = resolution[1]
+                img = draw_positions(frame, positions, xref,
+                                     yshift=yshift)
+                if None not in alpha:
+                    ((xa, ya), ell, bet) = inv_kin.extract_pose(
+                            alpha, eps, positions)
+                    for x, y in zip(xa, ya):
+                        cv2.circle(img, (int(x), int(yshift-y)), 1, (255, 255, 255))
             else:
                 img = frame
             # rotate
-            scale = .5
+            scale = .3
             img = imutils.rotate_bound(img, 270)
             img = cv2.resize(img, (0, 0), fx=scale, fy=scale)
 

@@ -5,7 +5,6 @@ Created on Wed Dec 12 16:06:15 2018
 @author: AmP
 """
 
-#if __name__ == "__main__":
 from __future__ import print_function
 
 # import the necessary packages

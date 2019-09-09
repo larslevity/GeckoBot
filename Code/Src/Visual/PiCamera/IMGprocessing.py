@@ -138,9 +138,14 @@ def draw_positions(img, position_coords, xref, yshift=None):
             col = (255, 0, 0)
             cv2.putText(img, str(tag_id), (x, y-10), font, fontscale, col, 2)
     # draw line
-    if X[1] and X[3]:
+    if X[1] and X[4]:
         thick = 2
-        cv2.line((X[1], yshift-Y[1]), (X[3], yshift-Y[3]), (0, 255, 0), thick)
+        cv2.line(img, (X[1], yshift-Y[1]), (X[4], yshift-Y[4]),
+                 (0, 255, 0), thick)
+    if X[1] and xref[0]:
+        thick = 2
+        cv2.line((X[1], yshift-Y[1]), (xref[0], yshift-xref[1]),
+                 (0, 255, 255), thick)
 
     return img
 
@@ -194,10 +199,11 @@ if __name__ == '__main__':
     import time
     from PIL import Image
     from PiVideoStream import PiVideoStream
+    import imutils
 
-    resolution = (1280, 720)
+    #resolution = (1280, 720)
     #resolution = (1920, 1080)
-    resolution = (1640, 922)
+    resolution = (1648, 928)
     vs = PiVideoStream(resolution=resolution).start()
     time.sleep(1.0)
     try:
@@ -213,6 +219,10 @@ if __name__ == '__main__':
                 img = draw_positions(frame, positions, xref, yshift=resolution[1])
             else:
                 img = frame
+            # rotate
+            scale = .5
+            img = imutils.rotate_bound(img, 270)
+            img = cv2.resize(img, (0, 0), fx=scale, fy=scale)
 
             cv2.imshow("Frame", img)
             cv2.waitKey(1) & 0xFF

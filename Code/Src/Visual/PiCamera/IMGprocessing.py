@@ -137,6 +137,10 @@ def draw_positions(img, position_coords, xref, yshift=None):
             fontscale = .8
             col = (255, 0, 0)
             cv2.putText(img, str(tag_id), (x, y-10), font, fontscale, col, 2)
+    # draw line
+    if X[1] and X[3]:
+        thick = 2
+        cv2.line((X[1], yshift-Y[1]), (X[3], yshift-Y[3]), (0, 255, 0), thick)
 
     return img
 

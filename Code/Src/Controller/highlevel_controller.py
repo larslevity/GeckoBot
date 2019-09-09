@@ -286,7 +286,7 @@ def optimal_pathplanner():
         if xref[0] and position[0] and eps:
             # convert measurements
             xbar = gait_law_planner.xbar(xref, position, eps)
-            xbar = xbar/30
+            xbar = xbar/30  # px to something ?!
             deps = np.rad2deg(np.arctan2(xbar[1], xbar[0]))
 
             print('\n\nxbar:\t', [round(x, 2) for x in xbar])

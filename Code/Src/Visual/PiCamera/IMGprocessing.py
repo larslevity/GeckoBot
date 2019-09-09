@@ -140,7 +140,12 @@ def draw_positions(img, position_coords, xref, yshift=None):
     # draw line
     if X[1] and X[4]:
         thick = 2
-        cv2.line(img, (X[1], yshift-Y[1]), (X[4], yshift-Y[4]), (0, 255, 0), thick)
+        cv2.line(img, (X[1], yshift-Y[1]), (X[4], yshift-Y[4]),
+                 (0, 255, 0), thick)
+    if X[1] and xref[0]:
+        thick = 2
+        cv2.line((X[1], yshift-Y[1]), (xref[0], yshift-xref[1]),
+                 (0, 255, 255), thick)
 
     return img
 

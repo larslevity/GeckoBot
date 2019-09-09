@@ -216,18 +216,19 @@ if __name__ == '__main__':
             print('Xref:\t', xref)
 
             if alpha:
+                yshift = resolution[1]
                 img = draw_positions(frame, positions, xref,
-                                     yshift=resolution[1])
+                                     yshift=yshift)
                 if None not in alpha:
                     ((xa, ya), ell, bet) = inv_kin.extract_pose(
                             alpha, eps, positions)
-                    pts = np.array([[x, y] for x, y in zip(xa, ya)], np.int32)
-                    pts = pts.reshape((-1, 1, 2))
-                    img = cv2.polylines(img, [pts], True, (0, 255, 0))
+                    for x, y in zip(xa, ya):
+                        cv2.circle(img, (int(x), int(yshift-y)), 1, (255, 255, 255))
+                    
             else:
                 img = frame
             # rotate
-            scale = .5
+            scale = .3
             img = imutils.rotate_bound(img, 270)
             img = cv2.resize(img, (0, 0), fx=scale, fy=scale)
 

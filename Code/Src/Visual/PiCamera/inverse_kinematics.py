@@ -12,8 +12,8 @@ from scipy.optimize import minimize
 
 arc_res = 20    # resolution of arcs
 
-len_leg = 100
-len_tor = 110
+len_leg = 75
+len_tor = 80
 
 n_foot = 4
 n_limbs = 5

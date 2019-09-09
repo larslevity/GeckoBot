@@ -148,6 +148,9 @@ def get_repr(x, r, f):
 
 
 def _calc_rad(length, angle):
+    if abs(angle) < 0.1:
+        angle=.1
+        
     return 360.*length/(2*np.pi*angle)
 
 

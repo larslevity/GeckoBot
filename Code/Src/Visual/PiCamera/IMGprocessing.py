@@ -197,12 +197,12 @@ def rotate(vec, theta):
 
 if __name__ == '__main__':
     import time
-    from PIL import Image
     from PiVideoStream import PiVideoStream
     import imutils
+    import inverse_kinematics as inv_kin
 
-    #resolution = (1280, 720)
-    #resolution = (1920, 1080)
+    # resolution = (1280, 720)
+    # resolution = (1920, 1080)
     resolution = (1648, 928)
     vs = PiVideoStream(resolution=resolution).start()
     time.sleep(1.0)
@@ -216,7 +216,14 @@ if __name__ == '__main__':
             print('Xref:\t', xref)
 
             if alpha:
-                img = draw_positions(frame, positions, xref, yshift=resolution[1])
+                img = draw_positions(frame, positions, xref,
+                                     yshift=resolution[1])
+                if None not in alpha:
+                    ((xa, ya), ell, bet) = inv_kin.extract_pose(
+                            alpha, eps, positions)
+                    pts = np.array([[x, y] for x, y in zip(xa, ya)], np.int32)
+                    pts = pts.reshape((-1, 1, 2))
+                    img = cv2.polylines(img, [pts], True, (0, 255, 0))
             else:
                 img = frame
             # rotate

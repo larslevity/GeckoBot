@@ -12,8 +12,8 @@ from scipy.optimize import minimize
 
 arc_res = 20    # resolution of arcs
 
-len_leg = 65
-len_tor = 70
+len_leg = 80
+len_tor = 85
 
 n_foot = 4
 n_limbs = 5
@@ -182,30 +182,35 @@ if __name__ == '__main__':
     import cv2
     import IMGprocessing
 
-    frame = cv2.imread('test_inv_kin.jpg', 1)
-    resolution = (1648, 928)
-    (h, w) = frame.shape[:2]
-    scale = resolution[1] / float(h)
-    frame = cv2.resize(frame, (0, 0), fx=scale, fy=scale)
-    (h, w) = frame.shape[:2]
-    resolution = (w, h)
+    fnames = ['test_inv_kin_01.jpg', 'test_inv_kin_02.jpg',
+              'test_inv_kin_03.jpg', 'test_inv_kin_04.jpg']
 
-    alpha, eps, positions, xref = IMGprocessing.detect_all(frame)
-    yshift = resolution[1]
-    IMGprocessing.draw_positions(frame, positions, xref, yshift=yshift)
-    X1 = (positions[0][1], positions[1][1])
-    IMGprocessing.draw_eps(frame, X1, eps)
+    for fname in fnames:
+        frame = cv2.imread(fname, 1)
+        resolution = (1648, 928)
+        (h, w) = frame.shape[:2]
+        scale = resolution[1] / float(h)
+        print(scale)
+        frame = cv2.resize(frame, (0, 0), fx=scale, fy=scale)
+        (h, w) = frame.shape[:2]
+        resolution = (w, h)
 
-    (xa, ya), ell, bet, eps_opt = extract_pose(alpha, eps, positions)
-    print('coords in main:')
-    print('ell:\t', [round(l, 2) for l in ell])
-    print('alp:\t', [round(a, 2) for a in alpha])
-    print('deps:\t', round(eps_opt - eps, 2))
+        alpha, eps, positions, xref = IMGprocessing.detect_all(frame)
+        yshift = resolution[1]
+        IMGprocessing.draw_positions(frame, positions, xref, yshift=yshift)
+        X1 = (positions[0][1], positions[1][1])
+        IMGprocessing.draw_eps(frame, X1, eps)
 
-    for x, y in zip(xa, ya):
-        cv2.circle(frame, (int(x), int(yshift-y)), 1, (255, 255, 255))
-    IMGprocessing.draw_eps(frame, X1, eps_opt, color=(0, 0, 0), dist=50)
+        (xa, ya), ell, bet, eps_opt = extract_pose(alpha, eps, positions)
+        print('coords in main:')
+        print('ell:\t', [round(l, 2) for l in ell])
+        print('dalp:\t', [round(b, 2) for b in bet])
+        print('deps:\t', round(eps_opt - eps, 2))
 
-    cv2.imshow('frame', frame)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+        for x, y in zip(xa, ya):
+            cv2.circle(frame, (int(x), int(yshift-y)), 1, (255, 255, 255))
+        IMGprocessing.draw_eps(frame, X1, eps_opt, color=(0, 0, 0), dist=120)
+
+        cv2.imshow('frame', frame)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()

@@ -149,8 +149,7 @@ def get_repr(x, r, f):
 
 def _calc_rad(length, angle):
     if abs(angle) < 0.1:
-        angle=.1
-        
+        angle = .1
     return 360.*length/(2*np.pi*angle)
 
 
@@ -180,3 +179,12 @@ def _calc_phi(alpha, eps):
     c4 = np.mod(180 + alpha[2] + alpha[0] - alpha[4] + c1 + 360, 360)
     phi = [c1, c2, c3, c4]
     return phi
+
+
+if __name__ == '__main__':
+    import cv2
+    import IMGprocessing
+
+    frame = cv2.imread('test_inv.kin.jpg')
+    alpha, eps, positions, xref = IMGprocessing.detect_all(frame)
+    

@@ -12,7 +12,8 @@ import time
 
 
 with picamera.PiCamera() as camera:
-    camera.resolution = (2592, 1944)
+    # camera.resolution = (2592, 1944)
+    camera.resolution = (1648, 928)
     # Start a preview and let the camera warm up for 2 seconds
     camera.start_preview()
     time.sleep(2)

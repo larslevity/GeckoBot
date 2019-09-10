@@ -226,15 +226,15 @@ if __name__ == '__main__':
                 img = draw_positions(frame, positions, xref,
                                      yshift=yshift)
                 if None not in alpha:
-                    ((xa, ya), ell, bet) = inv_kin.extract_pose(
+                    ((xa, ya), ell, bet, eps_) = inv_kin.extract_pose(
                             alpha, eps, positions)
                     for x, y in zip(xa, ya):
                         cv2.circle(img, (int(x), int(yshift-y)), 1, (255, 255, 255))
             else:
                 img = frame
             # rotate
-            scale = .3
-            img = imutils.rotate_bound(img, 270)
+            scale = .8
+            #img = imutils.rotate_bound(img, 270)
             img = cv2.resize(img, (0, 0), fx=scale, fy=scale)
 
             cv2.imshow("Frame", img)

@@ -44,12 +44,6 @@ def detect_all(frame):
     return alpha, eps, (X, Y), xref
 
 
-#def calc_pose(alpha, eps, positions):
-#    alpha_ = alpha[0:3] + alpha[4:6]
-#    pose_coords, ell, bet = kin_mod.extract_pose(alpha_, eps, positions)
-#    return pose_coords, ell, bet
-
-
 def detect_apriltags(frame):
     # gray frame
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -170,6 +164,13 @@ def draw_pose(img, pose_coords):
     for x, y in zip(X, Y):
         cv2.circle(img, (int(x), int(y)), 1, (255, 255, 255))
     return img
+
+
+def draw_eps(img, X1, eps, color=(255, 255, 0), dist=20):
+    (h, w) = img.shape[:2]
+    X2 = (int(X1[0] + np.cos(np.deg2rad(eps))*dist),
+          h-int(X1[1] + np.sin(np.deg2rad(eps))*dist))
+    cv2.line(img, (int(X1[0]), h-int(X1[1])), X2, color, 1)
 
 
 def calc_angle(vec1, vec2, rotate_angle=0., jump=np.pi*.5):

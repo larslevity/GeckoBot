@@ -276,7 +276,7 @@ def optimal_pathplanner():
         llc_ref.pressure = pvtsk
 
     n = 1
-    max_step_length = 50
+    max_step_length = 70
     if (fun[0] and gl_mgmt.last_process_time + gl_mgmt.process_time <
             time.time()):
         # collect measurements

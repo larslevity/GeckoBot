@@ -56,11 +56,11 @@ def detect_apriltags(frame):
 def extract_position(april_result):
     SHIFT = {
         0: [0, 1, 10],
-        1: [0, 3, 26],
+        1: [0, 3, 20],
         2: [1, 0, 10],
         3: [0, 1, 10],
-        4: [3, 0, -5],
-        5: [1, 0, 10],
+        4: [3, 0, -9],
+        5: [1, 0, 12],
             }
     X, Y = [None]*6, [None]*6
     xref = (None, None)
@@ -122,27 +122,24 @@ def extract_eps(X, Y):
     return eps
 
 
-def draw_positions(img, position_coords, xref, yshift=None):
+def draw_positions(img, position_coords, xref, col=(255, 0, 0), thick=2):
+    yshift = img.shape[0]
     X, Y = position_coords
     X = X + [xref[0]]
     Y = Y + [xref[1]]
     for tag_id, coords in enumerate(zip(X, Y)):
         x, y = coords
         if x is not None:
-            if yshift:
-                y = yshift - y
+            y = yshift - y
             cv2.rectangle(img, (x-5, y-5), (x+5, y+5), (0, 128, 255), -1)
             font = cv2.FONT_HERSHEY_SIMPLEX
             fontscale = .8
-            col = (255, 0, 0)
             cv2.putText(img, str(tag_id), (x, y-10), font, fontscale, col, 2)
     # draw line
     if X[1] and X[4]:
-        thick = 2
         cv2.line(img, (X[1], yshift-Y[1]), (X[4], yshift-Y[4]),
                  (0, 255, 0), thick)
     if X[1] and xref[0]:
-        thick = 2
         cv2.line(img, (X[1], yshift-Y[1]), (xref[0], yshift-xref[1]),
                  (0, 255, 255), thick)
 
@@ -161,13 +158,6 @@ def draw_rects(img):
         for corner in range(4):
             x, y = int(res.corners[corner][0]), int(res.corners[corner][1])
             cv2.putText(img, str(corner), (x, y), font, fontscale*.5, col, 2)
-    return img
-
-
-def draw_pose(img, pose_coords):
-    (X, Y) = pose_coords
-    for x, y in zip(X, Y):
-        cv2.circle(img, (int(x), int(y)), 1, (255, 255, 255))
     return img
 
 
@@ -190,6 +180,86 @@ def calc_angle(vec1, vec2, rotate_angle=0., jump=np.pi*.5):
     return -phi2
 
 
+def draw_pose(img, alpha, eps, positions, ell, col=(255, 255, 255)):
+    alpha = alpha[0:3] + alpha[4:]  # remove double torso measurement
+    xpos, ypos = positions
+    (xa, ya) = get_repr(alpha, ell, eps, [xpos[0], ypos[0]])
+    yshift = img.shape[0]
+    for x, y in zip(xa, ya):
+        cv2.circle(img, (int(x), int(yshift-y)), 1, col)
+
+
+arc_res = 20    # resolution of arcs
+
+def _calc_arc_coords(xy, alp1, alp2, rad):
+    x0, y0 = xy
+    x, y = [x0], [y0]
+    xr = x0 + np.cos(np.deg2rad(alp1))*rad
+    yr = y0 + np.sin(np.deg2rad(alp1))*rad
+    steps = [angle for angle in np.linspace(0, alp2-alp1, arc_res)]
+    for dangle in steps:
+        x.append(xr - np.sin(np.deg2rad(90-alp1-dangle))*rad)
+        y.append(yr - np.cos(np.deg2rad(90-alp1-dangle))*rad)
+    return x, y
+
+
+def _calc_rad(length, angle):
+    if abs(angle) < 0.1:
+        angle = .1
+    return 360.*length/(2*np.pi*angle)
+
+
+def _calc_phi(alpha, eps):
+    c1 = np.mod(eps - alpha[0] - alpha[2]*.5 + 360, 360)
+    c2 = np.mod(eps + alpha[1] - alpha[2]*.5 + 360, 360)
+    c3 = np.mod(180 + eps + alpha[3] + alpha[2]*.5 + 360, 360)
+    c4 = np.mod(180 + eps - alpha[4] + alpha[2]*.5 + 360, 360)
+    phi = [c1, c2, c3, c4]
+    return phi
+
+
+def get_repr(alp, ell, eps, f1pos):
+    c1, c2, c3, c4 = _calc_phi(alp, eps)
+    xf1, yf1 = f1pos
+#    print('\ncoords inside get_repr:')
+#    print('ell\t:', [round(l, 2) for l in ell])
+#    print('alp\t:', [round(a, 2) for a in alp])
+#    print('\n')
+
+    x, y = [xf1], [yf1]
+    # draw upper left leg
+    xl1, yl1 = _calc_arc_coords((x[-1], y[-1]), c1, c1+alp[0],
+                                _calc_rad(ell[0], alp[0]))
+    x = x + xl1
+    y = y + yl1
+
+    # draw torso
+    xt, yt = _calc_arc_coords((x[-1], y[-1]), -90+c1+alp[0], -90+c1+alp[0]+alp[2],
+                              _calc_rad(ell[2], alp[2]))
+    x = x + xt
+    y = y + yt
+
+    # draw lower right leg
+    xl4, yl4 = _calc_arc_coords((x[-1], y[-1]), c4+alp[4],
+                                c4, _calc_rad(ell[4], alp[4]))
+    x = x + xl4
+    y = y + yl4
+
+    # draw upper right leg
+    xl2, yl2 = _calc_arc_coords((xl1[-1], yl1[-1]), c2-alp[1],
+                                c2, _calc_rad(ell[1], alp[1]))
+    x = x + xl2
+    y = y + yl2
+
+    # draw lower left leg
+    xl3, yl3 = _calc_arc_coords((xt[-1], yt[-1]), c3-alp[3],
+                                c3, _calc_rad(ell[3], alp[3]))
+    x = x + xl3
+    y = y + yl3
+
+    return (x, y)
+
+
 def normalize(vec):
     x, y, z = vec
     l = np.sqrt(x**2 + y**2 + z**2)
@@ -209,32 +279,45 @@ if __name__ == '__main__':
 
     # resolution = (1280, 720)
     # resolution = (1920, 1080)
-    resolution = (1648, 928)
+#    resolution = (1648, 928)
+    resolution = (1648, 1232)  # Halle
     vs = PiVideoStream(resolution=resolution).start()
     time.sleep(1.0)
     try:
         while True:
             frame = vs.read()
             alpha, eps, positions, xref = detect_all(frame)
+
+
+            alpha, eps, positions, xref = detect_all(frame)
+            if None not in alpha:
+                (alpha, eps, positions, ell) = \
+                    inv_kin.correct_measurement(alpha, eps, positions)
+            else:
+                alpha, eps = [np.nan]*6, np.nan
+                positions = ([np.nan]*6, [np.nan]*6)
+                xref = (np.nan, np.nan)
+
+            if not np.isnan(eps):
+                yshift = resolution[1]
+                img = draw_positions(frame, positions, xref,
+                                     yshift=yshift)
+
+                (xa, ya) = inv_kin.extract_pose(alpha, eps, positions, ell)
+                for x, y in zip(xa, ya):
+                    cv2.circle(img, (int(x), int(yshift-y)), 1, (255, 255, 255))
+            else:
+                img = frame
+
             print('Alpha:\t', alpha)
             print('Epsilon:\t', eps)
             print('Positions:\t', positions)
             print('Xref:\t', xref)
 
-            if alpha:
-                yshift = resolution[1]
-                img = draw_positions(frame, positions, xref,
-                                     yshift=yshift)
-                if None not in alpha:
-                    ((xa, ya), ell, bet, eps_) = inv_kin.extract_pose(
-                            alpha, eps, positions)
-                    for x, y in zip(xa, ya):
-                        cv2.circle(img, (int(x), int(yshift-y)), 1, (255, 255, 255))
-            else:
-                img = frame
+
             # rotate
-            scale = .8
-            #img = imutils.rotate_bound(img, 270)
+            scale = .5
+            img = imutils.rotate_bound(img, 270)
             img = cv2.resize(img, (0, 0), fx=scale, fy=scale)
 
             cv2.imshow("Frame", img)

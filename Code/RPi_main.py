@@ -11,18 +11,23 @@ import socket
 import time
 import threading
 import cv2
+import numpy as np
 
 from Src.Visual.PiCamera import IMGprocessing as img_proc
 from Src.Visual.PiCamera.PiVideoStream import PiVideoStream
 from Src.Visual.PiCamera import pickler
+from Src.Visual.PiCamera import inverse_kinematics as inv_kin
 
 
-#resolution = (640, 480)  # DINA0
+# resolution = (640, 480)  # DINA0
 # resolution = (1280, 960)  # Halle
 resolution = (1648, 928)  # Halle
+resolution = (1648, 1232)  # Halle
+len_leg = 80  # px
+len_tor = 85  # px
+
 
 def main(alpha_memory, resolution=resolution):
-#    print("[INFO] warm up camera sensor...")
     vs = PiVideoStream(resolution=resolution).start()
     # allow the camera sensor to warmup
     time.sleep(1.0)
@@ -34,19 +39,20 @@ def main(alpha_memory, resolution=resolution):
             frame = vs.read()
             # detect pose
             alpha, eps, positions, xref = img_proc.detect_all(frame)
+            if None not in alpha:
+                (alpha, eps, positions, ell_opt) = \
+                    inv_kin.correct_measurement(alpha, eps, positions,
+                                                len_leg, len_tor)
+            else:
+                alpha, eps = [np.nan]*6, np.nan
+                positions = ([np.nan]*6, [np.nan]*6)
+                xref = (np.nan, np.nan)
 
-        
             alpha_memory.set_alpha(alpha)
             alpha_memory.set_eps(eps)
             alpha_memory.set_positions(positions)
             alpha_memory.set_xref(xref)
-#            if alpha[0] is not None:
-#                img = img_proc.draw_positions(frame, positions)
-#            else:
-#                img = frame
-#
-#            cv2.imshow("Frame", img)
-#            cv2.waitKey(1) & 0xFF
+
     finally:
         vs.stop()
 

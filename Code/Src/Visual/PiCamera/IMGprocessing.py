@@ -281,32 +281,32 @@ if __name__ == '__main__':
     # resolution = (1920, 1080)
 #    resolution = (1648, 928)
     resolution = (1648, 1232)  # Halle
+    len_leg = 80
+    len_tor = 85
+    ell0 = [len_leg, len_leg, len_tor, len_leg, len_leg]
+
     vs = PiVideoStream(resolution=resolution).start()
     time.sleep(1.0)
     try:
         while True:
             frame = vs.read()
             alpha, eps, positions, xref = detect_all(frame)
+            draw_positions(frame, positions, xref, thick=1)
+            X1 = (positions[0][1], positions[1][1])
+            draw_eps(frame, X1, eps, color=(0, 128, 255))
 
-
-            alpha, eps, positions, xref = detect_all(frame)
             if None not in alpha:
-                (alpha, eps, positions, ell) = \
-                    inv_kin.correct_measurement(alpha, eps, positions)
+                (alpha_opt, eps_opt, positions_opt) = \
+                    inv_kin.correct_measurement(alpha, eps, positions, len_leg,
+                                                len_tor)
+                X1_opt = (positions_opt[0][1], positions_opt[1][1])
+                draw_pose(frame, alpha_opt, eps_opt, positions_opt, ell0)
+                draw_eps(frame, X1_opt, eps_opt, color=(255, 255, 255), dist=120)
+                    
             else:
                 alpha, eps = [np.nan]*6, np.nan
                 positions = ([np.nan]*6, [np.nan]*6)
                 xref = (np.nan, np.nan)
-
-            if not np.isnan(eps):
-                yshift = resolution[1]
-                img = draw_positions(frame, positions, xref,
-                                     yshift=yshift)
-
-                (xa, ya) = inv_kin.extract_pose(alpha, eps, positions, ell)
-                for x, y in zip(xa, ya):
-                    cv2.circle(img, (int(x), int(yshift-y)), 1, (255, 255, 255))
-            else:
                 img = frame
 
             print('Alpha:\t', alpha)

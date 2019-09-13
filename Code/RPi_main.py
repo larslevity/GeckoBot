@@ -21,10 +21,10 @@ from Src.Visual.PiCamera import inverse_kinematics as inv_kin
 
 # resolution = (640, 480)  # DINA0
 # resolution = (1280, 960)  # Halle
-resolution = (1648, 928)  # Halle
+#resolution = (1648, 928)  # Halle
 resolution = (1648, 1232)  # Halle
-len_leg = 80  # px
-len_tor = 85  # px
+len_leg = 79  # px
+len_tor = 92  # px
 
 
 def main(alpha_memory, resolution=resolution):
@@ -40,7 +40,7 @@ def main(alpha_memory, resolution=resolution):
             # detect pose
             alpha, eps, positions, xref = img_proc.detect_all(frame)
             if None not in alpha:
-                (alpha, eps, positions, ell_opt) = \
+                (alpha, eps, positions) = \
                     inv_kin.correct_measurement(alpha, eps, positions,
                                                 len_leg, len_tor)
             else:

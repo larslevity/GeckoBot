@@ -54,13 +54,13 @@ def detect_apriltags(frame):
 
 
 def extract_position(april_result):
-    SHIFT = {
-        0: [0, 1, 10],
-        1: [0, 3, 20],
-        2: [1, 0, 10],
-        3: [0, 1, 10],
-        4: [3, 0, -9],
-        5: [1, 0, 12],
+    SHIFT = {  # xshift, yshift
+        0: [10, 5],
+        1: [0, -15],
+        2: [-10, 5],
+        3: [10, -5],
+        4: [0, -9],
+        5: [-12, -5],
             }
     X, Y = [None]*6, [None]*6
     xref = (None, None)
@@ -69,12 +69,12 @@ def extract_position(april_result):
         if tag_id == 6:
             xref = (int(res.center[0]), int(res.center[1]))
         elif tag_id in SHIFT:
-            pc0 = np.array([res.corners[SHIFT[tag_id][0]][0],
-                            res.corners[SHIFT[tag_id][0]][1]])
-            pc1 = np.array([res.corners[SHIFT[tag_id][1]][0],
-                            res.corners[SHIFT[tag_id][1]][1]])
-            shift = (pc1-pc0)/np.linalg.norm(pc1-pc0)*SHIFT[tag_id][2]
-            center = res.center + shift
+            pc0 = np.array([res.corners[0][0], res.corners[0][1]])
+            pc1 = np.array([res.corners[1][0], res.corners[1][1]])
+            pc3 = np.array([res.corners[3][0], res.corners[3][1]])
+            xshift = (pc1-pc0)/np.linalg.norm(pc1-pc0)*SHIFT[tag_id][0]
+            yshift = (pc0-pc3)/np.linalg.norm(pc0-pc3)*SHIFT[tag_id][1]
+            center = res.center + yshift + xshift
             x, y = int(center[0]), int(center[1])
             X[tag_id] = x
             Y[tag_id] = y
@@ -92,13 +92,10 @@ def extract_alpha(april_result):
             5: [5, 4]
             }
     ori = [None]*6
-    center = []
     for res in april_result:
         tag_id = res.tag_id
         if tag_id < 6:
             ori[tag_id] = res.corners[2] - res.corners[0]
-            if tag_id == 1 or tag_id == 4:
-                center.append(res.center)
 
     angle = [None]*6
     for tag_id in POSs:
@@ -107,9 +104,7 @@ def extract_alpha(april_result):
          and ori[POSs[tag_id][1]] is not None):
             p0, p1 = (np.append(ori[POSs[tag_id][0]], 0),
                       np.append(ori[POSs[tag_id][1]], 0))
-
             angle[tag_id] = round(calc_angle(p0, p1, jump=jump), 1)
-
     return angle
 
 
@@ -122,7 +117,8 @@ def extract_eps(X, Y):
     return eps
 
 
-def draw_positions(img, position_coords, xref, col=(255, 0, 0), thick=2):
+def draw_positions(img, position_coords, xref, col=(255, 0, 0),
+                   thick=2, size=2):
     yshift = img.shape[0]
     X, Y = position_coords
     X = X + [xref[0]]
@@ -131,41 +127,28 @@ def draw_positions(img, position_coords, xref, col=(255, 0, 0), thick=2):
         x, y = coords
         if x is not None:
             y = yshift - y
-            cv2.rectangle(img, (x-5, y-5), (x+5, y+5), (0, 128, 255), -1)
+            cv2.rectangle(img, (x-size, y-size), (x+size, y+size), col, -1)
             font = cv2.FONT_HERSHEY_SIMPLEX
-            fontscale = .8
-            cv2.putText(img, str(tag_id), (x, y-10), font, fontscale, col, 2)
+            fontscale = .5
+            cv2.putText(img, str(tag_id), (x, y-2*size),
+                        font, fontscale, col, 2)
     # draw line
     if X[1] and X[4]:
         cv2.line(img, (X[1], yshift-Y[1]), (X[4], yshift-Y[4]),
-                 (0, 255, 0), thick)
+                 col, thick)
     if X[1] and xref[0]:
         cv2.line(img, (X[1], yshift-Y[1]), (xref[0], yshift-xref[1]),
-                 (0, 255, 255), thick)
+                 col, thick)
 
     return img
 
 
-def draw_rects(img):
-    april_result = detect_apriltags(img)
-    font = cv2.FONT_HERSHEY_SIMPLEX
-    fontscale = .8
-    col = (255, 0, 0)
-    for res in april_result:
-        tag_id = res.tag_id
-        xc, yc = int(res.center[0]), int(res.center[1])
-        cv2.putText(img, str(tag_id), (xc, yc), font, fontscale, col, 2)
-        for corner in range(4):
-            x, y = int(res.corners[corner][0]), int(res.corners[corner][1])
-            cv2.putText(img, str(corner), (x, y), font, fontscale*.5, col, 2)
-    return img
-
-
-def draw_eps(img, X1, eps, color=(0, 0, 255), dist=100):
-    (h, w) = img.shape[:2]
-    X2 = (int(X1[0] + np.cos(np.deg2rad(eps))*dist),
-          h-int(X1[1] + np.sin(np.deg2rad(eps))*dist))
-    cv2.line(img, (int(X1[0]), h-int(X1[1])), X2, color, 3)
+def draw_eps(img, X1, eps, color=(0, 0, 255), dist=100, thick=2):
+     if eps:   
+        (h, w) = img.shape[:2]
+        X2 = (int(X1[0] + np.cos(np.deg2rad(eps))*dist),
+              h-int(X1[1] + np.sin(np.deg2rad(eps))*dist))
+        cv2.line(img, (int(X1[0]), h-int(X1[1])), X2, color, thick)
 
 
 def calc_angle(vec1, vec2, rotate_angle=0., jump=np.pi*.5):
@@ -281,8 +264,8 @@ if __name__ == '__main__':
     # resolution = (1920, 1080)
 #    resolution = (1648, 928)
     resolution = (1648, 1232)  # Halle
-    len_leg = 80
-    len_tor = 85
+    len_leg = 79
+    len_tor = 92
     ell0 = [len_leg, len_leg, len_tor, len_leg, len_leg]
 
     vs = PiVideoStream(resolution=resolution).start()
@@ -301,13 +284,12 @@ if __name__ == '__main__':
                                                 len_tor)
                 X1_opt = (positions_opt[0][1], positions_opt[1][1])
                 draw_pose(frame, alpha_opt, eps_opt, positions_opt, ell0)
-                draw_eps(frame, X1_opt, eps_opt, color=(255, 255, 255), dist=120)
+                draw_eps(frame, X1_opt, eps_opt, color=(255, 255, 0), dist=120)
                     
             else:
                 alpha, eps = [np.nan]*6, np.nan
                 positions = ([np.nan]*6, [np.nan]*6)
                 xref = (np.nan, np.nan)
-                img = frame
 
             print('Alpha:\t', alpha)
             print('Epsilon:\t', eps)
@@ -317,7 +299,7 @@ if __name__ == '__main__':
 
             # rotate
             scale = .5
-            img = imutils.rotate_bound(img, 270)
+            img = imutils.rotate_bound(frame, 270)
             img = cv2.resize(img, (0, 0), fx=scale, fy=scale)
 
             cv2.imshow("Frame", img)

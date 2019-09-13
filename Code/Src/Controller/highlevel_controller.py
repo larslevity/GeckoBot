@@ -281,9 +281,9 @@ def optimal_pathplanner():
             time.time()):
         # collect measurements
         position = (imgproc_rec.X[1], imgproc_rec.Y[1])
-        eps = imgproc_rec.eps
-        xref = imgproc_rec.xref
-        if xref[0] and position[0] and eps:
+        eps = imgproc_rec.eps if imgproc_rec.eps else np.nan
+        xref = imgproc_rec.xref if imgproc_rec.xref[0] else (np.nan, np.nan)
+        if not np.isnan(xref[0]) and not np.isnan(eps):
             # convert measurements
             xbar = gait_law_planner.xbar(xref, position, eps)
             xbar = xbar/30  # px to something ?!

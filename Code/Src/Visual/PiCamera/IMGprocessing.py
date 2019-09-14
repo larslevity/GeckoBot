@@ -267,6 +267,7 @@ if __name__ == '__main__':
     len_leg = 79
     len_tor = 92
     ell0 = [len_leg, len_leg, len_tor, len_leg, len_leg]
+    count_tag_fail = [0]*6
 
     vs = PiVideoStream(resolution=resolution).start()
     time.sleep(1.0)
@@ -287,6 +288,10 @@ if __name__ == '__main__':
                 draw_eps(frame, X1_opt, eps_opt, color=(255, 255, 0), dist=120)
                     
             else:
+                fails = list(filter(lambda x: positions[0][x] == None, range(6)))
+                for idx in fails:
+                    count_tag_fail[idx] += 1
+                print('fail count:', count_tag_fail)
                 alpha, eps = [np.nan]*6, np.nan
                 positions = ([np.nan]*6, [np.nan]*6)
                 xref = (np.nan, np.nan)

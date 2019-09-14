@@ -27,7 +27,7 @@ len_leg = 79  # px
 len_tor = 92  # px
 
 
-def main(alpha_memory, resolution=resolution):
+def main(alpha_memory, resolution=resolution, correct=False):
     vs = PiVideoStream(resolution=resolution).start()
     # allow the camera sensor to warmup
     time.sleep(1.0)
@@ -39,14 +39,15 @@ def main(alpha_memory, resolution=resolution):
             frame = vs.read()
             # detect pose
             alpha, eps, positions, xref = img_proc.detect_all(frame)
-            if None not in alpha:
-                (alpha, eps, positions) = \
-                    inv_kin.correct_measurement(alpha, eps, positions,
-                                                len_leg, len_tor)
-            else:
-                alpha, eps = [np.nan]*6, np.nan
-                positions = ([np.nan]*6, [np.nan]*6)
-                xref = (np.nan, np.nan)
+            if correct:
+                if np.isnan(alpha).any():
+                    (alpha, eps, positions) = \
+                        inv_kin.correct_measurement(alpha, eps, positions,
+                                                    len_leg, len_tor)
+                else:
+                    alpha, eps = [np.nan]*6, np.nan
+                    positions = ([np.nan]*6, [np.nan]*6)
+                    xref = (np.nan, np.nan)
 
             alpha_memory.set_alpha(alpha)
             alpha_memory.set_eps(eps)

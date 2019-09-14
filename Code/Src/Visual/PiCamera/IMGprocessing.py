@@ -33,14 +33,14 @@ def detect_all(frame):
         eps = extract_eps(X, Y)
         # coordinate transform:
         for idx, y in enumerate(Y):
-            if y:
+            if not np.isnan(y):
                 Y[idx] = yshift - y
-        if xref[1]:
+        if not np.isnan(xref[1]):
             xref = (xref[0], yshift - xref[1])
     else:
-        alpha, eps = [None]*6, None
-        X, Y = [None]*6, [None]*6
-        xref = (None, None)
+        alpha, eps = [np.nan]*6, np.nan
+        X, Y = [np.nan]*6, [np.nan]*6
+        xref = (np.nan, np.nan)
 
     return alpha, eps, (X, Y), xref
 
@@ -62,8 +62,8 @@ def extract_position(april_result):
         4: [0, -9],
         5: [-12, -5],
             }
-    X, Y = [None]*6, [None]*6
-    xref = (None, None)
+    X, Y = [np.nan]*6, [np.nan]*6
+    xref = (np.nan, np.nan)
     for res in april_result:
         tag_id = res.tag_id
         if tag_id == 6:
@@ -97,7 +97,7 @@ def extract_alpha(april_result):
         if tag_id < 6:
             ori[tag_id] = res.corners[2] - res.corners[0]
 
-    angle = [None]*6
+    angle = [np.nan]*6
     for tag_id in POSs:
         if (
          ori[POSs[tag_id][0]] is not None
@@ -110,8 +110,8 @@ def extract_alpha(april_result):
 
 def extract_eps(X, Y):
     # calc eps
-    eps = None
-    if X[1] and X[4]:
+    eps = np.nan
+    if not np.isnan(X[1]) and not np.isnan(X[4]):
         p0, p1 = np.array([X[1], Y[1], 0]), np.array([X[4], Y[4], 0])
         eps = np.mod(-round(calc_angle(p1-p0, [1, 0, 0]) + 180, 1), 360)
     return eps
@@ -125,7 +125,7 @@ def draw_positions(img, position_coords, xref, col=(255, 0, 0),
     Y = Y + [xref[1]]
     for tag_id, coords in enumerate(zip(X, Y)):
         x, y = coords
-        if x is not None:
+        if not np.isnan(x):
             y = yshift - y
             cv2.rectangle(img, (x-size, y-size), (x+size, y+size), col, -1)
             font = cv2.FONT_HERSHEY_SIMPLEX
@@ -133,10 +133,10 @@ def draw_positions(img, position_coords, xref, col=(255, 0, 0),
             cv2.putText(img, str(tag_id), (x, y-2*size),
                         font, fontscale, col, 2)
     # draw line
-    if X[1] and X[4]:
+    if not np.isnan(X[1]) and not np.isnan(X[4]):
         cv2.line(img, (X[1], yshift-Y[1]), (X[4], yshift-Y[4]),
                  col, thick)
-    if X[1] and xref[0]:
+    if not np.isnan(X[1]) and not np.isnan(xref[0]):
         cv2.line(img, (X[1], yshift-Y[1]), (xref[0], yshift-xref[1]),
                  col, thick)
 
@@ -144,7 +144,7 @@ def draw_positions(img, position_coords, xref, col=(255, 0, 0),
 
 
 def draw_eps(img, X1, eps, color=(0, 0, 255), dist=100, thick=2):
-     if eps:   
+     if not np.isnan(eps):   
         (h, w) = img.shape[:2]
         X2 = (int(X1[0] + np.cos(np.deg2rad(eps))*dist),
               h-int(X1[1] + np.sin(np.deg2rad(eps))*dist))
@@ -279,7 +279,7 @@ if __name__ == '__main__':
             X1 = (positions[0][1], positions[1][1])
             draw_eps(frame, X1, eps, color=(0, 128, 255))
 
-            if None not in alpha:
+            if not np.isnan(alpha).any():
                 (alpha_opt, eps_opt, positions_opt) = \
                     inv_kin.correct_measurement(alpha, eps, positions, len_leg,
                                                 len_tor)
@@ -288,7 +288,7 @@ if __name__ == '__main__':
                 draw_eps(frame, X1_opt, eps_opt, color=(255, 255, 0), dist=120)
                     
             else:
-                fails = list(filter(lambda x: positions[0][x] == None, range(6)))
+                fails = list(filter(lambda x: np.isnan(positions[0][x]), range(6)))
                 for idx in fails:
                     count_tag_fail[idx] += 1
                 print('fail count:', count_tag_fail)

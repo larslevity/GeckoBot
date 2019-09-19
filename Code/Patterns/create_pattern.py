@@ -27,7 +27,7 @@ def generate_pattern(p0, p1, p2, p3, p4, p5, p6, p7, t_move=3.0, t_fix=.66,
 
 
 def generate_pattern_2(p0, p1, p2, p3, p4, p5, p6, p7, t_move=3.0, t_fix=.66,
-                     t_dfx=.25, stiffener=False):
+                       t_dfx=.25, stiffener=False):
     p01, p11, p41, p51 = [.25]*4 if stiffener else [.0]*4
 
     data = [
@@ -39,6 +39,21 @@ def generate_pattern_2(p0, p1, p2, p3, p4, p5, p6, p7, t_move=3.0, t_fix=.66,
         [p0, 0.0, 0.0, p3, p4, p51, 0.0, p7, False, True, True, False, t_dfx]
     ]
     return data
+
+
+def generate_pattern_general(P1, P2, t_move=3.0, t_fix=.66, t_dfx=.25):
+    [p0, p1, p2, p3, p4, p5, p6, p7] = P1
+    [p00, p11, p22, p33, p44, p55, p66, p77] = P2
+    data = [
+        [p0, p1, p2, p3, p4, p5, 0.0, 0.0, True, False, False, True, t_move],
+        [p0, p1, p2, p3, p4, p5, 0.0, 0.0, True, True, True, True, t_fix],
+        [p0, p1, p2, p3, p4, p5, 0.0, 0.0, False, True, True, False, t_dfx],
+        [p00, p11, p22, p33, p44, p55, 0, 0, False, True, True, False, t_move],
+        [p00, p11, p22, p33, p44, p55, 0, 0, True, True, True, True, t_fix],
+        [p00, p11, p22, p33, p44, p55, 0, 0, True, False, False, True, t_dfx]
+    ]
+    return data
+
 
 
 def generate_pattern_climb(p0, p1, p2, p3, p4, p5, p6, p7, t_move=3.0,
@@ -66,7 +81,7 @@ def generate_pattern_climb(p0, p1, p2, p3, p4, p5, p6, p7, t_move=3.0,
 
 
 def save_list_as_csv(lis, filename='test.csv'):
-    # with open(filename, 'w', newline='') as f:
+#    with open(filename, 'w', newline='') as f:
     with open(filename, 'wb') as f:
         writer = csv.writer(f)
         writer.writerows(lis)
@@ -114,60 +129,50 @@ def resample(ptrn, Ts=.1):
                 else:
                     Ptrn.append(now + [round(np.mod(ptime, Ts), 2)])
     Tres = sum([p[-1] for p in Ptrn])
-    print T
-    print Tres
-    return Ptrn
+    print(T)
+    print(Tres)
+    return(Ptrn)
 
 
-if __name__ == '__main__':
-    import matplotlib.pyplot as plt
-
-    # SB v11 slow
-    ptrnV11 = generate_pattern_2(
-            .81, .76, .73, .78, .73, .76, 0, 0, t_move=6, t_fix=.2, t_dfx=.2)
-
-    # v4.0
-    ptrn = generate_pattern(
-            .81, .81, .79, .84, .78, .76, 0, 0, t_move=6, t_fix=.2, t_dfx=.2)
-
-    # v4.0 - 0
-    ptrn00 = generate_pattern_2(
-            .81, .81, .79, .84, .78, .76, 0, 0, t_move=3, t_fix=.2, t_dfx=.2)
-    ptrn28 = generate_pattern_2(
-            .69, .72, .95, .94, .76, .74, 0, 0, t_move=3, t_fix=.2, t_dfx=.2)
-    ptrn48 = generate_pattern_2(
-            .62, .65, .98, .97, .73, .71, 0, 0, t_move=3, t_fix=.2, t_dfx=.2)
-    ptrn63 = generate_pattern_2(
-            .60, .63, .99, .99, .68, .66, 0, 0, t_move=3, t_fix=.2, t_dfx=.2)
-    ptrn76 = generate_pattern_climb(
-            .60, .63, .9, .9, .68, .66, 0, 0, t_move=3, t_fix=.8, t_dfx=.2)
-
-    # vSB v1.1 - 0
-    ptrn00 = generate_pattern_2(
-            .81, .76, .73, .78, .73, .76, 0, 0, t_move=.8, t_fix=.1, t_dfx=.1)
-    ptrn48 = generate_pattern_2(
-            .67, .69, .96, .99, .71, .67, 0, 0, t_move=.8, t_fix=.1, t_dfx=.1)
-    ptrn76 = generate_pattern_climb(
-            .67, .69, .96, .99, .71, .67, 0, 0, t_move=.8, t_fix=.4, t_dfx=.2)
-
-
-    Ptrn = resample(ptrnV11)
-
+def plot_pattern(ptrn):
     t = [0] + list(np.cumsum([p[-1] for p in ptrn]))
-    for idx in range(1):
+    for idx in range(6):
         p1 = [ptrn[0][idx]]+[p[idx] for p in ptrn]
         plt.step(t, p1)
 
 
-    plt.figure()
-    t = list([0]+np.cumsum([p[-1] for p in Ptrn]))
-    for idx in range(2):
-        p1 =  [p[idx] for p in Ptrn]
-        plt.step(t, p1)
+def get_ptrn_from_angles(a, version, t=[5, .66, .25]):
+    p1 = calibration.get_pressure(a[0], version)
+    p2 = calibration.get_pressure(a[1], version)
+    ptrn = generate_pattern_general(p1, p2, t[0], t[1], t[2])
+    return ptrn
 
 
-    save_list_as_csv(ptrn48, 'A_incl_vS11_48.csv')
+if __name__ == '__main__':
+    import sys
+    from os import path
+    sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
+
+    import matplotlib.pyplot as plt
+    from Src.Controller import calibration
 
 
 
+    version = 'v40'
+    times = [5, .66, .25]
 
+    angles = {
+        'straight_1':  [[90, 0, -90, 90, 0], [0, 90, 90, 0, 90]],
+        'straight_2':  [[86, 4, -110, 83, 4], [4, 86, 110, 4, 83]],
+        'straight_3':  [[0, 18, -85, 10, 22], [18, 0, 85, 22, 10]],
+        'curve_1':  [[97, 28, -98, 116, 17], [79, 0, -84, 67, 0]],
+        'curve_2':  [[104, 48, -114, 124, 27], [72, 0, -70, 55, 0]],
+        'curve_3':  [[164, 124, -152, 221, 62], [0, 0, -24, 0, 0]],
+            }
+
+    for key in angles:
+        angle = angles[key]
+        ptrn = get_ptrn_from_angles(angle, version, times)
+        plot_pattern(ptrn)
+
+        save_list_as_csv(ptrn, key + '.csv')

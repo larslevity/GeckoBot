@@ -260,12 +260,23 @@ if __name__ == '__main__':
     import imutils
     import inverse_kinematics as inv_kin
 
+    import sys
+    from os import path
+    sys.path.append(path.dirname(path.dirname(path.dirname(
+            path.abspath(__file__)))))
+
+    from Controller import calibration
+
+
+
+    version = 'v40'
     # resolution = (1280, 720)
     # resolution = (1920, 1080)
 #    resolution = (1648, 928)
     resolution = (1648, 1232)  # Halle
-    len_leg = 79
-    len_tor = 92
+    
+    len_leg, len_tor = calibration.get_len(version)
+    
     ell0 = [len_leg, len_leg, len_tor, len_leg, len_leg]
     count_tag_fail = [0]*6
 
@@ -279,27 +290,32 @@ if __name__ == '__main__':
             X1 = (positions[0][1], positions[1][1])
             draw_eps(frame, X1, eps, color=(0, 128, 255))
 
-            if not np.isnan(alpha).any():
-                (alpha_opt, eps_opt, positions_opt) = \
-                    inv_kin.correct_measurement(alpha, eps, positions, len_leg,
-                                                len_tor)
-                X1_opt = (positions_opt[0][1], positions_opt[1][1])
-                draw_pose(frame, alpha_opt, eps_opt, positions_opt, ell0)
-                draw_eps(frame, X1_opt, eps_opt, color=(255, 255, 0), dist=120)
-                    
-            else:
-                fails = list(filter(lambda x: np.isnan(positions[0][x]), range(6)))
-                for idx in fails:
-                    count_tag_fail[idx] += 1
-                print('fail count:', count_tag_fail)
-                alpha, eps = [np.nan]*6, np.nan
-                positions = ([np.nan]*6, [np.nan]*6)
-                xref = (np.nan, np.nan)
+            fails = list(filter(lambda x: np.isnan(positions[0][x]), range(6)))
+            for idx in fails:
+                count_tag_fail[idx] += 1
+            print('fail count:', count_tag_fail)
 
-            print('Alpha:\t', alpha)
-            print('Epsilon:\t', eps)
-            print('Positions:\t', positions)
-            print('Xref:\t', xref)
+#            if not np.isnan(alpha).any():
+#                (alpha_opt, eps_opt, positions_opt) = \
+#                    inv_kin.correct_measurement(alpha, eps, positions, len_leg,
+#                                                len_tor)
+#                X1_opt = (positions_opt[0][1], positions_opt[1][1])
+#                draw_pose(frame, alpha_opt, eps_opt, positions_opt, ell0)
+#                draw_eps(frame, X1_opt, eps_opt, color=(255, 255, 0), dist=120)
+#                    
+#            else:
+#                fails = list(filter(lambda x: np.isnan(positions[0][x]), range(6)))
+#                for idx in fails:
+#                    count_tag_fail[idx] += 1
+#                print('fail count:', count_tag_fail)
+#                alpha, eps = [np.nan]*6, np.nan
+#                positions = ([np.nan]*6, [np.nan]*6)
+#                xref = (np.nan, np.nan)
+
+#            print('Alpha:\t', alpha)
+#            print('Epsilon:\t', eps)
+#            print('Positions:\t', positions)
+#            print('Xref:\t', xref)
 
 
             # rotate

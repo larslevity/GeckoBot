@@ -178,8 +178,8 @@ def pattern_ref():
         mgmt.idx = mgmt.idx+1 if mgmt.idx < len(pattern)-1 else 0
         # capture image?
         if sys_config.Camera and mgmt.IMAGES:
-            if mgmt.idx % 3 == 1:
-                time.sleep(.4)  # hold robot
+            if mgmt.idx % 3 == 2:
+                time.sleep(.8)  # hold robot
                 fname = time.strftime('%Y-%m-%d--%H-%M-%S', time.localtime())
                 sys_config.Camera.make_image(fname)
                 time.sleep(.4)  # hold robot

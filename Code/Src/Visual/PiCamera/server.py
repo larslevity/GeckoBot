@@ -13,6 +13,9 @@ import picamera
 
 import pickler
 
+# max_res = (2592, 1944)
+resolution = (1648, 1232)  # Halle
+
 
 # Start a socket listening for connections on 0.0.0.0:8000
 server_socket = socket.socket()
@@ -26,7 +29,7 @@ connection = conn.makefile('rb')
 
 try:
     with picamera.PiCamera() as camera:
-        camera.resolution = (2592, 1944)
+        camera.resolution = resolution
         # Start a preview and let the camera warm up for 2 seconds
         camera.start_preview()
         time.sleep(2)

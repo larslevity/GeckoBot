@@ -99,6 +99,15 @@ def main():
     lcd = lcd_module.getlcd()
 
     try:
+        rootLogger.info('Asking for Camera or ImageProc ...')
+        if not sys_config.LivePlotter:
+            with timeout.timeout(2):
+                try:
+                    Q = 'Capture Images?'
+                    ans = lcd.select_elem_from_list(['Yes', 'No '], Quest=Q)
+                except exception.TimeoutError:
+                    ans = 'No'
+            IMGPROC = True if ans == 'No' else False
 
         rootLogger.info('Starting LowLevelController ...')
         lowlevelctr = lowlevel_controller.LowLevelController()
@@ -107,7 +116,7 @@ def main():
         sys_config.IMUsConnected = lowlevelctr.is_imu_in_use()
 
         rootLogger.info('Searching for external devices in periphere...')
-        camerasock, imgprocsock, plotsock = init_server_connections()
+        camerasock, imgprocsock, plotsock = init_server_connections(IMGPROC)
         sys_config.Camera = camerasock
         sys_config.ImgProc = imgprocsock
         sys_config.LivePlotter = plotsock

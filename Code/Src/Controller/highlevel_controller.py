@@ -179,8 +179,10 @@ def pattern_ref():
         # capture image?
         if sys_config.Camera and mgmt.IMAGES:
             if mgmt.idx % 3 == 1:
+                time.sleep(.4)  # hold robot
                 fname = time.strftime('%Y-%m-%d--%H-%M-%S', time.localtime())
                 sys_config.Camera.make_image(fname)
+                time.sleep(.4)  # hold robot
 
     if fun[1] and not mgmt.IMAGES and sys_config.Camera:
         mgmt.IMAGES = True

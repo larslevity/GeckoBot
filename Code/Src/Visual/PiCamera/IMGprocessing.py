@@ -295,22 +295,19 @@ if __name__ == '__main__':
                 count_tag_fail[idx] += 1
             print('fail count:', count_tag_fail)
 
-#            if not np.isnan(alpha).any():
-#                (alpha_opt, eps_opt, positions_opt) = \
-#                    inv_kin.correct_measurement(alpha, eps, positions, len_leg,
-#                                                len_tor)
-#                X1_opt = (positions_opt[0][1], positions_opt[1][1])
-#                draw_pose(frame, alpha_opt, eps_opt, positions_opt, ell0)
-#                draw_eps(frame, X1_opt, eps_opt, color=(255, 255, 0), dist=120)
-#                    
-#            else:
-#                fails = list(filter(lambda x: np.isnan(positions[0][x]), range(6)))
-#                for idx in fails:
-#                    count_tag_fail[idx] += 1
-#                print('fail count:', count_tag_fail)
-#                alpha, eps = [np.nan]*6, np.nan
-#                positions = ([np.nan]*6, [np.nan]*6)
-#                xref = (np.nan, np.nan)
+            if not np.isnan(alpha).any():
+                (alpha_opt, eps_opt, positions_opt) = \
+                    inv_kin.correct_measurement(alpha, eps, positions, len_leg,
+                                                len_tor)
+                X1_opt = (positions_opt[0][1], positions_opt[1][1])
+                draw_pose(frame, alpha_opt, eps_opt, positions_opt, ell0)
+                draw_eps(frame, X1_opt, eps_opt, color=(255, 255, 0), dist=120)
+                    
+            else:
+                print('fail count:', count_tag_fail)
+                alpha, eps = [np.nan]*6, np.nan
+                positions = ([np.nan]*6, [np.nan]*6)
+                xref = (np.nan, np.nan)
 
 #            print('Alpha:\t', alpha)
 #            print('Epsilon:\t', eps)

@@ -15,23 +15,21 @@ def merge_multiple_dicts(dicts):
 
 
 def rehash_record(pressure=[None]*8, reference=[None]*8, motor_in=[None]*8,
-                  fixation=[None]*4, alphaIMG=[None]*6, epsilon=None,
-                  positionx=[None]*6, positiony=[None]*6,
-                  alphaIMU=[None]*6, IMU=False, IMG=False):
+                  alphaIMU=[None]*6, IMU=True):
 
     p = {'p{}'.format(idx): px for idx, px in enumerate(pressure)}
     r = {'r{}'.format(idx): px for idx, px in enumerate(reference)}
     u = {'u{}'.format(idx): px for idx, px in enumerate(motor_in)}
-    f = {'f{}'.format(idx): px for idx, px in enumerate(fixation)}
+#    f = {'f{}'.format(idx): px for idx, px in enumerate(fixation)}
     t = {'time': time.time()}
 
-    record = merge_multiple_dicts([p, r, u, f, t])
-    if IMG:
-        aIMG = {'aIMG{}'.format(idx): px for idx, px in enumerate(alphaIMG)}
-        x = {'x{}'.format(idx): px for idx, px in enumerate(positionx)}
-        y = {'y{}'.format(idx): px for idx, px in enumerate(positiony)}
-        eps = {'eps': epsilon}
-        record = merge_multiple_dicts([record, aIMG, x, y, eps])
+    record = merge_multiple_dicts([p, r, u, t])
+#    if IMG:
+#        aIMG = {'aIMG{}'.format(idx): px for idx, px in enumerate(alphaIMG)}
+#        x = {'x{}'.format(idx): px for idx, px in enumerate(positionx)}
+#        y = {'y{}'.format(idx): px for idx, px in enumerate(positiony)}
+#        eps = {'eps': epsilon}
+#        record = merge_multiple_dicts([record, aIMG, x, y, eps])
     if IMU:
         aIMU = {'aIMU{}'.format(idx): px for idx, px in enumerate(alphaIMU)}
         record = merge_multiple_dicts([record, aIMU])

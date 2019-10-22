@@ -11,8 +11,11 @@ from __future__ import print_function
 import threading
 import time
 import sys
-import Adafruit_BBIO.GPIO as GPIO
-import Adafruit_BBIO.ADC as ADC
+try:
+    import Adafruit_BBIO.GPIO as GPIO
+    import Adafruit_BBIO.ADC as ADC
+except ImportError:
+    pass
 import logging
 
 from Src.Management import state_machine
@@ -23,8 +26,8 @@ rootLogger = logging.getLogger()
 
 UI_TSAMPLING = .1
 
-MODE1 = "P9_23"
-MODE2 = "P9_27"
+MODE1 = "P9_27"
+MODE2 = "P9_23"
 MODE3 = "P9_30"  # "P9_25" doesnt work.
 MODES = [MODE1, MODE2, MODE3]
 
@@ -32,16 +35,18 @@ FUN1 = "P9_24"
 FUN2 = "P9_26"
 BTNS = [MODE1, MODE2, MODE3, FUN1, FUN2]
 
-MODE1LED = "P8_15"
-MODE2LED = "P8_14"
-MODE3LED = "P8_17"
-FUN1LED = "P8_16"
-FUN2LED = "P8_18"
+MODE1LED = "P8_14"
+MODE2LED = "P8_15"
+MODE3LED = "P8_18"
+FUN1LED = "P8_17"
+FUN2LED = "P8_16"
 LEDS = [MODE1LED, MODE2LED, MODE3LED, FUN1LED, FUN2LED]
 
 SWITCHES = {0: "P9_11", 1: "P9_17", 2: "P9_15", 3: "P9_13"}
-POTIS = {0: "P9_40", 1: "P9_38", 2: "P9_33", 3: "P9_39",
-         4: "P9_36", 5: "P9_35", 6: "P9_37"}
+
+POTIS = {0: "P9_36", 1: "P9_33", 2: "P9_35", 3: "P9_39",
+         4: "P9_37", 5: "P9_40", 6: "P9_38"}
+
 
 
 def flicker_leds():
@@ -202,34 +207,6 @@ class UserInterface(threading.Thread):
                 time.sleep(UI_TSAMPLING)
                 set_leds()
             return self.state
-
-#        def mode2():
-#            lcd.display(feature.NAMES[1])
-#            while not mode_changed():
-#
-#                fun = [fun1(), fun2()]
-#                switches = read_switches()
-#                potis = read_potis()
-#
-#                feature.mode2(switches, potis, fun)
-#
-#                time.sleep(UI_TSAMPLING)
-#                set_leds()
-#            return self.state
-#
-#        def mode3():
-#            lcd.display(feature.NAMES[2])
-#            while not mode_changed():
-#
-#                fun = [fun1(), fun2()]
-#                switches = read_switches()
-#                potis = read_potis()
-#
-#                feature.mode3(switches, potis, fun)
-#
-#                time.sleep(UI_TSAMPLING)
-#                set_leds()
-#            return self.state
 
         """ ---------------- ----- ------- ----------------------------- """
         """ ---------------- RUN STATE MACHINE ------------------------- """

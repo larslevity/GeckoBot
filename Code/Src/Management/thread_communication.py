@@ -10,6 +10,10 @@ from Src.Hardware.configuration import CHANNELset
 from Src.Hardware.configuration import DiscreteCHANNELset
 from Src.Hardware.configuration import IMUset
 from Src.Hardware.configuration import STARTSTATE
+#from Src.Hardware.user_interface import POTIS, SWITCHES
+
+n_potis = 7  # len(POTIS)
+n_switches = 4  # len(SWITCHES)
 
 
 class Borg:
@@ -102,26 +106,30 @@ class UIState(Borg):
 
         self.fun = [False, False]
         self.mode = 'MODE1'
-        self.switches = {idx: False for idx in range(4)}
-        self.potis = {idx: 0.0 for idx in range(7)}
+        self.switches = {idx: False for idx in range(n_switches)}
+        self.potis = {idx: 0.0 for idx in range(n_potis)}
+
+    def __str__(self):
+        strrepr = (
+            self.mode + '\n' + 'FuncBtns:\t' +
+            str([int(self.fun[i]) for i in range(2)])+'\nSwichtes:\t' +
+            str([int(self.switches[i]) for i in range(n_switches)]) +
+            '\nPotis:\t\t' +
+            str([round(self.potis[i], 2) for i in range(n_potis)]))
+        return strrepr
+
+    def get(self):
+        return {
+            'fun': self.fun,
+            'mode': self.mode,
+            'switches': self.switches,
+            'potis': self.potis}
+
+    def set_state(self, data):
+        self.fun = data['fun']
+        self.mode = data['mode']
+        self.switches = data['switches']
+        self.potis = data['potis']
 
 
 ui_state = UIState()
-
-
-#class LLCRecorder(object):
-#    def __init__(self):
-#        self.rec_p = Queue(1)
-#        self.rec_p.put({name: 0.0 for name in CHANNELset})
-#        self.rec_aIMU = Queue(1)
-#        self.rec_aIMU.put({name: None for name in IMUset})
-#        self.rec_u = Queue(1)
-#        self.rec_u.put({name: 0.0 for name in CHANNELset})
-#class LLCReference(object):
-#    def __init__(self):
-#        self.dvalve_ref = Queue(1)
-#        self.dvalve_ref.put({name: 0. for name in DiscreteCHANNELset})
-#        self.pressure_ref = Queue(1)
-#        self.pressure_ref.put({name: 0. for name in CHANNELset})
-#        self.pwm_ref = Queue(1)
-#        self.pwm_ref.put({name: 20. for name in CHANNELset})

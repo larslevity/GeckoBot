@@ -178,7 +178,7 @@ class HUIThread(threading.Thread):
                 for idx in range(2):
                     if act_is_connected[idx]:
                         if self.shared_memory.rec[idx] > 0:
-                            if self.shared_memory.rec_angle[idx] < 40:
+                            if self.shared_memory.rec_angle[idx] < 20:
                                 act_is_connected[idx] = False
                                 print('Actuator ', idx, 'destroyed. Number of cycles: ', (n_cycles-1)/3)
 

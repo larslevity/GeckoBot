@@ -193,7 +193,7 @@ class HUIThread(threading.Thread):
                     # capture image?
                     if self.camerasock:  # not video but image
                         if act_is_connected[0] or act_is_connected[1]:
-                            if n_cycles % 30 == 1:
+                            if n_cycles % 1500 == 1:
                                 self.camerasock.make_image(
                                         'test'+str(self.camidx))
                                 self.camidx += 1

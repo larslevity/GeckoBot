@@ -12,11 +12,11 @@ import time
 from Src.Visual.PiCamera.client import Socket
 from Src.Management.thread_communication import ui_state
 
-UI_ip = '192.168.7.2'
+UI_ip = '192.168.5.2'
 
 
 def start_UI(ip):
-    cmd = 'ssh -i ~/.ssh/key_Windoof root@{} nohup python\
+    cmd = 'ssh -i ~/.ssh/key_CBoardBBB_main root@{} nohup python3\
         /root/Git/GeckoBot/Code/UI_main.py &'.format(ip)
     call(cmd, shell=True)
 

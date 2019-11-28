@@ -240,6 +240,27 @@ root & for \texttt{root}
 
 
 
+\subsection{Change static IP of USB port}
+\url{https://stackoverflow.com/questions/23805457/changing-the-static-ip-of-beagle-bone-black-usb0}
+
+\begin{itemize}
+\item To change the static ip of BBB's usb0 interface from default 192.168.7.2 to ...5.2:
+
+\begin{lstlisting}
+root@bbb:~# nano /etc/network/interfaces
+
+iface usb0 inet static
+	address 192.168.5.2
+	netmask 255.255.255.0
+	network 192.168.5.0
+	gateway 192.169.5.1
+\end{lstlisting}
+
+
+\item (I also edited the file \texttt{/opt/scripts/boot/am335\_evm.sh}. Maybe it had an effect...)
+
+\end{itemize}
+
 
 \subsection{Set LAN connection on BBB at AmP}
 

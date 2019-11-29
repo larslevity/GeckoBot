@@ -13,12 +13,11 @@ from socket import error as SocketError
 from Src.Management import timeout
 from Src.Management import exception
 
-from Src.Visual.PiCamera import client
+
 from Src.Controller import lowlevel_controller
 from Src.Controller import highlevel_controller
-from Src.Hardware import lcd as lcd_module
-from Src.Hardware import user_interface as UI
 from Src.Communication import printer
+from Src.Communication import client
 from Src.Management.thread_communication import sys_config
 
 
@@ -39,6 +38,14 @@ rootLogger.addHandler(consoleHandler)
 
 # ------------ CAMERA INIT
 
+def init_ui_connections():
+    ui_ip = '192.168.5.2'
+    client.start_UI(ui_ip)
+    time.sleep(3)
+    ui_sock = client.UISocket(ui_ip)
+    return ui_sock
+
+
 def init_server_connections(IMGPROC=True):
     camerasock, imgprocsock, plotsock = None, None, None
     RPi_ip = '134.28.136.49'
@@ -53,10 +60,11 @@ def init_server_connections(IMGPROC=True):
                 imgprocsock = client.IMGProcSocket(RPi_ip)
                 rootLogger.info("RPi Server found: Img Processing is running")
             else:
-                client.start_server(RPi_ip)
                 time.sleep(3)
-                camerasock = client.CameraSocket(RPi_ip)
-                rootLogger.info("RPi Server found: Camera is running")
+#                client.start_image_capture_server(RPi_ip)
+#                time.sleep(3)
+#                camerasock = client.CameraSocket(RPi_ip)
+#                rootLogger.info("RPi Server found: Camera is running")
         except exception.TimeoutError:
             rootLogger.info("RPi Server not found")
         except SocketError as err:
@@ -85,29 +93,16 @@ def init_server_connections(IMGPROC=True):
 
 
 def main():
-    """
-    - Run the State Machine
-        - switch between following states according to user or system given
-          conditions:
-            - PAUSE (do nothing but read sensors)
-            - FEED_THROUGH (Set PWM direct from User Interface)
-            - PRESSURE_REFERENCE (Use PSensCtr to track user-given reference)
-            - ANGLE_REFERENCE (Use IMUCtr to track user-given reference)
-            - EXIT (Cleaning..)
-    - wait for communication thread to join
-    """
-    lcd = lcd_module.getlcd()
-
     try:
+        rootLogger.info('Initialize  UI Connection...')
+        ui_sock = init_ui_connections()
+
         rootLogger.info('Asking for Camera or ImageProc ...')
-        if not sys_config.LivePlotter:
-            with timeout.timeout(2):
-                try:
-                    Q = 'Capture Images?'
-                    ans = lcd.select_elem_from_list(['Yes', 'No '], Quest=Q)
-                except exception.TimeoutError:
-                    ans = 'No'
-            IMGPROC = True if ans == 'No' else False
+        Q = 'Capture Images?'
+        lis = ['Yes', 'No ']
+        time_to_ans = 3
+        ans = ui_sock.select_from_list(lis, Q, time_to_ans)
+        IMGPROC = True if ans in [None, 'No'] else False
 
         rootLogger.info('Starting LowLevelController ...')
         lowlevelctr = lowlevel_controller.LowLevelController()
@@ -116,26 +111,21 @@ def main():
         sys_config.IMUsConnected = lowlevelctr.is_imu_in_use()
 
         rootLogger.info('Searching for external devices in periphere...')
-        camerasock, imgprocsock, plotsock = init_server_connections(IMGPROC)
+        camerasock, imgprocsock, plotsock = \
+            init_server_connections(IMGPROC)
         sys_config.Camera = camerasock
         sys_config.ImgProc = imgprocsock
         sys_config.LivePlotter = plotsock
+        sys_config.UI = ui_sock
 
         rootLogger.info('Determinig System Configuartion ...')
         if not sys_config.LivePlotter:
-            with timeout.timeout(3):
-                try:
-                    Q = 'Print States?'
-                    ans = lcd.select_elem_from_list(['Yes', 'No '], Quest=Q)
-                except exception.TimeoutError:
-                    ans = 'No'
+            Q = 'Print States?'
+            lis = ['Yes', 'No ']
+            time_to_ans = 2
+            ans = ui_sock.select_from_list(lis, Q, time_to_ans)
             sys_config.ConsolePrinter = True if ans == 'Yes' else False
         rootLogger.info(sys_config)
-
-        rootLogger.info('Starting UserInterface ...')
-        ui_thread = UI.UserInterface()
-        ui_thread.setDaemon(True)
-        ui_thread.start()
 
         rootLogger.info('Starting HighLevelController ...')
         highlevelctr = highlevel_controller.HighLevelController()
@@ -168,7 +158,12 @@ def main():
 #            camTrigger.setDaemon(True)
 #            camTrigger.start()
 
-        ui_thread.join()
+        rootLogger.info('Starting UserInterface ...')
+        ui_thread = client.UIReader(ui_sock)
+        ui_thread.run()
+
+
+#        ui_thread.join()
         lowlevelctr.join()
         highlevelctr.join()
         if sys_config.ConsolePrinter:
@@ -195,7 +190,6 @@ def main():
             sys_config.Camera.close()
 
     rootLogger.info('All is done ...')
-    lcd.display('Bye Bye')
     sys.exit(0)
 
 

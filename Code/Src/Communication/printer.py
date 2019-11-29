@@ -11,14 +11,14 @@ import errno
 from socket import error as SocketError
 
 
-from Src.Visual.GUI import datamanagement as mgmt
+from Src.GUI import datamanagement as mgmt
 
 from Src.Management.thread_communication import llc_rec
 from Src.Management.thread_communication import llc_ref
 from Src.Management.thread_communication import imgproc_rec
 
 
-n_pc = len(llc_rec.p)           # proportional channels
+n_pc = len(llc_ref.pressure)           # proportional channels
 n_dc = len(llc_ref.dvalve)      # discrete channels
 
 
@@ -65,7 +65,7 @@ class ConsolePrinter(threading.Thread):
 
     def print_state(self):
         p, r, u, f, aIMG, eps, X, Y, aIMU = make_printable(*prepare_data())
-        eps = [eps] + [None]*3
+        eps = [eps] + ['']*3
         state_str = '\n\t| Ref \t| State \t| epsilon \n'
         state_str = state_str + '-------------------------------------------\n'
         for i in range(4):
@@ -85,7 +85,7 @@ class ConsolePrinter(threading.Thread):
     def run(self):
         while self.state != 'EXIT':
             self.print_state()
-            time.sleep(.2)
+            time.sleep(.5)
 
     def kill(self):
         self.state = 'EXIT'

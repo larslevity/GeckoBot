@@ -22,7 +22,7 @@ stats/.style={draw=none}
 
 
 %%% P8
-\path (\w+\w+\w,0) coordinate(O)++(\ws,\h)node[above, scale=2]{Front of LCD PCB};
+\path (\w+\w+\w,0) coordinate(O)++(\ws,\h)node[above, scale=1]{Front of LCD PCB (not the display side)};
 \foreach \i in {1,...,6}{
 	\pgfmathsetmacro{\shift}{mod(\i-1,2)*\ws}
 	\pgfmathsetmacro{\y}{(\i-\shift)*.5*\h}
@@ -34,10 +34,10 @@ stats/.style={draw=none}
 }
 
 \foreach \pin/\fun/\txt in {
-	2/pwr/5V,
-	3/i2c/I2C Data (red),
-	5/i2c/I2C Clk (yellow),
-	6/pwr/DGNG
+	1/pwr/5V,
+	4/i2c/I2C Data (red),
+	6/i2c/I2C Clk (yellow),
+	5/pwr/DGNG
 	}{
 	\ifodd\pin
 		\draw[\fun](\pin)rectangle++(-\w,\h)node[fun]{\txt};
@@ -52,6 +52,8 @@ stats/.style={draw=none}
 %	\pgfmathsetmacro{\y}{\i*\h}
 %	\draw[\cat](O)++(0,-\y)rectangle++(\w-.2,\h)node[fun]{\cat};
 %}
+
+\draw (O)++(-.4,-2) node[right=1cm]{$\vdots$}--++(0,2.5)--++(5,0);
 
 
 \end{tikzpicture}

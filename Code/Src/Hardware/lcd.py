@@ -27,11 +27,14 @@ class _LCD(object):
             self.lcd.clear()
         self.lcd.message = msg
 
-    def select_from_dic(self, dic, default_key=None):
+    def turn_off(self):
+        self.lcd.color = [0, 0, 0]
+        self.lcd.clear()
+
+    def select_from_keylist(self, list_of_keys, default_key=None):
 
         ui_mode_start = ui_state.mode
 
-        list_of_keys = [name for name in sorted(iter(dic.keys()))]
         selected_key = None
         if default_key:
             if default_key in list_of_keys:
@@ -44,10 +47,10 @@ class _LCD(object):
         while selected_key is None:
             if self.lcd.up_button:
                 idx = idx - 1 if idx > 0 else len(list_of_keys) - 1
-                self.display(list_of_keys[idx], clear=0)
+                self.display(list_of_keys[idx], clear=1)
             elif self.lcd.down_button:
                 idx = idx + 1 if idx < len(list_of_keys) - 1 else 0
-                self.display(list_of_keys[idx], clear=0)
+                self.display(list_of_keys[idx], clear=1)
             elif self.lcd.select_button or ui_state.fun[0]:
                 self.display("SELECTED")
                 selected_key = list_of_keys[idx]

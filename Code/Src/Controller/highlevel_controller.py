@@ -14,7 +14,6 @@ from Src.Management.thread_communication import llc_ref
 from Src.Management.thread_communication import imgproc_rec
 from Src.Management.thread_communication import ui_state
 from Src.Management import load_pattern as load_ptrn
-from Src.Hardware import lcd as lcd_module
 from Src.Management.thread_communication import sys_config
 from Src.Management import state_machine
 
@@ -27,11 +26,10 @@ from Src.Controller import rotate_on_spot as rotspot
 n_pc = len(llc_ref.pressure)
 n_dc = len(llc_ref.dvalve)
 
-lcd = lcd_module.getlcd()
 rootLogger = logging.getLogger()
 
 # Names of Modes
-NAMES = {'MODE1': 'PRESSURE / PWM',
+NAMES = {'MODE1': 'PRESSURE',
          'MODE2': 'PATTERN',
          'MODE3': 'GECKO'}
 
@@ -48,19 +46,30 @@ class PatternMGMT(object):
         self.idx = 0
         self.IMAGES = False
         self.init = False
+        self.last_fun = [0, 0]
 
         self.ptrndic = load_ptrn.get_pattern_dic()
         self.default_version = 'vS11' if 'vS11' in self.ptrndic else None
         self.pattern_name = None
 
+    def fun_changed(self, fun, idx):
+        if not(fun[idx] == self.last_fun[idx]):
+            self.last_fun = fun
+            return 1
+        return 0
+
     def select_version(self):
-        self.version = lcd.select_from_dic(self.ptrndic, self.default_version)
+        list_of_keys = [name for name in sorted(iter(self.ptrndic.keys()))]
+        self.version = sys_config.UI.select_from_keylist(
+                list_of_keys, self.default_version)
         return self.version
 
     def select_pattern_name(self):
         if self.version:
-            self.pattern_name = lcd.select_from_dic(
-                    self.ptrndic[mgmt.version], self.pattern_name)
+            list_of_keys = [name for name in sorted(
+                    iter(self.ptrndic[mgmt.version].keys()))]
+            self.pattern_name = sys_config.UI.select_from_keylist(
+                    list_of_keys, self.pattern_name)
         return self.pattern_name
 
 
@@ -88,19 +97,23 @@ gl_mgmt = GaitLawMGMT()
 
 
 def mode1():
-    lcd.display(NAMES['MODE1'])
+    sys_config.UI.lcd_display(NAMES['MODE1'])
 
     while ui_state.mode == 'MODE1':
         switches, potis, fun = ui_state.switches, ui_state.potis, ui_state.fun
-        if fun[1]:  # PWM Mode
-            llc_ref.set_state('FEED_THROUGH')
+        if fun[1]:
+            if mgmt.fun_changed(fun, 1):
+                sys_config.UI.lcd_display('ANGLE')
+            llc_ref.set_state('ANGLE_REFERENCE')
             if not fun[0]:  # pwm = potis*100
                 for idx in potis:
-                    potis[idx] = potis[idx]*100
-                llc_ref.pwm = potis
-            else:  # pwm = 0
-                llc_ref.pwm = {idx: 0.0 for idx in range(n_pc)}
+                    potis[idx] = potis[idx]*130
+                llc_ref.alpha = potis
+            else:
+                llc_ref.alpha = {idx: 0.0 for idx in range(n_pc)}
         else:  # Pressure Mode
+            if mgmt.fun_changed(fun, 1):
+                sys_config.UI.lcd_display('PRESSURE')
             llc_ref.set_state('PRESSURE_REFERENCE')
             if not fun[0]:  # ref = potis
                 llc_ref.pressure = potis
@@ -113,13 +126,13 @@ def mode1():
 
 
 def mode2():
-    lcd.display(NAMES['MODE2'])
+    sys_config.UI.lcd_display(NAMES['MODE2'])
     llc_ref.set_state('PRESSURE_REFERENCE')
 
     # init Pattern mgmt
     if not mgmt.version:
         mgmt.select_version()
-#    if not mgmt.pattern_name: Always select pattern
+#    Always select pattern
     mgmt.select_pattern_name()
     if mgmt.version and mgmt.pattern_name:
         mgmt.pattern = mgmt.ptrndic[mgmt.version][mgmt.pattern_name]
@@ -134,7 +147,7 @@ def mode2():
 
 
 def mode3():
-    lcd.display(NAMES['MODE3'])
+    sys_config.UI.lcd_display(NAMES['MODE3'])
     llc_ref.set_state('PRESSURE_REFERENCE')
 
     choices = list(clb.clb.keys())
@@ -143,7 +156,7 @@ def mode3():
     while mgmt.version not in choices:
         if ui_state.mode != 'MODE3':
             break
-        lcd.display('selected version\nnot calibrated')
+        sys_config.UI.lcd_display('selected version\nnot calibrated')
         mgmt.select_version()
 
     gl_mgmt.round = 0
@@ -185,9 +198,11 @@ def pattern_ref():
                 time.sleep(.4)  # hold robot
 
     if fun[1] and not mgmt.IMAGES and sys_config.Camera:
+        sys_config.UI.lcd_display('taking photos')
         mgmt.IMAGES = True
         rootLogger.info('RPi takes photos now')
     elif not fun[1] and mgmt.IMAGES and not sys_config.Camera:
+        sys_config.UI.lcd_display('stop taking \nphotos')
         mgmt.IMAGES = False
         rootLogger.info('RPi stop to take photos')
 

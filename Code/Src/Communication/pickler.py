@@ -17,12 +17,8 @@ else:
         return pickle.loads(string)
 
 
-
 def pickle_data(data):
     """
         returns a string repr of data (if its pickable)
     """
     return pickle.dumps(data, protocol=2)
-
-
-

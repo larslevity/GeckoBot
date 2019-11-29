@@ -23,12 +23,12 @@ from Src.Management.thread_communication import llc_rec
 from Src.Hardware.configuration import CHANNELset
 from Src.Hardware.configuration import DiscreteCHANNELset
 from Src.Hardware.configuration import IMUset
-from Src.Hardware.configuration import MAX_PRESSURE
 from Src.Hardware.configuration import MAX_CTROUT
 from Src.Hardware.configuration import TSAMPLING
 
 
 rootLogger = logging.getLogger()
+n_pc = len(llc_ref.pressure)
 
 
 def init_channels():
@@ -57,24 +57,19 @@ def init_channels():
     except IOError:  # not connected
         IMU = False
 
-    PSens, PValve, DValve, Controller, Imu_controller = {}, {}, {}, {}, {}
+    DValve, PValve, Imu_controller = {}, {}, {}
     for name in CHANNELset:
-        PSens[name] = sensors.DPressureSens(
-            name=name, mplx_id=CHANNELset[name]['PSensid'],
-            maxpressure=MAX_PRESSURE)
         PValve[name] = actuators.Valve(
                 name=name, pwm_pin=CHANNELset[name]['pin'])
-        Controller[name] = ctrlib.PidController(
-                CHANNELset[name]['ctr'], TSAMPLING, MAX_CTROUT)
         if CHANNELset[name]['IMUs'][-1]:
             Imu_controller[name] = ctrlib.PidController(
-                CHANNELset[name]['ctrIMU'], TSAMPLING, MAX_CTROUT)
+                CHANNELset[name]['ctr'], TSAMPLING, MAX_CTROUT)
 
     for name in DiscreteCHANNELset:
         DValve[name] = actuators.DiscreteValve(
             name=name, pin=DiscreteCHANNELset[name]['pin'])
 
-    return PSens, PValve, DValve, IMU, Controller, Imu_controller
+    return PValve, DValve, IMU, Imu_controller
 
 
 class LowLevelController(threading.Thread):
@@ -87,25 +82,11 @@ class LowLevelController(threading.Thread):
         return self.imu_in_use
 
     def run(self):
-        PSens, PValve, DValve, IMU, Ctr, ImuCtr = init_channels()
+        PValve, DValve, IMU, ImuCtr = init_channels()
         if IMU:
             self.imu_in_use = True
         else:
             self.imu_in_use = False
-
-        def read_pressure_sens():
-            for name in PSens:
-                try:
-                    llc_rec.p[name] = PSens[name].get_value()
-                except IOError as e:
-                    if e.errno == errno.EREMOTEIO:
-                        rootLogger.info(
-                            'cant read pressure sensor.' +
-                            ' Continue anyway ... Fail in [{}]'.format(name))
-                    else:
-                        rootLogger.exception('Sensor [{}]'.format(name))
-                        rootLogger.error(e, exc_info=True)
-                        raise e
 
         def read_imu():
             for name in IMU:
@@ -128,60 +109,39 @@ class LowLevelController(threading.Thread):
 
         def init_output():
             for name in PValve:
-                PValve[name].set_pwm(20.)
-
-        def pressure_check(pressure, pressuremax, cutoff):
-            if pressure <= cutoff:
-                out = 0
-            elif pressure >= pressuremax:
-                out = -MAX_CTROUT
-            else:
-                out = -MAX_CTROUT/(pressuremax-cutoff)*(pressure-cutoff)
-            return out
-
-        def cutoff(x, minx=-MAX_PRESSURE, maxx=MAX_PRESSURE):
-            if x < minx:
-                out = minx
-            elif x > maxx:
-                out = maxx
-            else:
-                out = x
-            return out
+                PValve[name].set_pwm(0.)
 
         def angle_reference():
             rootLogger.info("Arriving in ANGLE_REFERENCE State. ")
 
             init_output()
             while llc_ref.state == 'ANGLE_REFERENCE':
-                read_pressure_sens()
                 if IMU:
                     set_dvalve()
                     read_imu()
                     imu_rec = self.IMU
                     for name in ImuCtr:
-                        ref = llc_ref.pressure[name]*90.
+                        ref = llc_ref.alpha[name]
                         idx0, idx1 = CHANNELset[name]['IMUs']
                         rot_angle = CHANNELset[name]['IMUrot']
                         acc0 = imu_rec[idx0]
                         acc1 = imu_rec[idx1]
                         sys_out = IMUcalc.calc_angle(acc0, acc1, rot_angle)
-                        ctr_out = ImuCtr[name].output(ref, sys_out)
-                        pressure = llc_rec.p[name]
-                        pressure_bound = pressure_check(
-                                pressure, 1.5*MAX_PRESSURE, 1*MAX_PRESSURE)
-                        ctr_out_ = cutoff(ctr_out+pressure_bound)
-                        # for torso, set pwm to 0 if other ref is higher:
+                        pressure_ref = ImuCtr[name].output(ref, sys_out)
+
+                        # for torso, set pressure to 0 if other ref is higher:
                         if name in [2, 3]:
                             other = 2 if name == 3 else 3
-                            other_ref = llc_ref.pressure[other]*90
-                            if ref == 0 and ref == other_ref:
-                                if pressure > .5:
-                                    ctr_out_ = -MAX_CTROUT
+                            other_ref = llc_ref.pressure[other]
+                            if ref == 0 and other_ref == 0:
+                                if pressure_ref > .2:
+                                    pressure_ref = 0
                             elif (ref < other_ref or
                                   (ref == other_ref and ref > 0)):
-                                ctr_out_ = -MAX_CTROUT
-                        pwm = ctrlib.sys_input(ctr_out_)
+                                pressure_ref = 0
+                        pwm = ctrlib.sys_input(pressure_ref)
                         PValve[name].set_pwm(pwm)
+                        llc_ref.pressure[name] = pressure_ref
                         llc_rec.u[name] = pwm
                         llc_rec.aIMU[name] = round(sys_out, 2)
 
@@ -189,41 +149,14 @@ class LowLevelController(threading.Thread):
 
             return llc_ref.state
 
-        def feed_through():
-            """
-            Set the valves to the data recieved by the comm_tread
-            """
-            rootLogger.info("Arriving in FEED_THROUGH State: ")
-
-            while llc_ref.state == 'FEED_THROUGH':
-                # read
-                read_pressure_sens()
-                # write
-                for name in PValve:
-                    pwm = llc_ref.pwm[name]
-                    PValve[name].set_pwm(pwm)
-                    llc_rec.u[name] = pwm
-                set_dvalve()
-                # meta
-                time.sleep(self.sampling_time)
-
-            return llc_ref.state
-
         def pressure_reference():
-            """
-            Set the references for each valves to the data recieved by UI_tread
-            """
             rootLogger.info("Arriving in PRESSURE_REFERENCE State: ")
-
+            llc_ref.alpha = {idx: np.nan for idx in range(n_pc)}
             while llc_ref.state == 'PRESSURE_REFERENCE':
-                # read
-                read_pressure_sens()
                 # write
                 for name in PValve:
-                    ref = llc_ref.pressure[name]
-                    sys_out = llc_rec.p[name]
-                    ctr_out = Ctr[name].output(ref, sys_out)
-                    pwm = ctrlib.sys_input(ctr_out)
+                    pressure_ref = llc_ref.pressure[name]
+                    pwm = ctrlib.sys_input(pressure_ref)
                     PValve[name].set_pwm(pwm)
                     llc_rec.u[name] = pwm
                 set_dvalve()
@@ -250,7 +183,6 @@ class LowLevelController(threading.Thread):
             init_output()
 
             while llc_ref.state == 'PAUSE':
-                read_pressure_sens()
                 time.sleep(self.sampling_time)
 
             return llc_ref.state
@@ -262,7 +194,6 @@ class LowLevelController(threading.Thread):
         automat = state_machine.StateMachine()
         automat.add_state('PAUSE', pause_state)
         automat.add_state('ANGLE_REFERENCE', angle_reference)
-        automat.add_state('FEED_THROUGH', feed_through)
         automat.add_state('PRESSURE_REFERENCE', pressure_reference)
         automat.add_state('EXIT', exit_cleaner)
         automat.add_state('QUIT', None, end_state=True)

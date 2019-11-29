@@ -372,4 +372,4 @@ class PidController_SymPy(Controller):
 
 
 def sys_input(ctr_out):
-    return (.5 + ctr_out/2)*100
+    return ctr_out*100

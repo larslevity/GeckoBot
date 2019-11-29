@@ -9,7 +9,7 @@ Created on Tue Oct 22 09:43:14 2019
 from subprocess import call
 import time
 
-from Src.Visual.PiCamera.client import Socket
+from Src.Communication.client import Socket
 from Src.Management.thread_communication import ui_state
 
 UI_ip = '192.168.5.2'

@@ -6,7 +6,7 @@
 \begin{document}
 \begin{tikzpicture}[
 scale=1, 
-stretch/.style={color=red!40, line width=2cm},
+stretch/.style={color=red!1, line width=2cm},
 %dstretch/.style={color=red!40, line width=1.333cm},
 foot/.style={fill=red!10, line width=.333mm, draw=red!40},
 solid/.style={line width=.333mm, draw=red!80},
@@ -19,15 +19,14 @@ arrow/.style={triangle 45-}
 
 \def\hx{11.2}	% length of legs
 \def\hy{2}  % change only with line width of stretch
-\def\lb{11.2}	% length of belly
-\def\rf{2}	% radius of foot
+\def\rf{.0003}	% radius of foot
 \pgfmathsetmacro{\rfh}{\rf*.5}
 \pgfmathsetmacro{\hyh}{.5*\hy}
 \pgfmathsetmacro{\hxh}{\hx/2}
 
 
 
-\foreach \alp in {88,85,80,75,70,65,60,55,50,45,40,35,30,25,20,15,10,5,2}{
+\foreach \alp in {120,110,105,95,88,85,80,75,70,65,60,55,50,45,40,35,30,25,20,15,10,5,2}{
 
 \def\bet{\alp}
 

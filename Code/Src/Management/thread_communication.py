@@ -29,7 +29,7 @@ class LLCReference(Borg):
 
         self.dvalve = {name: 0. for name in DiscreteCHANNELset}
         self.pressure = {name: 0. for name in CHANNELset}
-        self.pwm = {name: 20. for name in CHANNELset}
+        self.alpha = {name: 0. for name in CHANNELset}
         self.state = STARTSTATE
 
     def set_state(self, state):
@@ -50,7 +50,6 @@ class LLCRecorder(Borg):
     def __init__(self):
         Borg.__init__(self)
 
-        self.p = {name: 0.0 for name in CHANNELset}
         self.aIMU = {name: None for name in IMUset}
         self.u = {name: 0.0 for name in CHANNELset}
 
@@ -81,6 +80,7 @@ class SystemConfig(Borg):
         self.ImgProc = None
         self.LivePlotter = None
         self.ConsolePrinter = False
+        self.UI = None
 
     def __str__(self):
         return (

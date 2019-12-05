@@ -151,7 +151,7 @@ class LowLevelController(threading.Thread):
 
         def pressure_reference():
             rootLogger.info("Arriving in PRESSURE_REFERENCE State: ")
-            llc_ref.alpha = {idx: np.nan for idx in range(n_pc)}
+            llc_ref.alpha = {idx: None for idx in range(n_pc)}
             while llc_ref.state == 'PRESSURE_REFERENCE':
                 # write
                 for name in PValve:

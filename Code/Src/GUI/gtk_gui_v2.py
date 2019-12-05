@@ -8,8 +8,8 @@ from gi.repository import Gtk
 # pylint: disable=no-name-in-module
 from gi.repository import GLib
 
-from Src.Visual.GUI import AnalysisWindow
-from Src.Visual.GUI import MenuToolbar
+from Src.GUI import AnalysisWindow
+from Src.GUI import MenuToolbar
 
 
 gi.require_version('Gtk', '3.0')

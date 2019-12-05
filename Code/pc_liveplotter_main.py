@@ -14,10 +14,10 @@ import socket
 import random
 import numpy as np
 
-from Src.Visual.GUI import gtk_gui_v2
-from Src.Visual.GUI import datamanagement
-from Src.Visual.GUI import save
-from Src.Visual.PiCamera import pickler
+from Src.GUI import gtk_gui_v2
+from Src.GUI import datamanagement
+from Src.GUI import save
+from Src.Communication import pickler
 from Src.Management import timeout
 from Src.Management import exception
 

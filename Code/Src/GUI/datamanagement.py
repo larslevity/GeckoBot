@@ -14,18 +14,18 @@ def merge_multiple_dicts(dicts):
     return super_dict
 
 
-def rehash_record(pressure=[None]*8, reference=[None]*8, motor_in=[None]*8,
+def rehash_record(alpref=[None]*8, pref=[None]*8, motor_in=[None]*8,
                   fixation=[None]*4, alphaIMG=[None]*6, epsilon=None,
                   positionx=[None]*7, positiony=[None]*7,
                   alphaIMU=[None]*6, IMU=False, IMG=False):
 
-    p = {'p{}'.format(idx): px for idx, px in enumerate(pressure)}
-    r = {'r{}'.format(idx): px for idx, px in enumerate(reference)}
+    ar = {'ar{}'.format(idx): px for idx, px in enumerate(alpref)}
+    pr = {'pr{}'.format(idx): px for idx, px in enumerate(pref)}
     u = {'u{}'.format(idx): px for idx, px in enumerate(motor_in)}
     f = {'f{}'.format(idx): px for idx, px in enumerate(fixation)}
     t = {'time': time.time()}
 
-    record = merge_multiple_dicts([p, r, u, f, t])
+    record = merge_multiple_dicts([ar, pr, u, f, t])
     if IMG:
         aIMG = {'aIMG{}'.format(idx): px for idx, px in enumerate(alphaIMG)}
         x = {'x{}'.format(idx): px for idx, px in enumerate(positionx)}

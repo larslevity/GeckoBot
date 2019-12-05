@@ -178,7 +178,7 @@ class PlotArea(Gtk.Bin):
         vbox.pack_start(hbox, expand=True, fill=True, padding=1)
         # ToggleButton for equal AxisButton
         image = Gtk.Image()
-        image.set_from_file("Src/Visual/GUI/pictures/Equal.png")
+        image.set_from_file("Src/GUI/pictures/Equal.png")
         toggle_btn = Gtk.ToggleButton()
         toggle_btn.add(image)
         toggle_btn.connect("clicked", self.change_axes_aspect)

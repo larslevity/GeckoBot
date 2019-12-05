@@ -23,8 +23,9 @@ n_dc = len(llc_ref.dvalve)      # discrete channels
 
 
 def prepare_data():
-    p = [round(llc_rec.p[i], 2) for i in range(n_pc)]
-    r = [round(llc_ref.pressure[i], 2) for i in range(n_pc)]
+    ar = [round(llc_ref.alpha[i], 2) if llc_ref.alpha[i] else None
+          for i in range(n_pc)]
+    pr = [round(llc_ref.pressure[i], 2) for i in range(n_pc)]
     u = [round(llc_rec.u[i], 2) for i in range(n_pc)]
     f = [round(llc_ref.dvalve[i], 2) for i in range(n_dc)]
 
@@ -42,10 +43,10 @@ def prepare_data():
     aIMU = [round(rec_angle[i], 2) if rec_angle[i] else None
             for i in range(len(llc_rec.aIMU))]
 
-    return (p, r, u, f, aIMG, eps, X, Y, aIMU)
+    return (ar, pr, u, f, aIMG, eps, X, Y, aIMU)
 
 
-def make_printable(p, r, u, f, aIMG, eps, X, Y, aIMU):
+def make_printable(ar, pr, u, f, aIMG, eps, X, Y, aIMU):
     if len(aIMG) < n_pc:
         aIMG = aIMG + [None]*(n_pc-len(aIMG))
     if len(aIMU) < n_pc:
@@ -55,7 +56,7 @@ def make_printable(p, r, u, f, aIMG, eps, X, Y, aIMU):
     if len(Y) < n_pc:
         Y = Y + [None]*(n_pc-len(Y))
 
-    return p, r, u, f, aIMG, eps, X, Y, aIMU
+    return ar, pr, u, f, aIMG, eps, X, Y, aIMU
 
 
 class ConsolePrinter(threading.Thread):
@@ -64,7 +65,7 @@ class ConsolePrinter(threading.Thread):
         self.state = 'RUN'
 
     def print_state(self):
-        p, r, u, f, aIMG, eps, X, Y, aIMU = make_printable(*prepare_data())
+        ar, pr, u, f, aIMG, eps, X, Y, aIMU = make_printable(*prepare_data())
         eps = [eps] + ['']*3
         state_str = '\n\t| Ref \t| State \t| epsilon \n'
         state_str = state_str + '-------------------------------------------\n'
@@ -78,7 +79,7 @@ class ConsolePrinter(threading.Thread):
         state_str = state_str + '-'*75 + '\n'
         for i in range(n_pc):
             s = '{}\t| {}\t| {}\t| {}\t| {}\t| {}\t| ({},{})\n'.format(
-                i, r[i], p[i], u[i], aIMU[i], aIMG[i], X[i], Y[i])
+                i, ar[i], pr[i], u[i], aIMU[i], aIMG[i], X[i], Y[i])
             state_str = state_str + s
         print(state_str)
 

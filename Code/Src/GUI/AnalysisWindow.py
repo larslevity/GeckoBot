@@ -4,8 +4,8 @@ Analysis Tool
 """
 # pylint: disable= no-name-in-module
 from gi.repository import Gtk
-from Src.Visual.GUI import PlotArea
-from Src.Visual.GUI import SelectionArea
+from Src.GUI import PlotArea
+from Src.GUI import SelectionArea
 
 
 # pylint: disable= too-many-public-methods, unused-argument

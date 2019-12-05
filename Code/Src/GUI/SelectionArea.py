@@ -13,7 +13,7 @@ class SelectionArea(Gtk.Bin):
     Selection Area with the atrribute keylist containing tuple of (abs, ord)
     which somebody selected to plot in the Plotting Area
     """
-    def find_default_keylist(self, modus='p'):
+    def find_default_keylist(self, modus='pr'):
         """ Look in Recorder and check what data is worth to plot """
         keylist = []
         if modus == 'pos':
@@ -233,56 +233,56 @@ class SelectionArea(Gtk.Bin):
         # p btn
         p_btn = Gtk.Button()
         image = Gtk.Image()
-        image.set_from_file("Src/Visual/GUI/pictures/pressure.png")
+        image.set_from_file("Src/GUI/pictures/alpref.png")
         p_btn.add(image)
-        p_btn.connect("clicked", self.keylist_append, 'p')
+        p_btn.connect("clicked", self.keylist_append, 'ar')
         btns_hbox1.pack_start(p_btn, False, False, 2)
         # u btn
         u_btn = Gtk.Button()
         image = Gtk.Image()
-        image.set_from_file("Src/Visual/GUI/pictures/motor_input.png")
+        image.set_from_file("Src/GUI/pictures/motor_input.png")
         u_btn.add(image)
         u_btn.connect("clicked", self.keylist_append, 'u')
         btns_hbox1.pack_start(u_btn, False, False, 2)
         # r btn
         r_btn = Gtk.Button()
         image = Gtk.Image()
-        image.set_from_file("Src/Visual/GUI/pictures/reference.png")
+        image.set_from_file("Src/GUI/pictures/pref.png")
         r_btn.add(image)
-        r_btn.connect("clicked", self.keylist_append, 'r')
+        r_btn.connect("clicked", self.keylist_append, 'pr')
         btns_hbox1.pack_start(r_btn, False, False, 2)
         # del btn
         del_btn = Gtk.Button()
         image = Gtk.Image()
-        image.set_from_file("Src/Visual/GUI/pictures/delete.png")
+        image.set_from_file("Src/GUI/pictures/delete.png")
         del_btn.add(image)
         del_btn.connect("clicked", self.delete_keylist)
         btns_hbox1.pack_start(del_btn, False, False, 2)
         # alpha btn
         alpha_btn = Gtk.Button()
         image = Gtk.Image()
-        image.set_from_file("Src/Visual/GUI/pictures/alpha_IMG.png")
+        image.set_from_file("Src/GUI/pictures/alpha_IMG.png")
         alpha_btn.add(image)
-        alpha_btn.connect("clicked", self.keylist_append, 'a')
+        alpha_btn.connect("clicked", self.keylist_append, 'aIMG')
         btns_hbox2.pack_start(alpha_btn, False, False, 2)
         # epsilon btn
         eps_btn = Gtk.Button()
         image = Gtk.Image()
-        image.set_from_file("Src/Visual/GUI/pictures/epsilon.png")
+        image.set_from_file("Src/GUI/pictures/epsilon.png")
         eps_btn.add(image)
         eps_btn.connect("clicked", self.keylist_append, 'e')
         btns_hbox2.pack_start(eps_btn, False, False, 2)
         # pos btn
         pos_btn = Gtk.Button()
         image = Gtk.Image()
-        image.set_from_file("Src/Visual/GUI/pictures/pos_feet.png")
+        image.set_from_file("Src/GUI/pictures/pos_feet.png")
         pos_btn.add(image)
         pos_btn.connect("clicked", self.keylist_append, 'pos')
         btns_hbox2.pack_start(pos_btn, False, False, 2)
         # fixation btn
         fix_btn = Gtk.Button()
         image = Gtk.Image()
-        image.set_from_file("Src/Visual/GUI/pictures/fixation.png")
+        image.set_from_file("Src/GUI/pictures/fixation.png")
         fix_btn.add(image)
         fix_btn.connect("clicked", self.keylist_append, 'f')
         btns_hbox2.pack_start(fix_btn, False, False, 2)
@@ -384,7 +384,7 @@ class SelectionArea(Gtk.Bin):
             # #### Delete Button ####
             # create image
             image = Gtk.Image()
-            image.set_from_file("Src/Visual/GUI/pictures/delete.gif")
+            image.set_from_file("Src/GUI/pictures/delete.gif")
             # a button to contain the image widget
             button = Gtk.Button()
             button.add(image)
@@ -393,7 +393,7 @@ class SelectionArea(Gtk.Bin):
             # #### Visible Button ####
             # create image
             image = Gtk.Image()
-            image.set_from_file("Src/Visual/GUI/pictures/visible.png")
+            image.set_from_file("Src/GUI/pictures/visible.png")
             # a button to contain the image widget
             self.vis_btn[idx] = Gtk.ToggleButton()
             self.vis_btn[idx].add(image)

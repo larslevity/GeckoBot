@@ -11,7 +11,7 @@ from time import strftime
 import gi
 from gi.repository import Gtk
 
-from Src.Visual.GUI import save
+from Src.GUI import save
 
 gi.require_version('Gtk', '3.0')
 

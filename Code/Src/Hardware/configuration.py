@@ -34,14 +34,16 @@ IMUset = {
     4: {'id': 4},
     5: {'id': 5}
     }
+
 CHANNELset = {
     0: {'pin': 'P9_22', 'ctr': PID, 'IMUs': [0, 1], 'IMUrot': -90},
-    1: {'pin': 'P8_19', 'ctr': PID, 'IMUs': [1, 2], 'IMUrot': -90},
-    2: {'pin': 'P9_21', 'ctr': PID, 'IMUs': [1, 4], 'IMUrot': 180},
-    3: {'pin': 'P8_13', 'ctr': PID, 'IMUs': [4, 1], 'IMUrot': 180},
-    4: {'pin': 'P9_14', 'ctr': PID, 'IMUs': [4, 3], 'IMUrot': -90},
-    5: {'pin': 'P9_16', 'ctr': PID, 'IMUs': [5, 4], 'IMUrot': -90},
+    1: {'pin': 'P9_14', 'ctr': PID, 'IMUs': [1, 2], 'IMUrot': -90},
+    2: {'pin': 'P8_13', 'ctr': PID, 'IMUs': [1, 4], 'IMUrot': 180},
+    3: {'pin': 'P9_16', 'ctr': PID, 'IMUs': [4, 1], 'IMUrot': 180},
+    4: {'pin': 'P8_19', 'ctr': PID, 'IMUs': [4, 3], 'IMUrot': -90},
+    5: {'pin': 'P9_21', 'ctr': PID, 'IMUs': [5, 4], 'IMUrot': -90},
     }
+
 DiscreteCHANNELset = {
     0: {'pin': 'P8_10'},
     1: {'pin': 'P8_7'},

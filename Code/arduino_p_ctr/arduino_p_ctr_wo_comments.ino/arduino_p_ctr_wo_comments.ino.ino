@@ -17,8 +17,9 @@ float DC;
 double referencePressure;
 
 // PID
-const double Kp=.6, Ki=.05, Kd=0.01;
-// const double Kp=.6, Ki=.7, Kd=0.005;
+// const double Kp=.6, Ki=.05, Kd=0.01;  // big version
+const double Kp=.6, Ki=.01, Kd=0.002;  // small version tuning
+// const double Kp=.6, Ki=.7, Kd=0.005;  //rohat
 const double max_output=.99, gam=.1, tsampling=10; 
 double integral=0, last_err=0, last_out=0, windup_guard=0; 
 double err, diff, integ, controller_output, u, u_ctr;

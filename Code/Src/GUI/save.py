@@ -31,7 +31,7 @@ def save_recorded_data(data, filename):
 def save_last_sample_as_csv(data, filename):
 
     dirname = os.path.dirname(os.path.realpath(__file__))
-    realpath = '../../../../../GeckoBotExperiments/current_exp/' + filename
+    realpath = '../../../../GeckoBotExperiments/current_exp/' + filename
     filename = os.path.join(dirname, realpath)
     filename = os.path.abspath(os.path.realpath(filename))
 
@@ -54,7 +54,7 @@ def save_recorded_data_as_csv(data, filename=None, StartStop=None):
         exp = 'exp--'
         filename = exp+strftime("%Y_%m_%d__%H_%M_%S")+'.csv'
     dirname = os.path.dirname(os.path.realpath(__file__))
-    realpath = '../../../../../GeckoBotExperiments/current_exp/' + filename
+    realpath = '../../../../GeckoBotExperiments/current_exp/' + filename
     filename = os.path.join(dirname, realpath)
     filename = os.path.abspath(os.path.realpath(filename))
 

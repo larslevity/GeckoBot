@@ -188,8 +188,8 @@ if __name__ == '__main__':
 
     for q1 in Q1:
         for q2 in Q2:
-            a1 = gaitlaw(q1, q2, feet1)
-            a2 = gaitlaw(-q1, q2, feet2)
+            a1 = gaitlaw(-q1, q2, feet1)
+            a2 = gaitlaw(q1, q2, feet2)
             ptrn = get_ptrn_from_angles([a1, a2], version, times)
             plt.figure()
             plot_pattern(ptrn)

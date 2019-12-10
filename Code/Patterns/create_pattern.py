@@ -81,8 +81,8 @@ def generate_pattern_climb(p0, p1, p2, p3, p4, p5, p6, p7, t_move=3.0,
 
 
 def save_list_as_csv(lis, filename='test.csv'):
-#    with open(filename, 'w', newline='') as f:
-    with open(filename, 'wb') as f:
+    with open(filename, 'w', newline='') as f:
+#    with open(filename, 'wb') as f:
         writer = csv.writer(f)
         writer.writerows(lis)
 
@@ -155,24 +155,44 @@ if __name__ == '__main__':
 
     import matplotlib.pyplot as plt
     from Src.Controller import calibration
-
+    from Src.Controller.gait_law_planner import alpha as gaitlaw
 
 
     version = 'v40'
     times = [5, .66, .25]
 
-    angles = {
-        'straight_1':  [[90, 0, -90, 90, 0], [0, 90, 90, 0, 90]],
-        'straight_2':  [[86, 4, -110, 83, 4], [4, 86, 110, 4, 83]],
-        'straight_3':  [[0, 18, -85, 10, 22], [18, 0, 85, 22, 10]],
-        'curve_1':  [[97, 28, -98, 116, 17], [79, 0, -84, 67, 0]],
-        'curve_2':  [[104, 48, -114, 124, 27], [72, 0, -70, 55, 0]],
-        'curve_3':  [[164, 124, -152, 221, 62], [0, 0, -24, 0, 0]],
-            }
+#    angles = {
+#        'straight_1':  [[90, 0, -90, 90, 0], [0, 90, 90, 0, 90]],
+#        'straight_2':  [[86, 4, -110, 83, 4], [4, 86, 110, 4, 83]],
+#        'straight_3':  [[0, 18, -85, 10, 22], [18, 0, 85, 22, 10]],
+#        'curve_1':  [[97, 28, -98, 116, 17], [79, 0, -84, 67, 0]],
+#        'curve_2':  [[104, 48, -114, 124, 27], [72, 0, -70, 55, 0]],
+#        'curve_3':  [[164, 124, -152, 221, 62], [0, 0, -24, 0, 0]],
+#            }
+#
+#    for key in angles:
+#        angle = angles[key]
+#        ptrn = get_ptrn_from_angles(angle, version, times)
+#        plot_pattern(ptrn)
 
-    for key in angles:
-        angle = angles[key]
-        ptrn = get_ptrn_from_angles(angle, version, times)
-        plot_pattern(ptrn)
+#        save_list_as_csv(ptrn, key + '.csv')
 
-        save_list_as_csv(ptrn, key + '.csv')
+# %%
+    version = 'vS11'
+    Q1 = [50, 60, 70, 80, 90]
+    Q2 = [-.5, -.25, 0, .25, .5]
+
+    feet1 = [1, 0, 0, 1]
+    feet2 = [0, 1, 1, 0]
+    times = [2, .25, .25]
+
+    for q1 in Q1:
+        for q2 in Q2:
+            a1 = gaitlaw(q1, q2, feet1)
+            a2 = gaitlaw(-q1, q2, feet2)
+            ptrn = get_ptrn_from_angles([a1, a2], version, times)
+            plt.figure()
+            plot_pattern(ptrn)
+            save_list_as_csv(ptrn, 'q1_' + str(q1) + 'q2_' + str(q2).replace('.', '') + '.csv')
+
+

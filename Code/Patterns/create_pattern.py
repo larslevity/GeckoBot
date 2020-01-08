@@ -131,19 +131,31 @@ def resample(ptrn, Ts=.1):
     Tres = sum([p[-1] for p in Ptrn])
     print(T)
     print(Tres)
-    return(Ptrn)
+    return Ptrn
 
 
-def plot_pattern(ptrn):
+def get_marker_color():
+    return ['red', 'orange', 'darkred', 'blue', 'darkorange', 'darkblue']
+
+
+def get_act_color():
+    return ['red', 'darkred', 'orange', 'darkorange', 'blue', 'darkblue']
+
+
+def plot_pattern(ptrn, legend=1, linestyle='-'):
+    col = get_act_color()
     t = [0] + list(np.cumsum([p[-1] for p in ptrn]))
     for idx in range(6):
         p1 = [ptrn[0][idx]]+[p[idx] for p in ptrn]
-        plt.step(t, p1)
+        plt.step(t, p1, linestyle, label=idx if legend else None,
+                 color=col[idx])
+    if legend:
+        plt.legend()
 
 
-def get_ptrn_from_angles(a, version, t=[5, .66, .25]):
-    p1 = calibration.get_pressure(a[0], version)
-    p2 = calibration.get_pressure(a[1], version)
+def get_ptrn_from_angles(a, version, t=[5, .66, .25], max_prs=1.1):
+    p1 = calibration.get_pressure(a[0], version, max_prs)
+    p2 = calibration.get_pressure(a[1], version, max_prs)
     ptrn = generate_pattern_general(p1, p2, t[0], t[1], t[2])
     return ptrn
 
@@ -179,8 +191,9 @@ if __name__ == '__main__':
 
 # %%
     version = 'vS11'
+    max_prs = 1.1
     Q1 = [50, 60, 70, 80, 90]
-    Q2 = [-.5, -.25, 0, .25, .5]
+    Q2 = [-.5, -.3, -.1, .1, .3, .5]
 
     feet1 = [1, 0, 0, 1]
     feet2 = [0, 1, 1, 0]
@@ -190,9 +203,23 @@ if __name__ == '__main__':
         for q2 in Q2:
             a1 = gaitlaw(-q1, q2, feet1)
             a2 = gaitlaw(q1, q2, feet2)
-            ptrn = get_ptrn_from_angles([a1, a2], version, times)
-            plt.figure()
-            plot_pattern(ptrn)
-            save_list_as_csv(ptrn, 'q1_' + str(q1) + 'q2_' + str(q2).replace('.', '') + '.csv')
+            ptrn = get_ptrn_from_angles([a1, a2], version, times, max_prs=max_prs)
+#            plt.figure()
+#            plot_pattern(ptrn)
+            save_list_as_csv(ptrn, version+'/q1_' + str(q1) + 'q2_' + str(q2).replace('.', '') + '.csv')
+# %%
+
+    q1 = 80
+    q2 = -0.5
+    times = [1, .25, .25]
+    a1 = gaitlaw(-q1, q2, feet1, c1=1)
+    a2 = gaitlaw(q1, q2, feet2, c1=1)
+    ptrn = get_ptrn_from_angles([a1, a2], version, times, max_prs=max_prs)
+    plt.figure()
+    plot_pattern(ptrn, legend=0, linestyle='x')
+#    ptrn = resample(ptrn, Ts=.1)
+    plot_pattern(ptrn)
+    save_list_as_csv(ptrn, version+'/speed_q1_' + str(q1) + 'q2_' + str(q2).replace('.', '') + '.csv')
+    
 
 

@@ -21,15 +21,25 @@ def xbar(xref, xbot, epsbot):
     return rotate(xref - xbot, np.deg2rad(-epsbot))
 
 
-def dx(x1, x2):  # analytic_model6
+def dx_(x1, x2):  # analytic_model6
     return np.array([
             [.016*x1 - .113*x2**2],
             [-(.044*x2 - .001*x2**2 + .022*x1*x2)]
         ])
 
+def dx(x1, x2):  # exp GaitLaw_c110_redo
+    return np.array([
+            [0.1106 + 0.2225*x1 + 11.4146*x2 + -0.0008*x1**2 + -17.5133*x2**2 + -0.1213*x1**1*x2**1],
+            [ 1.9498 + -0.0682*x1 + -3.6997*x2 + 0.0004*x1**2 + -0.0333*x2**2 + -0.058*x1**1*x2**1]
+        ])
+    
 
-def deps(x1, x2):  # analytic_model6
+def deps_(x1, x2):  # analytic_model6
     return np.deg2rad(-.001*x1 + 10.188*x2 + .019*x2**2 - .936*x1*x2)
+
+
+def deps(x1, x2):  # exp GaitLaw_c110_redo
+    return np.deg2rad(5.4154 + -0.0457*x1 + -44.1944*x2 + -0.0006*x1**2 + 0.778*x2**2 + -0.0832*x1**1*x2**1)
 
 
 def sumsin(x, n):
@@ -64,12 +74,22 @@ def cut(x):
     return x if x > 0.001 else 0.001
 
 
-def alpha(x1, x2, f):
-    alpha = [cut(45 - x1/2. - abs(x1)*x2/2. + (f[0])*x1*x2),
-             cut(45 + x1/2. + abs(x1)*x2/2. + (f[1])*x1*x2),
+#def alpha(x1, x2, f):
+#    alpha = [cut(45 - x1/2. - abs(x1)*x2/2. + (f[0])*x1*x2),
+#             cut(45 + x1/2. + abs(x1)*x2/2. + (f[1])*x1*x2),
+#             x1 + x2*abs(x1),
+#             cut(45 - x1/2. - abs(x1)*x2/2. + (f[2])*x1*x2),
+#             cut(45 + x1/2. + abs(x1)*x2/2. + (f[3])*x1*x2)
+#             ]
+#    return alpha
+
+
+def alpha(x1, x2, f, c1=1):
+    alpha = [cut(45 - x1/2. - abs(x1)*x2/2. + x1*x2*c1),
+             cut(45 + x1/2. + abs(x1)*x2/2. + x1*x2*c1),
              x1 + x2*abs(x1),
-             cut(45 - x1/2. - abs(x1)*x2/2. + (f[2])*x1*x2),
-             cut(45 + x1/2. + abs(x1)*x2/2. + (f[3])*x1*x2)
+             cut(45 - x1/2. - abs(x1)*x2/2. + x1*x2*c1),
+             cut(45 + x1/2. + abs(x1)*x2/2. + x1*x2*c1)
              ]
     return alpha
 
@@ -94,7 +114,8 @@ def find_opt_x(xbar, n, max_step_length):
     return solution.x
 
 
-def optimal_planner(xbar, alp_act, feet_act, n=2, max_step_length=90, dist_min=.1):
+def optimal_planner(xbar, alp_act, feet_act, n=2, max_step_length=90,
+                    dist_min=.1):
     """
     opt planner
     """

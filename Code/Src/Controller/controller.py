@@ -3,6 +3,7 @@
 """
 import abc
 import numpy as np  # pragma: no cover
+from Src.Hardware.configuration import MAX_PRESSURE_REF
 
 
 # pylint: disable=too-few-public-methods
@@ -371,5 +372,5 @@ class PidController_SymPy(Controller):
         return self.out1
 
 
-def sys_input(ctr_out):
-    return ctr_out*100
+def sys_input(pref_in_bar):
+    return pref_in_bar/MAX_PRESSURE_REF*100

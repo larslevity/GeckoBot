@@ -20,7 +20,10 @@ double referencePressure;
 // const double Kp=.6, Ki=.05, Kd=0.01;  // big version
 const double Kp=.6, Ki=.01, Kd=0.002;  // small version tuning
 // const double Kp=.6, Ki=.7, Kd=0.005;  //rohat
-const double max_output=.99, gam=.1, tsampling=10; 
+const double max_output=.99, gam=.1, tsampling=10;
+ 
+const double max_prs=1.1; // Tune here for PWM reference encoding!
+
 double integral=0, last_err=0, last_out=0, windup_guard=0; 
 double err, diff, integ, controller_output, u, u_ctr;
 
@@ -84,7 +87,7 @@ void loop() {
    // Read Reference
    pwm_value = analogRead(PWM_PIN_IN);    //read PWM Value on PWM_Pin
    DC = round((100./683.)*pwm_value);
-   referencePressure= 1.*(DC/100);
+   referencePressure= max_prs*(DC/100);
 
    // Read PSens
    Wire.beginTransmission(pressureSensor); //Begin Transmission to Pressure Sensor

@@ -8,6 +8,7 @@ Created on Thu Jul 25 12:29:50 2019
 # CHANNELS
 
 MAX_CTROUT = 0.50     # [10V]
+MAX_PRESSURE_REF = 1.1
 TSAMPLING = 0.001     # [sec]
 PID = [0.0117, 1.012, 0.31]    # [1]
 

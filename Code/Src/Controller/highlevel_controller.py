@@ -95,6 +95,7 @@ class GaitLawMGMT(object):
         self.process_time = 0
         self.round = 0
         self.lastq1 = -30
+        self.idx = 0
 
 
 gl_mgmt = GaitLawMGMT()
@@ -166,6 +167,8 @@ def mode3():
     # init
     gl_mgmt.round = 0
     kbmg_mgmt.round, kbmg_mgmt.idx = (0, 0)
+    gl_mgmt.idx = 0  # idx of xref list
+    gl_mgmt.lastq1 = -30  # for planning horizon
 
     while ui_state.mode == 'MODE3':
         if ui_state.fun[1]:
@@ -322,13 +325,20 @@ def optimal_pathplanner():
         llc_ref.pressure = pvtsk
 
     nmax = 4
-    max_step_length = 90
     if (fun[0] and gl_mgmt.last_process_time + gl_mgmt.process_time <
             time.time()):
         # collect measurements
         position = (imgproc_rec.X[1], imgproc_rec.Y[1])
         eps = imgproc_rec.eps if imgproc_rec.eps else np.nan
-        xref = imgproc_rec.xref if imgproc_rec.xref[0] else (np.nan, np.nan)
+#        xref = imgproc_rec.xref if imgproc_rec.xref[0] else (np.nan, np.nan)
+        XREF = [(400, 288),
+                (962, 288),
+                (962, 850),
+                (1364, 850)]
+        try:
+            xref = XREF[gl_mgmt.idx]
+        except IndexError:
+            xref = XREF[-1]
         if not np.isnan(xref[0]) and not np.isnan(eps):
             # convert measurements
             xbar = gait_law_planner.xbar(xref, position, eps)
@@ -336,44 +346,51 @@ def optimal_pathplanner():
             deps = np.rad2deg(np.arctan2(xbar[1], xbar[0]))
             dist = np.linalg.norm(xbar)
 
-            print('\n\nxbar:\t', [round(x, 2) for x in xbar])
-            print('dist:\t', round(dist, 2))
+            print('\n\ndist:\t', round(dist, 2))
+            print('xbar:\t', [round(x, 2) for x in xbar])
             print('deps:\t', round(deps, 2))
 
-            pressure_ref, feet_act = convert_rec(
-                    llc_ref.pressure, llc_ref.dvalve)
-            alp_act = clb.get_alpha(pressure_ref, mgmt.version)
+            if dist < 10:
+                print('\n\nReached ', gl_mgmt.idx, ' !!\n\n\n')
+                gl_mgmt.idx += 1
+            else:
+                pressure_ref, feet_act = convert_rec(
+                        llc_ref.pressure, llc_ref.dvalve)
+                alp_act = clb.get_alpha(pressure_ref, mgmt.version)
 
-            # calc ref
-            [alpha, feet], q = gait_law_planner.optimal_planner(
-                    xbar, alp_act, feet_act, gl_mgmt.lastq1,
-                    nmax=nmax, q1bnds=[50, 90])
-            gl_mgmt.lastq1 = q[0]
-            pattern = [[alp_act, [1, 1, 1, 1], .2],
-                       [alp_act, feet, .1],
-                       [alpha, feet, 1.5]]
-            for idx, pose in enumerate(pattern):
-                alpha, feet, ptime = pose
-                # convert ref
-                pvtsk, dvtsk = convert_ref(
-                        clb.get_pressure(alpha, mgmt.version), feet)
+                # calc ref
+                [alpha, feet], q = gait_law_planner.optimal_planner(
+                        xbar, alp_act, feet_act, gl_mgmt.lastq1,
+                        nmax=nmax, q1bnds=[50, 90])
+                gl_mgmt.lastq1 = q[0]
+                pattern = [[alp_act, [1, 1, 1, 1], .2],
+                           [alp_act, feet, .1],
+                           [alpha, feet, 1.5]]
+                for idx, pose in enumerate(pattern):
+                    alpha, feet, ptime = pose
+                    # convert ref
+                    pvtsk, dvtsk = convert_ref(
+                            clb.get_pressure(alpha, mgmt.version), feet)
 
-                # set ref
-                llc_ref.dvalve = dvtsk
-                llc_ref.pressure = pvtsk
-                if idx != len(pattern)-1:  # last pose -> no sleep
-                    time.sleep(ptime)
-            print('q:\t\t', [round(qi, 2) for qi in q])
-            print('alpha:\t', [int(a) for a in alpha])
-            print('pres:\t', [int(p*100)/100. for p in clb.get_pressure(
-                    alpha, mgmt.version)])
-#            print('feet:\t', feet)
-            print('\n\n---------------------------------\n\n')
+                    # set ref
+                    llc_ref.dvalve = dvtsk
+                    llc_ref.pressure = pvtsk
+                    if idx != len(pattern)-1:  # last pose -> no sleep
+                        time.sleep(ptime)
+                # save to rec
+                imgproc_rec.aIMG[6] = q[0]
+                imgproc_rec.aIMG[7] = q[1]
+                # stats
+                print('q:\t\t', [round(qi, 2) for qi in q])
+                print('alpha:\t', [int(a) for a in alpha])
+                print('pres:\t', [int(p*100)/100. for p in clb.get_pressure(
+                        alpha, mgmt.version)])
+                print('\n\n---------------------------------\n\n')
 
-            # organisation
-            gl_mgmt.process_time = ptime
-            gl_mgmt.last_process_time = time.time()
-            gl_mgmt.round += 1
+                # organisation
+                gl_mgmt.process_time = ptime
+                gl_mgmt.last_process_time = time.time()
+                gl_mgmt.round += 1
         else:
             print('No detection ...')
 

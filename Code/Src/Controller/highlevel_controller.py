@@ -94,6 +94,7 @@ class GaitLawMGMT(object):
         self.last_process_time = time.time()
         self.process_time = 0
         self.round = 0
+        self.lastq1 = -30
 
 
 gl_mgmt = GaitLawMGMT()
@@ -315,13 +316,13 @@ def optimal_pathplanner():
     if gl_mgmt.round == 0:
         # feasible start pose:
         pvtsk, dvtsk = convert_ref(
-                clb.get_pressure([30, 0, -30, 30, 0], mgmt.version),
+                clb.get_pressure([30, 0, gl_mgmt.lastq1, 30, 0], mgmt.version),
                 [1, 0, 0, 1])
         llc_ref.dvalve = dvtsk
         llc_ref.pressure = pvtsk
 
-    n = 1
-    max_step_length = 70
+    nmax = 4
+    max_step_length = 90
     if (fun[0] and gl_mgmt.last_process_time + gl_mgmt.process_time <
             time.time()):
         # collect measurements
@@ -344,14 +345,13 @@ def optimal_pathplanner():
             alp_act = clb.get_alpha(pressure_ref, mgmt.version)
 
             # calc ref
-            if abs(deps) > 70:
-                pattern = rotspot.rotate_on_spot(deps, alp_act, feet_act)
-            else:
-                alpha, feet = gait_law_planner.optimal_planner(
-                        xbar, alp_act, feet_act, n, max_step_length)
-                pattern = [[alp_act, [1, 1, 1, 1], .2],
-                           [alp_act, feet, .1],
-                           [alpha, feet, 1.5]]
+            [alpha, feet], q = gait_law_planner.optimal_planner(
+                    xbar, alp_act, feet_act, gl_mgmt.lastq1,
+                    nmax=nmax, q1bnds=[50, 90])
+            gl_mgmt.lastq1 = q[0]
+            pattern = [[alp_act, [1, 1, 1, 1], .2],
+                       [alp_act, feet, .1],
+                       [alpha, feet, 1.5]]
             for idx, pose in enumerate(pattern):
                 alpha, feet, ptime = pose
                 # convert ref
@@ -363,7 +363,7 @@ def optimal_pathplanner():
                 llc_ref.pressure = pvtsk
                 if idx != len(pattern)-1:  # last pose -> no sleep
                     time.sleep(ptime)
-
+            print('q:\t\t', [round(qi, 2) for qi in q])
             print('alpha:\t', [int(a) for a in alpha])
             print('pres:\t', [int(p*100)/100. for p in clb.get_pressure(
                     alpha, mgmt.version)])

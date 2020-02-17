@@ -199,19 +199,19 @@ if __name__ == '__main__':
     feet2 = [0, 1, 1, 0]
     times = [2, .25, .25]
 
-    for q1 in Q1:
-        for q2 in Q2:
-            a1 = gaitlaw(-q1, q2, feet1)
-            a2 = gaitlaw(q1, q2, feet2)
-            ptrn = get_ptrn_from_angles([a1, a2], version, times, max_prs=max_prs)
-#            plt.figure()
-#            plot_pattern(ptrn)
-            save_list_as_csv(ptrn, version+'/q1_' + str(q1) + 'q2_' + str(q2).replace('.', '') + '.csv')
+#    for q1 in Q1:
+#        for q2 in Q2:
+#            a1 = gaitlaw(-q1, q2, feet1)
+#            a2 = gaitlaw(q1, q2, feet2)
+#            ptrn = get_ptrn_from_angles([a1, a2], version, times, max_prs=max_prs)
+##            plt.figure()
+##            plot_pattern(ptrn)
+#            save_list_as_csv(ptrn, version+'/q1_' + str(q1) + 'q2_' + str(q2).replace('.', '') + '.csv')
 # %%
 
     q1 = 80
-    q2 = -0.5
-    times = [1, .25, .25]
+    q2 = 0
+    times = [.43, .05, .02]
     a1 = gaitlaw(-q1, q2, feet1, c1=1)
     a2 = gaitlaw(q1, q2, feet2, c1=1)
     ptrn = get_ptrn_from_angles([a1, a2], version, times, max_prs=max_prs)

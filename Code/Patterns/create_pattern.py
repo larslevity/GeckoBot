@@ -211,7 +211,7 @@ if __name__ == '__main__':
 
     q1 = 80
     q2 = 0
-    times = [.73, .05, .02]
+    times = [.63, .05, .02]
     a1 = gaitlaw(-q1, q2, feet1, c1=1)
     a2 = gaitlaw(q1, q2, feet2, c1=1)
     ptrn = get_ptrn_from_angles([a1, a2], version, times, max_prs=max_prs)

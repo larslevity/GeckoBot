@@ -77,7 +77,7 @@ Hostname & Port \\
 
 \item Linux:
 \begin{lstlisting}
-bianca@bianca:~ ssh root@134.28.136.51
+user@pc:~ ssh root@134.28.136.51
 \end{lstlisting}
 
 \item login: root \qquad password: root
@@ -96,8 +96,8 @@ root@beaglebone:~Git/GeckoBot/Code/# python3 main.py
 
 If you want to run the GUI (to have the ability to save experimental data) run the the following piece of code on \texttt{bianca} with \textbf{python2}:
 \begin{lstlisting}
-bianca@bianca:~ cd Git/GeckoBot/Code
-bianca@bbianca:~Git/GeckoBot/Code/ python pc_liveplotter_main.py
+user@pc:~ cd Git/GeckoBot/Code
+user@pc:~Git/GeckoBot/Code/ python2 pc_liveplotter_main.py
 \end{lstlisting}
 \item \textbf{Note} that you must start both programs more or less at the same time. (main on bbb is tries to connect to bianca. if there is no listing port at bianca, the gui wont start)
 
@@ -157,12 +157,20 @@ root@beaglebone:~Git/GeckoBot/Code/#
 
 \subsection{Install OS on BBB}
 
-The developers of BBB embedded linux systems decided to change the device tree structure from \texttt{kernel} overlay (till version 8.7), to \texttt{uboot} overlay (9.1+). (Don't ask me to explain).
-However, the PWM setup for all pins is only possible with \texttt{kernel} overlay (or at least I'm not able to configure it in version 9.1+).
-Therefore you have to use the following image:
+The developers of BBB embedded linux systems decided to change the device tree structure from \texttt{kernel} overlay (till version 8.7), to \texttt{uboot} overlay (9.1+).
+The PWM setup for all possible pins is quite difficult for the early releases of the new kernel (9.1+).
+With kernel v8.7.xx it is easily possible to overload the device tree and from kernel 9.14.xx it is possible again (for versions in between it is very tricky).
+Therefore, it is recommended to use one the following images (download: \url{http://beagleboard.org/latest-images}):
 
-\texttt{bone-debian-8.7-iot-armhf-2017-03-19-4gb.img}
-(Download: \url{http://beagleboard.org/latest-images})
+\begin{tabular}{ll}
+kernel 8.7 & \texttt{bone-debian-8.7-iot-armhf-2017-03-19-4gb.img} \\
+kernel 9.14 & \texttt{bone-debian-9.9-iot-armhf-2019-08-03-4gb.img} \\
+\end{tabular}
+
+
+
+
+\textbf{Install on SD:}
 
 To install it on a \texttt{8GB} Micro-SD Card follow the instructions:
 
@@ -185,30 +193,6 @@ $ dd if=./bone-debian-**.img of=/dev/sdX
 
 (Here, \texttt{sdX} is the mounted empty uSD Card. It can be found with multiple use of the command \texttt{mount} or \texttt{df}.)
 
-
-\item Obsolete:
-\begin{footnotesize}
-\begin{itemize}
-
-\item In order to turn these images into eMMC flasher images, edit the \texttt{/boot/uEnv.txt} file on the BBB and remove the \texttt{\#} on the line with 
-
-\texttt{cmdline=init=/opt/scripts/tools/eMMC/init-eMMC-flasher-v3.sh}. 
-
-Enabling this will cause booting the microSD card to flash the eMMC. Images are no longer provided here to avoid people accidentally overwriting their eMMC flash.
-
-\item Insert the SD Card in the unpowered BBB, and power it by plugging in the USB or the 5VDC supply. Wait until all 4 LED have solid lights. This can take up to 45 minutes. 
-
-
-\item Flash MicroSD 4 with: \texttt{Debian 8.7 2017-03-19 4GB SD IoT} from \url{http://beagleboard.org/latest-images} (MicroSD 3 is weird ...).
-
-\item Insert MicroSD in (unpowered) BBB, press the USER Button, and apply power.
-
-\item It will take 30-45 minutes to flash the image onto the on-board chip. Once it is done, the bank of 4 LEDs to the right of the Ethernet port will all turn off. You can then power down your BBB.
-
-\end{itemize}
-
-\end{footnotesize}
-
 \end{itemize}
 
 
@@ -223,7 +207,7 @@ your BBB is called \texttt{beaglebone} and the default user on BBB is called \te
 
 \item Open a terminal and ssh into BBB as \texttt{debian} and then get superuser to configure the Board.
 \begin{lstlisting}
-bianca@bianca:~ ssh debian@192.168.7.2
+user@pc:~ ssh debian@192.168.7.2
 temppwd
 debian@beaglebone:~ su
 root
@@ -319,12 +303,12 @@ $ sudo connmanctl config ethernet_689e19b50543_cable --ipv4 dhcp
 \item If your Board crashed, and you were forced to reinstall the OS, there already exist a ssh-key.
 This you have to remove first (this is for USB cable):
 \begin{lstlisting}
-bianca@bianca:~ ssh-keygen -f "/home/bianca/.ssh/known_hosts" -R 192.168.7.2
+user@pc:~ ssh-keygen -f "/home/bianca/.ssh/known_hosts" -R 192.168.7.2
 \end{lstlisting}
 
 \item Generate a new key:
 \begin{lstlisting}
-bianca@bianca:~ ssh-keygen -f "/home/bianca/.ssh/key_bianca"
+user@pc:~ ssh-keygen -f "/home/bianca/.ssh/key_bianca"
 \end{lstlisting}
 When you are prompted for a password, just hit the enter key and you will generate a key with no password.
 
@@ -344,12 +328,12 @@ root@beaglebone:# service ssh restart
 
 \item Now you are able to transfer the key to the server:
 \begin{lstlisting}
-bianca@bianca:~ ssh-copy-id -i /home/bianca/.ssh/key_bianca root@192.168.7.2
+user@pc:~ ssh-copy-id -i /home/bianca/.ssh/key_bianca root@192.168.7.2
 \end{lstlisting}
 
 \item Check if its work:
 \begin{lstlisting}
-bianca@bianca:~ ssh root@192.168.7.2
+user@pc:~ ssh root@192.168.7.2
 \end{lstlisting}
 
 \item Now disable root login with password on server (for saftey):
@@ -371,67 +355,10 @@ root@beaglebone:# service ssh restart
 
 
 
-\subsection{Configure BBB Device Tree}
+\subsection{Configure BBB Device Tree (enabling all PWM pins)}
 
-In order to enable \texttt{P9.28} as pwm pin, you have to load \texttt{cape-universala}. This you gonna do in \texttt{/boot/uEnv.txt}:
-
-\begin{itemize}
-\item source: \url{https://groups.google.com/forum/#!topic/beagleboard/EYSwmyxYjdM}
-
-\item \texttt{/boot/uEnv.txt} should be looking something like this:
-
-\begin{lstlisting}
-root@beaglebone:# cat /boot/uEnv.txt | grep -v "#"
-
-uname_r=4.4.54-ti-r93 
-cmdline=coherent_pool=1M quiet cape_universal=enable
-\end{lstlisting}
-
-Edit it with:
-\begin{lstlisting}
-root@beaglebone:# nano /boot/uEnv.txt
-\end{lstlisting}
-
-Add the following lines, such that \texttt{/boot/uEnv.txt} looks like:
-\begin{lstlisting}
-root@beaglebone:# cat /boot/uEnv.txt | grep -v "#"
-
-uname_r=4.4.54-ti-r93
-dtb=am335x-boneblack-overlay.dtb
-cmdline=coherent_pool=1M quiet cape_universal=enable
-cape_enable=bone_capemgr.enable_partno=cape-universala
-\end{lstlisting}
-\item Reboot and you should be able to configure with:
-\begin{lstlisting}
-root@beaglebone:# config-pin P9_28 pwm
-\end{lstlisting}
-\end{itemize}
-
-
-Note:
-\begin{footnotesize}
-\begin{itemize}
-\item In \texttt{debian-elinux-version-9.1+} the \texttt{/boot/uEnv.txt} looks like:
-\begin{lstlisting}
-root@beaglebone:# cat /boot/uEnv.txt | grep -v "#"
-
-uname_r=4.9.82-ti-r102
-enable_uboot_overlays=1
-enable_uboot_cape_universal=1
-cmdline=coherent_pool=1M net.ifnames=0 quiet
-\end{lstlisting}
-
-If you see this, you may want to find a way to enable all the pins. I failed.
-
-Robert C Nelson seems to be the only one, who has an idea whats going on...
-\url{https://elinux.org/Beagleboard:BeagleBoneBlack_Debian#U-Boot_Overlays}
-
-\end{itemize}
-\end{footnotesize}
-
-
-
-
+In order to enable \texttt{P9.28} as pwm pin, you have to load \texttt{cape-universala}.\\
+\\
 \textbf{Debian 9 / Kernel v4.14.71-ti-r80}:
 
 \begin{itemize}
@@ -471,15 +398,64 @@ also make sure the bb-cape-overlays package is upto date
 apt update
 apt install --only-upgrade bb-cape-overlays
 \end{lstlisting}
-
-
-
-
 \end{itemize}
 
 
 
+\textbf{Debian 8 / Kernel version v4.4.54}
+\begin{itemize}
+\item source: \url{https://groups.google.com/forum/#!topic/beagleboard/EYSwmyxYjdM}
 
+\item \texttt{/boot/uEnv.txt} should be looking something like this:
+
+\begin{lstlisting}
+root@beaglebone:# cat /boot/uEnv.txt | grep -v "#"
+
+uname_r=4.4.54-ti-r93 
+cmdline=coherent_pool=1M quiet cape_universal=enable
+\end{lstlisting}
+
+Edit it with:
+\begin{lstlisting}
+root@beaglebone:# nano /boot/uEnv.txt
+\end{lstlisting}
+
+Add the following lines, such that \texttt{/boot/uEnv.txt} looks like:
+\begin{lstlisting}
+root@beaglebone:# cat /boot/uEnv.txt | grep -v "#"
+
+uname_r=4.4.54-ti-r93
+dtb=am335x-boneblack-overlay.dtb
+cmdline=coherent_pool=1M quiet cape_universal=enable
+cape_enable=bone_capemgr.enable_partno=cape-universala
+\end{lstlisting}
+\item Reboot and you should be able to configure with:
+\begin{lstlisting}
+root@beaglebone:# config-pin P9_28 pwm
+\end{lstlisting}
+\end{itemize}
+
+
+\textbf{Debian 9 / Kernel version v4.9.xx}
+\begin{footnotesize}
+\begin{itemize}
+\item In \texttt{debian-elinux-version-9.1+} the \texttt{/boot/uEnv.txt} looks like:
+\begin{lstlisting}
+root@beaglebone:# cat /boot/uEnv.txt | grep -v "#"
+
+uname_r=4.9.82-ti-r102
+enable_uboot_overlays=1
+enable_uboot_cape_universal=1
+cmdline=coherent_pool=1M net.ifnames=0 quiet
+\end{lstlisting}
+
+If you see this, you may want to find a way to enable all the pins. I failed.
+
+Robert C Nelson seems to be the only one, who has an idea whats going on...
+\url{https://elinux.org/Beagleboard:BeagleBoneBlack_Debian#U-Boot_Overlays}
+
+\end{itemize}
+\end{footnotesize}
 
 
 
@@ -498,12 +474,9 @@ apt install --only-upgrade bb-cape-overlays
 
 
 \subsection{Set I2C Bus to FastMode (400kHz)}
+
+\textbf{Kernel version 4.14.xx:}
 \begin{itemize}
-\item \textbf{Kernel version 4.14.xx}
-
-\item For Kernel version $<$ 4.4.xx replace
-\texttt{am335x-boneblack.dtb} with \texttt{am335x-boneblack-overlay.dtb}
-
 \item Backup the original \texttt{.dtb}:
 \begin{lstlisting}
 root@beaglebone: /boot/dtbs/4.14.71-ti-r80# cp am335x-boneblack.dtb am335x-boneblack.dtb.orig
@@ -566,8 +539,10 @@ should be the output.
 
 
 
-
-
+\textbf{Kernel version $<$4.4.xx:}
+\begin{itemize}
+\item For Kernel version $<$ 4.4.xx replace \texttt{am335x-boneblack.dtb} with \texttt{am335x-boneblack-overlay.dtb}
+\end{itemize}
 
 
 
@@ -627,20 +602,41 @@ root@beaglebone:~/Git/# git clone https://github.com/larslevity/GeckoBot.git
 
 
 
+\subsection{Disable unused programs on BBB}
+
+Webserver
+
+\begin{lstlisting}[language=bash]
+root@beaglebone: systemctl stop apache2.service
+root@beaglebone: systemctl disable apache2.service
+
+\end{lstlisting}
+
+
+NodeJS:
+
+
+\begin{lstlisting}[language=bash]
+root@beaglebone: systemctl stop bonescript-autorun.service
+root@beaglebone: systemctl disable bonescript-autorun.service
+
+\end{lstlisting}
 
 
 
 
-
-\clearpage
 
 \section{Pin Layout}
 
 Figure~\ref{fig:BBBpins} shows all available pins and there functions of the Beaglebone Board Black and which of these pins are used and for what purpose.
-\begin{figure}[h!]
+\begin{figure}
 \begin{center}
 \includegraphics[width=.8\textwidth]{Images/beaglebone-black-pinout.jpg} \\
-\includegraphics[width=.9\textwidth]{Images/PinLayout/PinLayout.pdf}
+\begin{tabular}{cc}
+\includegraphics[width=.45\textwidth]{Images/PinLayout/PinLayoutBBBMain.pdf} &
+\includegraphics[width=.45\textwidth]{Images/PinLayout/PinLayoutBBBUI.pdf} \\
+Main BBB & UI BBB \\
+\end{tabular}
 \caption{Pin layout of BBB}
 \label{fig:BBBpins}
 \end{center}
@@ -661,66 +657,121 @@ It consists of:
 	\item 9 pull-down resistors, which pull the reference signal for discrete valves and operating modes down again, after activation.
 \end{itemize}
 
-\begin{figure}[h!]
+\begin{figure}
 \begin{center}
-\includegraphics[width=.98\textwidth]{Images/circuit_HUI/circuit_HUI.pdf}
-\caption{User Interface Wiring}
+\begin{tabular}{c}
+\includegraphics[width=.98\textwidth]{Images/circuit_HUI/circuit_HUI.pdf} \\
+\end{tabular}
+\end{center}
+\caption{Circuit of User Interface}
 \label{fig:hui_circuit}
+\end{figure}
+
+\subsection{LCD-Display}
+
+LCD-Display is connected to I2C of BBB UI.
+The PinOut of LCD module is shown in Figure \ref{fig:LCD:pinout}
+
+\begin{figure}
+\begin{center}
+\includegraphics[scale=.8]{Images/LCDDisplay/LCDPins.pdf}
+\caption{PinOut of LCD module}
+\label{fig:LCD:pinout}
 \end{center}
 \end{figure}
 
 
-\subsection{Proportional Valves}
+
+
+
+\subsection{Proportional Valve Unit}
 
 To generate the control signal for the proportional valves, \texttt{pwm} is used.
-Since the pwm-signal oscillating and its level is 3.3V, it must be lowpass-filtered and amplified.
-Therefore the following circuit is used:
+Since the pwm-signal oscillating and its level is smaller than 10V (input of valve), it must be lowpass-filtered and amplified.
+The circuit is depicted in Figure \ref{fig:ValveUnit}
 
-\includegraphics[scale=1]{Images/Mpye/mpye_simplified_scheme.pdf}
-\begin{tabular}{lr}
-R & 510 $\Omega$ \\
-R1 & 11 k$\Omega$ \\
-R2 & 22 k$\Omega$ \\
-C & 220 $\mu$F
+\begin{figure}
+\begin{center}
+\begin{tabular}{c}
+\includegraphics[width=.98\textwidth]{Images/circuit_ValveUnit/circuit_ValveUnit.pdf} \\
 \end{tabular}
+\end{center}
+\caption{Circuit of Valve Unit}
+\label{fig:ValveUnit}
 
-For the proportional valves, the used cable (status: 28.6.18) has the following color scheme (accordingly to the data sheet\cite[p. 9]{MPYE_DATASHEET}):
+\end{figure}
 
 
+
+For the proportional valves, the cable used (status: 28.6.18) has color scheme depicted in Figure \ref{fig:mpye_pins} (accordingly to the data sheet\cite[p. 9]{MPYE_DATASHEET}).
+
+\begin{figure}
 \includegraphics[scale=1]{Images/Mpye/anschluss_mpye_PIN.pdf}
 \includegraphics[height=3cm]{Images/Mpye/PinOut.PNG}
+\caption{Color scheme of the cable used to connect proportional valves}
+\label{fig:mpye_pins}
+\end{figure}
 
-\begin{tabular}{lcr}
-Potentiometer & 10 & kOhm \\
-Pull Down Resistor & 22 (?) & kOhm \\
-\end{tabular}
+
 
 
 \subsection{Discrete Valves}	
 The discrete valves are controlled directly via a GPIO.
 The signal controls a mosfet \cite{IRF540_DATASHEET}.
-A ready-to-use Arduino module is available:
+Figure \ref{fig:mosfet:dvalve} shows a break-out board, which is used for the purpose.
 
+\begin{figure}
+\begin{center}
 \includegraphics[height=3cm]{Images/Excel/mosfet.PNG}
+\end{center}
+\caption{Mosfet for controlling the direct acting solenoid valves}
+\label{fig:mosfet:dvalve}
+\end{figure}
+
 
 
 
 \subsection{Pressure Sensors}
 
-The following table is from \cite[p. 30]{SSC_DATASHEET}. 
-It shows the PinOut of the used pressure Sens.
-The figure below shows the numbering scheme of the pressure sensors \cite[p. 19]{SSC_DATASHEET}.
+Figure \ref{fig:psens:schmeme} shows the the PinOut and numbering scheme of the pressure sensors.
 
-\includegraphics[width=.9\textwidth]{Images/PressureSensor/PinOut.PNG}
-
+\begin{figure}
+\begin{center}
+\includegraphics[width=.9\textwidth]{Images/PressureSensor/PinOut.PNG} \\
 \includegraphics[width=.9\textwidth]{Images/PressureSensor/PinNumbering.PNG}
+\end{center}
+\caption{PinOut and pin numbering scheme of the pressure sensor used \cite[p.19, p.30]{SSC_DATASHEET}}
+\label{fig:psens:schmeme}
+\end{figure}
 
 
 
-\subsection{LCD-Display}
 
-LCD-Display is connected to I2C.
-\includegraphics[scale=1]{Images/LCDDisplay/LCDPins.pdf}
+
+\subsection{Complete Setup}
+
+Figure \ref{fig:circuit_cboard} shows the circuit and photographs and of the complete setup.
+
+\begin{figure}[h!]
+\begin{center}
+\begin{tabular}{c}
+\includegraphics[width=.98\textwidth]{Images/circuit_CBoard/circuit_CBoard.pdf} \\
+(a) circuit \\
+\end{tabular}
+
+\begin{tabular}{cc}
+\includegraphics[width=.48\textwidth]{Images/circuit_HUI/circuit_HUI.jpg} &
+\includegraphics[width=.48\textwidth]{Images/circuit_ValveUnit/circuit_ValveUnit.jpg} \\
+(b) UI & (c) Valve unit \\
+\includegraphics[width=.48\textwidth]{Images/circuit_CBoard/circuit_CBoard.jpg} \\
+(d) top view \\
+\end{tabular}
+\end{center}
+
+\caption{Circuit of the complete setup}
+\label{fig:circuit_cboard}
+\end{figure}
+
 
 
 
@@ -748,228 +799,210 @@ BBB experiment 	& - &.& -  &.& - &.& 55 \\
 
 
 
-\subsection{Formatting SD Card with debian}
+%\subsection{Formatting SD Card with debian}
+%
+%\begin{itemize}
+%\item Source: \url{https://www.techwalla.com/articles/how-to-format-an-sd-card-in-debian-linux}
+%
+%\item Determine location of SDCard (in the following called: \texttt{/dev/mmcblk0p2}) and directory where it is mounted (in the following called: \texttt{/media/SDCard}):
+%\begin{lstlisting}
+%su
+%df
+%\end{lstlisting}
+%
+%\item Unmount, format, and remount:
+%\begin{lstlisting}
+%umount /dev/mmcblk0p2
+%mkdosfs /dev/mmcblk0p2 -F16
+%mount /dev/mmcblk0p2 /media/SDCard
+%\end{lstlisting}
+%
+%\item For formatting SD with more than one partition, use:
+%\begin{lstlisting}
+%cfdisk /dev/mmcblk0
+%\end{lstlisting}
+%and follow the instructions.
+%\end{itemize}
+%
+%
+%
+%\subsection{Set WiFi connection}
+%
+%\begin{itemize}
+%
+%\item Order WiFi Antenna \texttt{TP-LINK WLAN LITEN HI.G USB ADA. WN722N} from somewhere.
+%
+%\item Complete this tuturial ...
+%
+%\end{itemize}
+%
+%
+%
+%\subsection{Setup for analog inputs}
+%
+%\begin{itemize}
+%
+%\item \url{https://groups.google.com/forum/#!topic/beagleboard/Lk3vWNIExiQ}
+%
+%\item Insert in command line on BBB:
+%
+%\begin{lstlisting}[language=bash]
+%su apt-get install bb-cape-overlays
+%
+%cd /opt/source/bb.org-overlays
+%
+%./dtc-overlay.sh
+%
+%./install.sh
+%
+%sudo sh -c "echo 'BB-ADC' > /sys/devices/platform/bone_capemgr/slots"
+%\end{lstlisting}
+%
+%
+%\item Reboot.
+%
+%\item For readout the ADC input Pins from python: \url{https://learn.adafruit.com/setting-up-io-python-library-on-beaglebone-black/adc}
+%
+%
+%\end{itemize}
+%
+%
+%\subsection{Autorun}
+%
+%In order to autorun this script after booting the BBB use crontab like this:
+%
+%\begin{lstlisting}[language=bash]
+%root@beaglebone:# crontab -e -u root
+%\end{lstlisting}
+%
+%adding the following lines to the cron boot jobs:
+%\begin{lstlisting}[language=bash]
+%@reboot config-pin P9_28 pwm
+%@reboot python /home/debian/Git/GeckoBot/Code/server_hardware_controlled.py &
+%\end{lstlisting}
+%
+%NOTE: Dont forget the \texttt{\&} at the end. Otherwise it will block the console.
+%And you wont be able to ssh into it.
+%But with the \texttt{\&} it will run as background process and will be able to ssh into
+%the BBB.
+%
+%Ending Background Processes
+%
+%Since the python script will run in the background, we need to find it and
+%end it manually. Enter this to find the processing running off the file we
+%wrote earlier.
+%
+%\begin{lstlisting}[language=bash]
+%ps aux | grep home/debian/GeckoBot/Code/server_hardware_controlled.py
+%\end{lstlisting}
+%
+%You will get something like this:
+%\begin{lstlisting}[language=bash]
+%    root    873     0.1     0.6     7260    3264    ?   S   22:19   0:01 python home/debian/GeckoBot/Code/server_hardware_controlled.py
+%\end{lstlisting}
+%
+%The number 873 is the process ID. Then, just use the process ID and kill
+%the process.
+%
+%\begin{lstlisting}[language=bash]
+%root@beaglebone:# kill 873
+%\end{lstlisting}
+%
+%Ref:
+%\url{https://billwaa.wordpress.com/2014/10/03/beaglebone-black-launch-python-script-at-boot-like-arduino-sketch/}
+%
+%---------------------------
+%
+%Okay, cron gives error:
+%try with daemontools - Ref:
+%\url{http://samliu.github.io/2017/01/10/daemontools-cheatsheet.html}
+%
+%-- This is super weird! starting the script every time a error occurs again.
+%
+%
+%---------------------------
+%
+%To see what happens in crontab, create a Crontab Logger:
+%
+%\begin{lstlisting}[language=bash]
+%crontab -e:
+%    @reboot /home/debian/Git/GeckoBot/boot_autorun_test/ssh_hack.sh 2>&1 |
+%        /home/debian/Git/GeckoBot/boot_autorun_test/timestamp.sh  >>
+%        /home/debian/Git/GeckoBot/boot_autorun_test/log/cronlog.log
+%\end{lstlisting}
+%
+%---------------------------
+%
+%ssh Hack:
+%For some reason the \texttt{BBIO.PWM} module needs a terminal (\texttt{tty}) to initialize.
+%A Job, started by \texttt{crontab} does not have a \texttt{tty}. There is simply no \texttt{tty}.
+%Therefore we \texttt{ssh} into the device from the device itself. So we create a virtual \texttt{tty}.
+%To do so run the \texttt{ssh\_hack.sh} script. it will automatically run the start
+%script.
+%But you must enable a ssh-login as root without password. 2 Steps:
+%
+%1. disable root pw (to clear the password):
+%\begin{lstlisting}[language=bash]
+%passwd -d root
+%\end{lstlisting}
+%            
+%editing
+%\begin{lstlisting}[language=bash]
+%nano /etc/pam.d/common-auth
+%\end{lstlisting}
+%Find the \texttt{pam\_unix.so} line and add \texttt{nullok} to the end if its
+%not there or change \texttt{nullok\_secure} to be just \texttt{nullok} if
+%yours says \texttt{nullok\_secure}.
+%
+%2. allow \texttt{ssh} to root login without password:
+%Ref: \url{https://askubuntu.com/questions/115151/how-to-set-up-passwordless-ssh-access-for-root-user}
+%
+%Basically, we have to create a public key for root and copy it
+%to the \texttt{BBB} itself. Just follow the instructions on Ref above.
+%But dont set \texttt{PasswordAuthentication} to \texttt{no}! 
+%Since than nobody can login with a password anymore, only with a public key. Which is not yet created anywhere else except on the \texttt{BBB} itself.
+%
+%\begin{lstlisting}[language=bash]
+%        nano /etc/ssh/sshd_config
+%            PermitRootLogin without-password
+%\end{lstlisting}
+%
+%3. restart ssh service:
+%\begin{lstlisting}[language=bash]
+%service ssh restart
+%\end{lstlisting}
+%
+%4. disable requiretty for root:
+%\begin{lstlisting}[language=bash]
+%visudo
+%\end{lstlisting}
+%and add \texttt{Defaults: root !requiretty}
+%
+%5. spawn a shell:
+%
+%\url{Ref: https://netsec.ws/?p=337}
+%
+%
+%Error: \texttt{stdin is no tty}:
+%\url{https://michaelseiler.net/2013/04/25/cron-jobs-and-ssh-errors-tty-and-sudo/}
+%
+%\url{https://sachinpradeeplinux.wordpress.com/2012/09/28/stdin-is-not-a-tty-error/}
+%
+%On the destination server, edit \texttt{/root/.bashrc} file and comment out
+%the \texttt{mesg y} line.
+%
+%If it is not there, please add the following line to \texttt{.bashrc} file .
+%
+%\begin{lstlisting}[language=bash]
+%if `tty -s`; then
+% mesg n
+%fi
+%\end{lstlisting}
 
-\begin{itemize}
-\item Source: \url{https://www.techwalla.com/articles/how-to-format-an-sd-card-in-debian-linux}
 
-\item Determine location of SDCard (in the following called: \texttt{/dev/mmcblk0p2}) and directory where it is mounted (in the following called: \texttt{/media/SDCard}):
-\begin{lstlisting}
-su
-df
-\end{lstlisting}
 
-\item Unmount, format, and remount:
-\begin{lstlisting}
-umount /dev/mmcblk0p2
-mkdosfs /dev/mmcblk0p2 -F16
-mount /dev/mmcblk0p2 /media/SDCard
-\end{lstlisting}
 
-\item For formatting SD with more than one partition, use:
-\begin{lstlisting}
-cfdisk /dev/mmcblk0
-\end{lstlisting}
-and follow the instructions.
-\end{itemize}
 
-
-
-\subsection{Set WiFi connection}
-
-\begin{itemize}
-
-\item Order WiFi Antenna \texttt{TP-LINK WLAN LITEN HI.G USB ADA. WN722N} from somewhere.
-
-\item Complete this tuturial ...
-
-\end{itemize}
-
-
-
-\subsection{Setup for analog inputs}
-
-\begin{itemize}
-
-\item \url{https://groups.google.com/forum/#!topic/beagleboard/Lk3vWNIExiQ}
-
-\item Insert in command line on BBB:
-
-\begin{lstlisting}[language=bash]
-su apt-get install bb-cape-overlays
-
-cd /opt/source/bb.org-overlays
-
-./dtc-overlay.sh
-
-./install.sh
-
-sudo sh -c "echo 'BB-ADC' > /sys/devices/platform/bone_capemgr/slots"
-\end{lstlisting}
-
-
-\item Reboot.
-
-\item For readout the ADC input Pins from python: \url{https://learn.adafruit.com/setting-up-io-python-library-on-beaglebone-black/adc}
-
-
-\end{itemize}
-
-
-\subsection{Autorun}
-
-In order to autorun this script after booting the BBB use crontab like this:
-
-\begin{lstlisting}[language=bash]
-root@beaglebone:# crontab -e -u root
-\end{lstlisting}
-
-adding the following lines to the cron boot jobs:
-\begin{lstlisting}[language=bash]
-@reboot config-pin P9_28 pwm
-@reboot python /home/debian/Git/GeckoBot/Code/server_hardware_controlled.py &
-\end{lstlisting}
-
-NOTE: Dont forget the \texttt{\&} at the end. Otherwise it will block the console.
-And you wont be able to ssh into it.
-But with the \texttt{\&} it will run as background process and will be able to ssh into
-the BBB.
-
-Ending Background Processes
-
-Since the python script will run in the background, we need to find it and
-end it manually. Enter this to find the processing running off the file we
-wrote earlier.
-
-\begin{lstlisting}[language=bash]
-ps aux | grep home/debian/GeckoBot/Code/server_hardware_controlled.py
-\end{lstlisting}
-
-You will get something like this:
-\begin{lstlisting}[language=bash]
-    root    873     0.1     0.6     7260    3264    ?   S   22:19   0:01 python home/debian/GeckoBot/Code/server_hardware_controlled.py
-\end{lstlisting}
-
-The number 873 is the process ID. Then, just use the process ID and kill
-the process.
-
-\begin{lstlisting}[language=bash]
-root@beaglebone:# kill 873
-\end{lstlisting}
-
-Ref:
-\url{https://billwaa.wordpress.com/2014/10/03/beaglebone-black-launch-python-script-at-boot-like-arduino-sketch/}
-
----------------------------
-
-Okay, cron gives error:
-try with daemontools - Ref:
-\url{http://samliu.github.io/2017/01/10/daemontools-cheatsheet.html}
-
--- This is super weird! starting the script every time a error occurs again.
-
-
----------------------------
-
-To see what happens in crontab, create a Crontab Logger:
-
-\begin{lstlisting}[language=bash]
-crontab -e:
-    @reboot /home/debian/Git/GeckoBot/boot_autorun_test/ssh_hack.sh 2>&1 |
-        /home/debian/Git/GeckoBot/boot_autorun_test/timestamp.sh  >>
-        /home/debian/Git/GeckoBot/boot_autorun_test/log/cronlog.log
-\end{lstlisting}
-
----------------------------
-
-ssh Hack:
-For some reason the \texttt{BBIO.PWM} module needs a terminal (\texttt{tty}) to initialize.
-A Job, started by \texttt{crontab} does not have a \texttt{tty}. There is simply no \texttt{tty}.
-Therefore we \texttt{ssh} into the device from the device itself. So we create a virtual \texttt{tty}.
-To do so run the \texttt{ssh\_hack.sh} script. it will automatically run the start
-script.
-But you must enable a ssh-login as root without password. 2 Steps:
-
-1. disable root pw (to clear the password):
-\begin{lstlisting}[language=bash]
-passwd -d root
-\end{lstlisting}
-            
-editing
-\begin{lstlisting}[language=bash]
-nano /etc/pam.d/common-auth
-\end{lstlisting}
-Find the \texttt{pam\_unix.so} line and add \texttt{nullok} to the end if its
-not there or change \texttt{nullok\_secure} to be just \texttt{nullok} if
-yours says \texttt{nullok\_secure}.
-
-2. allow \texttt{ssh} to root login without password:
-Ref: \url{https://askubuntu.com/questions/115151/how-to-set-up-passwordless-ssh-access-for-root-user}
-
-Basically, we have to create a public key for root and copy it
-to the \texttt{BBB} itself. Just follow the instructions on Ref above.
-But dont set \texttt{PasswordAuthentication} to \texttt{no}! 
-Since than nobody can login with a password anymore, only with a public key. Which is not yet created anywhere else except on the \texttt{BBB} itself.
-
-\begin{lstlisting}[language=bash]
-        nano /etc/ssh/sshd_config
-            PermitRootLogin without-password
-\end{lstlisting}
-
-3. restart ssh service:
-\begin{lstlisting}[language=bash]
-service ssh restart
-\end{lstlisting}
-
-4. disable requiretty for root:
-\begin{lstlisting}[language=bash]
-visudo
-\end{lstlisting}
-and add \texttt{Defaults: root !requiretty}
-
-5. spawn a shell:
-
-\url{Ref: https://netsec.ws/?p=337}
-
-
-Error: \texttt{stdin is no tty}:
-\url{https://michaelseiler.net/2013/04/25/cron-jobs-and-ssh-errors-tty-and-sudo/}
-
-\url{https://sachinpradeeplinux.wordpress.com/2012/09/28/stdin-is-not-a-tty-error/}
-
-On the destination server, edit \texttt{/root/.bashrc} file and comment out
-the \texttt{mesg y} line.
-
-If it is no there, please add the following line to \texttt{.bashrc} file .
-
-\begin{lstlisting}[language=bash]
-if `tty -s`; then
- mesg n
-fi
-\end{lstlisting}
-
-
-
-
-\subsection{Disable Webserver on BBB}
-
-Webserver
-
-\begin{lstlisting}[language=bash]
-root@BBB: systemctl stop apache2.service
-root@BBB: systemctl disable apache2.service
-
-\end{lstlisting}
-
-
-NodeJS:
-
-
-\begin{lstlisting}[language=bash]
-root@BBB: systemctl stop bonescript-autorun.service
-root@BBB: systemctl disable bonescript-autorun.service
-
-\end{lstlisting}
 
 
 \bibliography{bib}

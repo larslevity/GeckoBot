@@ -1,5 +1,10 @@
+
 \documentclass[10pt, border=10pt]{standalone}
-\input{../tikzpic_packages.tex}
+
+\usepackage{tikz}
+\usepackage[siunitx]{circuitikz}
+
+
 
 \def\pneumaticcolor{blue!20}
 
@@ -13,7 +18,10 @@ switc/.style={orange, fill=orange!40},
 pulldown/.style={blue, fill=blue!20},
 poti/.style={blue, fill=blue!30},
 bbb/.style={gray!60, fill=gray!40},
-head/.style={midway, above=.5cm, align=center}
+head/.style={midway, above=.5cm, align=center},
+connect/.style={circle, fill=black, inner sep=0pt, minimum height=.75mm},
+outerconnect/.style={circle, fill=white, draw, inner sep=0pt, minimum height=1.5mm},
+fontnode/.style={scale=.5}
 ]
 
 \def\yhigh{10}
@@ -24,7 +32,7 @@ head/.style={midway, above=.5cm, align=center}
 
 
 \def\ypbtns{5}
-\def\yswitch{7}
+\def\yswitch{5}
 \def\yled{2}
 \def\ypoti{7.5}
 
@@ -33,6 +41,23 @@ head/.style={midway, above=.5cm, align=center}
 \def\cabledist{.8}
 \def\leddist{1.2}
 \def\potidist{.9}
+
+
+
+
+
+
+
+\path (9.9,8.63) node[right, align=left, draw=gray!50]{
+\begin{tabular}{lll}
+Poti & 10\,k$\Omega$  		&  VIS  \\
+&& P16NM103MAB1 \\
+LED & 5\,V 								& RND 210-00013 \\
+Push Btn& 0.5\,A-24\,V & T 113A SW \\
+Resistor & 11\,k$\Omega$  						& MPR 11K\\
+Switch & 10\,A-125\,V& MS 165 \\
+\end{tabular}
+};
 
 
 %% PULLDOWNS
@@ -57,7 +82,7 @@ head/.style={midway, above=.5cm, align=center}
 \foreach \i in {1,...,5}{
 	\pgfmathsetmacro{\ydist}{\i*\headerdist}
 	\pgfmathsetmacro{\xdist}{\i*\cabledist}
-	\draw (\xbbbr,\ypbtns-\ydist)node[left]{GPIO-IN PBTN \i}
+	\draw (\xbbbr,\ypbtns-\ydist)node[left]{(PBTN \i) GPIO}
 		--(\xbbbr + \xdist, \ypbtns-\ydist)node[help](connect){$\bullet$}
 		--(\xbbbr + \xdist, \ypbtns)
 		to[push button] (\xbbbr + \xdist, \yhigh)node[help]{$\bullet$};
@@ -75,13 +100,13 @@ head/.style={midway, above=.5cm, align=center}
 \draw[switc] (\xbbbr+.3+\xs,\y-.5)rectangle++(\x,1)node[head]{Switches \\ (Ref DValve)};
 
 \foreach \i in {1,...,4}{
-	\pgfmathsetmacro{\ydist}{\i*\headerdist}
+	\pgfmathsetmacro{\ydist}{\i*(\headerdist)-2.2}
 	\pgfmathsetmacro{\xdist}{\i*\cabledist + 6*\cabledist}
-	\draw (\xbbbr,\yswitch-\ydist)node[left]{GPIO-IN SWITCH \i}
+	\draw (\xbbbr,\yswitch-\ydist)node[left]{(SWITCH \i) GPIO}
 		--(\xbbbr + \xdist, \yswitch-\ydist)node[help](connect){$\bullet$}
 		--(\xbbbr + \xdist, \yswitch)
 		to[switch] (\xbbbr + \xdist, \yhigh)node[help](33){$\bullet$};
-	\pgfmathsetmacro{\yswitchBAR}{\yswitch - 15*\headerdist}
+	\pgfmathsetmacro{\yswitchBAR}{\yswitch - 11*\headerdist}
 	\draw (connect) -- (\xbbbr + \xdist, \yswitchBAR)
 		to[R] (\xbbbr + \xdist, \ylow)node[help]{$\bullet$};
 }
@@ -99,8 +124,8 @@ head/.style={midway, above=.5cm, align=center}
 	\pgfmathsetmacro{\ydist}{\i*\headerdist}
 	\pgfmathsetmacro{\xdist}{\i*\leddist + 11*\cabledist}
 	\pgfmathsetmacro{\yledBAR}{\yled - 5*\headerdist}
-	\draw (\xbbbr,\yled-\ydist)node[left]{GPIO-OUT LED \i}
-		--(\xbbbr + \xdist, \yled-\ydist)node[help](connect){$\bullet$}
+	\draw (\xbbbr,\yled-\ydist)node[left]{(LED \i) GPIO}
+		--(\xbbbr + \xdist, \yled-\ydist)
 		--(\xbbbr + \xdist, \yledBAR)
 		to[leDo] (\xbbbr + \xdist, \ylow)node[help](GND){$\bullet$};
 }
@@ -131,6 +156,10 @@ head/.style={midway, above=.5cm, align=center}
 \draw (\xbbbr-1, \ylow + .7)node[above]{GND$^-$}--(\xbbbr-1, \ylow)node[help]{$\bullet$};
 
 
-
 \end{circuitikz}
+
+
 \end{document}
+
+
+

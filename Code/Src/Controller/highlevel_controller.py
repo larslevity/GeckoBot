@@ -363,9 +363,13 @@ def optimal_pathplanner():
                         xbar, alp_act, feet_act, gl_mgmt.lastq1,
                         nmax=nmax, q1bnds=[50, 90])
                 gl_mgmt.lastq1 = q[0]
-                pattern = [[alp_act, [1, 1, 1, 1], .2],
-                           [alp_act, feet, .1],
-                           [alpha, feet, 1.5]]
+                # time settings
+                time_fix = .2
+                time_defix = .1
+                time_move = 2.0
+                pattern = [[alp_act, [1, 1, 1, 1], time_fix],
+                           [alp_act, feet, time_defix],
+                           [alpha, feet, time_move]]
                 for idx, pose in enumerate(pattern):
                     alpha, feet, ptime = pose
                     # convert ref

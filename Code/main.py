@@ -49,7 +49,7 @@ def init_ui_connections():
 def init_server_connections(IMGPROC=True):
     camerasock, imgprocsock, plotsock = None, None, None
     RPi_ip = '134.28.136.49'
-    pc_ip = '134.28.136.129'
+    pc_ip = '134.28.136.131'
 #    pc_ip = '192.168.7.1'
 
     # RPi connection

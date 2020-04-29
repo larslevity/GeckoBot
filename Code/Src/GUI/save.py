@@ -15,7 +15,7 @@ try:
 except ImportError:
     print('Can not import Deepdish')
 import matplotlib.pyplot as plt
-from matplotlib2tikz import save as tikz_save
+#from matplotlib2tikz import save as tikz_save
 import fileinput
 import csv
 import numpy as np
@@ -105,8 +105,8 @@ def save_current_plot_as_tikz(toplevel, filename):
     plt.legend()
     plt.grid()
     # print(filename)
-    tikz_save(filename)
-    insert_tex_header(filename)
+#    tikz_save(filename)
+#    insert_tex_header(filename)
     print('Done!')
 
 

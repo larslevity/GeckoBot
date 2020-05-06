@@ -20,6 +20,7 @@ from Src.Management import state_machine
 from Src.Controller import searchtree
 from Src.Controller import calibration as clb
 from Src.Controller import gait_law_planner
+from Src.Controller import KitBasedMotionGenerator as KBMG
 from Src.Controller import rotate_on_spot as rotspot
 
 
@@ -76,14 +77,16 @@ class PatternMGMT(object):
 mgmt = PatternMGMT()
 
 
-class SearchTreeMGMT(object):
+class KitBasedMotionGeneratorMGMT(object):
     def __init__(self):
-        self.ref_generator = searchtree.ReferenceGenerator()
+        self.ref_generator = KBMG.ReferenceGenerator()
         self.last_process_time = time.time()
         self.process_time = 0
+        self.round = 0
+        self.idx = 0
 
 
-st_mgmt = SearchTreeMGMT()
+kbmg_mgmt = KitBasedMotionGeneratorMGMT()
 
 
 class GaitLawMGMT(object):
@@ -159,11 +162,13 @@ def mode3():
         sys_config.UI.lcd_display('selected version\nnot calibrated')
         mgmt.select_version()
 
+    # init
     gl_mgmt.round = 0
+    kbmg_mgmt.round, kbmg_mgmt.idx = (0, 0)
 
     while ui_state.mode == 'MODE3':
         if ui_state.fun[1]:
-            searchtree_pathplanner()
+            KB_MotionGen()
         else:
             optimal_pathplanner()
         time.sleep(TSAMPLING)
@@ -207,30 +212,53 @@ def pattern_ref():
         rootLogger.info('RPi stop to take photos')
 
 
-def searchtree_pathplanner():
+def KB_MotionGen():
     fun = ui_state.fun
 
-    if (fun[0] and st_mgmt.last_process_time + st_mgmt.process_time <
+    if (fun[0] and kbmg_mgmt.last_process_time + kbmg_mgmt.process_time <
             time.time()):
-        xref = imgproc_rec.xref
-        act_eps = imgproc_rec.eps
 
-        if xref[0] and act_eps:
-            act_pos = (imgproc_rec.X[1], imgproc_rec.Y[1])
+        act_pos = (imgproc_rec.X[1], imgproc_rec.Y[1])
+        act_eps = imgproc_rec.eps if imgproc_rec.eps else np.nan
+#        xref = imgproc_rec.xref if imgproc_rec.xref[0] else (np.nan, np.nan)
+#        XREF = [(0, 0), (20, 30), (-45, 50), (20, 95)]  # cm
+        XREF = [(467., 515),  # origin
+                (783., 288.),
+                (962., 850.),
+                (1364., 288.)]
+        try:
+            xref = XREF[kbmg_mgmt.idx]
+            imgproc_rec.xref = xref  # write to recorder
+        except IndexError:
+            xref = XREF[-1]
 
-            # generate reference
-            alpha, foot, ptime, pose_id =  \
-                st_mgmt.ref_generator.get_next_reference(
-                    act_pos, act_eps, xref)
-            print(pose_id)
-            pvtsk, dvtsk = convert_ref(
-                    clb.get_pressure(alpha, mgmt.version), foot)
-            # send to main thread
-            llc_ref.dvalve = dvtsk
-            llc_ref.pressure = pvtsk
-            # organisation
-            st_mgmt.process_time = ptime
-            st_mgmt.last_process_time = time.time()
+        if not np.isnan(xref[0]) and not np.isnan(act_eps):
+            # convert measurements
+            xbar = gait_law_planner.xbar(xref, act_pos, act_eps)
+            xbar = xbar*112./1000  # px to cm
+            dist = np.linalg.norm(xbar)
+            deps = np.rad2deg(np.arctan2(xbar[1], xbar[0]))
+            print('\n\nxbar:\t', [round(x, 2) for x in xbar])
+            print('dist:\t', round(dist, 2))
+            print('deps:\t', round(deps, 2))
+
+            if dist < 10:
+                print('\n\nReached goal ', kbmg_mgmt.idx, ' !!\n\n\n')
+                kbmg_mgmt.idx += 1 if kbmg_mgmt.idx < len(XREF) else 0
+            else:
+                # generate reference
+                alpha, foot, ptime, pose_id =  \
+                    kbmg_mgmt.ref_generator.get_next_reference(
+                        act_pos, act_eps, xref)
+                print(pose_id)
+                pvtsk, dvtsk = convert_ref(
+                        clb.get_pressure(alpha, mgmt.version), foot)
+                # send to main thread
+                llc_ref.dvalve = dvtsk
+                llc_ref.pressure = pvtsk
+                # organisation
+                kbmg_mgmt.process_time = ptime
+                kbmg_mgmt.last_process_time = time.time()
 
 
 def get_initial_pose(pattern, hold0=5., hold1=1.):
@@ -303,10 +331,12 @@ def optimal_pathplanner():
         if not np.isnan(xref[0]) and not np.isnan(eps):
             # convert measurements
             xbar = gait_law_planner.xbar(xref, position, eps)
-            xbar = xbar/30  # px to something ?!
+            xbar = xbar*112./1000  # px to cm
             deps = np.rad2deg(np.arctan2(xbar[1], xbar[0]))
+            dist = np.linalg.norm(xbar)
 
             print('\n\nxbar:\t', [round(x, 2) for x in xbar])
+            print('dist:\t', round(dist, 2))
             print('deps:\t', round(deps, 2))
 
             pressure_ref, feet_act = convert_rec(
@@ -315,7 +345,7 @@ def optimal_pathplanner():
 
             # calc ref
             if abs(deps) > 70:
-                pattern = rotspot.rotate_on_spot(xbar, alp_act, feet_act)
+                pattern = rotspot.rotate_on_spot(deps, alp_act, feet_act)
             else:
                 alpha, feet = gait_law_planner.optimal_planner(
                         xbar, alp_act, feet_act, n, max_step_length)

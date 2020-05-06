@@ -8,8 +8,7 @@ Created on Mon Aug 12 14:45:12 2019
 import numpy as np
 
 
-def rotate_on_spot(xbar, alp_act, feet_act, t_fix=.2, t_dfx=.1, t_move=1.5):
-    deps = np.rad2deg(np.arctan2(xbar[1], xbar[0]))
+def rotate_on_spot(deps, alp_act, feet_act, t_fix=.2, t_dfx=.1, t_move=1.5):
     a2 = alp_act[2]
     pattern = []
 

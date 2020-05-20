@@ -11,38 +11,19 @@ from time import strftime
 import gi
 from gi.repository import Gtk
 
-from Src.GUI import save
+try:
+    from Src.GUI import save
+except ImportError:
+    import save
+
 
 gi.require_version('Gtk', '3.0')
 
 
 UI_INFO = """
 <ui>
-  <menubar name='MenuBar'>
-    <menu action='FileMenu'>
-      <menu action='FileLoad'>
-        <menuitem action='FileLoadRecorded' />
-      </menu>
-      <menu action='FileSave'>
-        <menuitem action='FileSaveRecorded' />
-        <menuitem action='FileSaveRecordedAsCsv' />
-        <menuitem action='FileSaveRecordedAsTikz' />
-      </menu>
-      <separator />
-      <menuitem action='FileQuit' />
-    </menu>
-    <menu action='EditMenu'>
-      <menuitem action='EditPaste' />
-      <menuitem action='EditSomething' />
-    </menu>
-  </menubar>
   <toolbar name='ToolBar'>
-    <toolitem action='FileLoadRecorded' />
-    <toolitem action='FileSaveRecorded' />
-    <toolitem action='FileSaveRecordedAsCsv' />
-    <toolitem action='FileSaveRecordedAsTikz' />
     <toolitem action='FileSaveRecord' />
-    <toolitem action='FileQuit' />
   </toolbar>
 </ui>
 """
@@ -55,7 +36,6 @@ class MenuToolbarWindow(Gtk.Bin):
         super(MenuToolbarWindow, self).__init__()
         self.data = toplevel.data
         self.toplevel = toplevel
-        self.list_of_open_windows = self.toplevel.list_of_open_windows
 
         action_group = Gtk.ActionGroup("my_actions")
 
@@ -65,10 +45,7 @@ class MenuToolbarWindow(Gtk.Bin):
         uimanager = self.create_ui_manager()
         uimanager.insert_action_group(action_group)
 
-        menubar = uimanager.get_widget("/MenuBar")
-
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        box.pack_start(menubar, False, False, 0)
 
         toolbar = uimanager.get_widget("/ToolBar")
         box.pack_start(toolbar, False, False, 0)
@@ -82,61 +59,17 @@ class MenuToolbarWindow(Gtk.Bin):
         action_filemenu = Gtk.Action("FileMenu", "File", None, None)
         action_group.add_action(action_filemenu)
 
-        # Load
-        action_fileloadmenu = Gtk.Action("FileLoad", "Load", None, None)
-        action_group.add_action(action_fileloadmenu)
-
-        action_new = Gtk.Action("FileLoadRecorded", "Recorder",
-                                "Load a recorded file from .h5",
-                                Gtk.STOCK_OPEN)
-        action_new.connect("activate", self.on_load_clicked)
-        action_group.add_action_with_accel(action_new, '<control>O')
 
         # Save
         action_filesavemenu = Gtk.Action("FileSave", "Save", None, None)
         action_group.add_action(action_filesavemenu)
-        # TikZ
-        action_new = Gtk.Action("FileSaveRecordedAsTikz",
-                                "Current Plot as Tikz",
-                                "Save current Plot as TikZ-Picture",
-                                Gtk.STOCK_CONVERT)
-        action_new.connect("activate", self.on_save_clicked)
-        action_group.add_action_with_accel(action_new, None)
-        # Save Start/Stop
-#        action_new = Gtk.Action("FileSaveStartStop",
-#                                "Save sequence between Start/Stop",
-#                                ("Save Sequence from first hitting this"
-#                                 + " Button until the second hit"),
-#                                Gtk.STOCK_GO_FORWARD)
-#        action_new.connect("activate", self.on_save_clicked)
-#        action_group.add_action_with_accel(action_new, None)
         # Record
         action_new = Gtk.Action("FileSaveRecord",
                                 "Start/Stop recording",
                                 ("Start/Stop recording"),
                                 Gtk.STOCK_GO_FORWARD)
         action_new.connect("activate", self.on_record_clicked)
-        action_group.add_action_with_accel(action_new, None)
-        # Save csv
-        action_new = Gtk.Action("FileSaveRecordedAsCsv",
-                                "Current Plot as CSV",
-                                "Save Recorder as CSV-File",
-                                Gtk.STOCK_SAVE_AS)
-        action_new.connect("activate", self.on_save_clicked)
-        action_group.add_action_with_accel(action_new, '<control><shift>S')
-        # save deepdish
-        action_new = Gtk.Action("FileSaveRecorded", "Recorder",
-                                "Save the current Recorder to .h5",
-                                Gtk.STOCK_SAVE)
-        action_new.connect("activate", self.on_save_clicked)
-        action_group.add_action_with_accel(action_new, '<control>S')
-
-        # Quit
-        action_filequit = Gtk.Action("FileQuit", None,
-                                     'Exit the entire program', Gtk.STOCK_QUIT)
-        action_filequit.connect("activate", self.toplevel.do_delete_event)
-        action_group.add_action_with_accel(action_filequit,
-                                           'q')
+        action_group.add_action_with_accel(action_new, '<control>s')
 
     def add_edit_menu_actions(self, action_group):
         """ add items in the edit menu, key configuration and handlers. """
@@ -162,12 +95,12 @@ class MenuToolbarWindow(Gtk.Bin):
 
     def on_menu_edit(self, widget):
         """ starts the stimation state """
-        print "Menu item " + widget.get_name() + " was selected"
+        print("Menu item " + widget.get_name() + " was selected")
         if widget.get_name() == 'EditEstimate':
             if self.data.flag['PAUSE'] is True:
                 self.data.flag['ESTIMATE'] = True
             else:
-                print 'Only possile in PAUSE state...'
+                print('Only possible in PAUSE state...')
 
     def on_load_clicked(self, widget):
         """ Load an trajectory from somewhere

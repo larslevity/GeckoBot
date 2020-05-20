@@ -4,9 +4,12 @@ Analysis Tool
 """
 # pylint: disable= no-name-in-module
 from gi.repository import Gtk
-from Src.GUI import PlotArea
-from Src.GUI import SelectionArea
-
+try:
+    from Src.GUI import PlotArea
+    from Src.GUI import SelectionArea
+except ImportError:
+    import PlotArea
+    import SelectionArea
 
 # pylint: disable= too-many-public-methods, unused-argument
 class AnalysisObject(Gtk.Bin):
@@ -29,7 +32,7 @@ class AnalysisObject(Gtk.Bin):
         hbox = Gtk.HBox(False, 2)
         self.add(hbox)
         self.plot_win = PlotArea.PlotArea(self.data, toplevel=toplevel)
-        self.select_win = SelectionArea.SelectionArea(self.data)
+        self.select_win = SelectionArea.SelectionArea(self.data, pltwin=self.plot_win)
         hbox.pack_start(self.plot_win, True, True, 2)
         hbox.pack_start(self.select_win, False, False, 2)
 

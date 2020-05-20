@@ -13,23 +13,32 @@ class SelectionArea(Gtk.Bin):
     Selection Area with the atrribute keylist containing tuple of (abs, ord)
     which somebody selected to plot in the Plotting Area
     """
-    def find_default_keylist(self, modus='pr'):
+    def find_default_keylist(self, modus='pr', set_keylist=False):
         """ Look in Recorder and check what data is worth to plot """
         keylist = []
+        recorded_data = sorted(self.data.recorded.keys())
+        
         if modus == 'pos':
-            recorded_data = sorted(self.data.recorded.iterkeys())
-            for idx in range(6) + [8]:
+            for idx in list(range(6)) + [8]:
                 if 'x{}'.format(idx) in recorded_data:
                     if 'y{}'.format(idx) in recorded_data:
                         keylist.append(('x{}'.format(idx), 'y{}'.format(idx)))
+            self.pltwin.AxRatioBtn.set_active(True)
+        if modus == 'vec':
+            for el in recorded_data:
+                if (len(el.split(modus)) == 2 and len(el.split(modus)[0]) == 0):
+                    keylist.append((el, el))
+            self.pltwin.AxRatioBtn.set_active(False)
         else:
-            for el in sorted(self.data.recorded.iterkeys()):
+            for el in recorded_data:
                 if len(el.split('_')) == 1:
                     if (len(el.split(modus)) == 2 and
                        len(el.split(modus)[0]) == 0):
                         if 'time' in self.data.recorded:
                             keylist.append(('time', el))
-
+            self.pltwin.AxRatioBtn.set_active(0)
+        if set_keylist:
+            self.set_keylist(keylist)
         return keylist
 
     def set_keylist(self, desired_keylist):
@@ -51,6 +60,7 @@ class SelectionArea(Gtk.Bin):
         Args:
             keylist_to_append (list): List of tuples of the desired plots
         """
+        
         keylist_to_append = self.find_default_keylist(modus)
         idx = []
         for key in keylist_to_append:
@@ -127,7 +137,7 @@ class SelectionArea(Gtk.Bin):
                 self._selected.append(self.selection(None, key, False))
 
         if already_inserted:
-            print '(%s, %s) is already inserted' % new_tuple
+            print( '(%s, %s) is already inserted' % new_tuple)
         else:
             self._refresh_display_box()
 
@@ -136,7 +146,7 @@ class SelectionArea(Gtk.Bin):
         # check if the tuple will be complete
         abszisse = self._selected[idx].abszisse
         ordinate = self._selected[idx].ordinate
-        print abszisse, ordinate
+#        print(abszisse, ordinate)
         if abszisse is None:
             abszisse = key
         elif ordinate is None:
@@ -147,11 +157,11 @@ class SelectionArea(Gtk.Bin):
         # check if same length
         len_abs = self.data.recorded[abszisse]['len']
         len_ord = self.data.recorded[ordinate]['len']
-        print len_abs, len_ord
+        print(len_abs, len_ord)
         if len_abs == len_ord:
             return True
         else:
-            print 'tuple is not same length'
+            print('tuple is not same length')
             return False
 
     def delete_selection_btn_clicked(self, widget, idx):
@@ -161,7 +171,7 @@ class SelectionArea(Gtk.Bin):
         self.vis_btn[idx].set_active(False)
         del self._selected[idx]
         self._refresh_display_box()
-        print "Row %s is deleted" % idx
+        print("Row %s is deleted" % idx)
 
     def visible_selection_btn_clicked(self, widget, idx):
         """
@@ -184,14 +194,14 @@ class SelectionArea(Gtk.Bin):
             else:
                 if (abszisse, ordinate) in self.keylist:
                     self.keylist.remove((abszisse, ordinate))
-                    print "(%s, %s) is removed from keylist" % (abszisse,
-                                                                ordinate)
+                    print("(%s, %s) is removed from keylist" % (abszisse,
+                                                                ordinate))
                 self._selected[idx] = self.selection(abszisse, ordinate, False)
         # Not valid: set to inactive
         else:
             widget.set_active(False)
 
-    def __init__(self, data):
+    def __init__(self, data, pltwin, default_plot='pos'):
         """
         *Initialize with:*
 
@@ -203,10 +213,11 @@ class SelectionArea(Gtk.Bin):
 
         # Global Data
         self.data = data
-        self.choices = [key for key in sorted(self.data.recorded.iterkeys())]
+        self.pltwin = pltwin
+        self.choices = [key for key in sorted(self.data.recorded.keys())]
         # key list of (abs,ord)-tuple with only visible selections
         self.keylist = []
-        m = self.find_default_keylist()
+        m = self.find_default_keylist(default_plot)
         # construct a named tuple containing all selections
         self.selection = namedtuple('selection', 'abszisse ordinate visible')
         # store for all selections
@@ -318,6 +329,7 @@ class SelectionArea(Gtk.Bin):
         # init the Window:
         self._init_select_hbox()
         self.set_keylist(m)
+        print(m)
 
         self.show_all()
 
@@ -348,7 +360,8 @@ class SelectionArea(Gtk.Bin):
             # Put the vbox in the scrolled Window which is in the select_hbox
             scrolled_win.add_with_viewport(vbox)
             # create a Button for each key in data.recorded
-            for key in sorted(self.data.recorded.iterkeys()):
+#            print('init select buttons...')
+            for key in sorted(self.data.recorded.keys()):
                 button = Gtk.Button(key)
                 # connect Button
                 button.connect("clicked", self.push_axis_to_display_clicked,

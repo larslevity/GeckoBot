@@ -10,10 +10,7 @@ pip install deepdish
 http://deepdish.io/2014/11/11/python-dictionary-to-hdf5/
 """
 
-try:
-    import deepdish
-except ImportError:
-    print('Can not import Deepdish')
+
 import matplotlib.pyplot as plt
 #from matplotlib2tikz import save as tikz_save
 import fileinput
@@ -23,9 +20,6 @@ import os
 from time import strftime
 
 
-def save_recorded_data(data, filename):
-    """ save the recorded data from GlobalData object to .h5 file  """
-    deepdish.io.save(filename, data)
 
 
 def save_last_sample_as_csv(data, filename):
@@ -40,7 +34,7 @@ def save_last_sample_as_csv(data, filename):
 
     if not os.path.isfile(filename):
         print("New file created")
-        with open(filename, "wb") as outfile:
+        with open(filename, "w") as outfile:
             writer = csv.writer(outfile, delimiter="\t")
             writer.writerow(keys)
 

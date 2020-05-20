@@ -9,15 +9,11 @@ Gtk.Window for user specified paths
 
 from gi.repository import Gtk
 # from Src.Visual.GUI.User_control_modes import move
-from Src.Visual.GUI.User_control_modes import pwm
+from Src.GUI.User_control_modes import pwm
 
 
-# pylint: disable=too-many-locals, too-many-public-methods, unused-argument
-# pylint: disable=too-many-statements
 class UserControlWindow(Gtk.Window):
-    """
-    User Control via GUI
-    """
+
     def __init__(self, task, list_of_open_windows, modus='PWM'):
         """
         *Initialize with:*

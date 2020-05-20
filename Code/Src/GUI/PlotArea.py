@@ -7,6 +7,7 @@ from gi.repository import Gtk
 from matplotlib.figure import Figure as Figure
 from matplotlib.backends.backend_gtk3agg import FigureCanvasGTK3Agg
 from numpy import nan
+import numpy as np
 
 
 # pylint: disable=too-many-instance-attributes, unused-argument
@@ -33,41 +34,60 @@ class PlotArea(Gtk.Bin):
             val_new = data[start_idx:self.look_at_head]
         return val_new
 
+    def get_vec_data(self, key, angle=0.52, width=5):
+        """ data[vec]['val'] = [[x0, y0, x1, y1], ..., [x0, y0, x1, y1]] """
+        x0, y0, x1, y1 = (self.data.recorded[key]['val'][-1])
+        phi = np.arctan2(y1-y0, x1-x0)
+        x2 = x1 - width*np.sin(np.pi/2-phi-angle)
+        y2 = y1 - width*np.cos(np.pi/2-phi-angle)
+        x3 = x1 - width*np.cos(phi-angle)
+        y3 = y1 - width*np.sin(phi-angle)
+        return ([x0, x1, x2, x3, x1], [y0, y1, y2, y3, y1])  # x,y,dx,dy
+
+
     def update(self, keylist):
         """
         Update the plot
         """
 
-        # increase number of plots if neccessary
+        # adjust number of plots if neccessary
         while len(keylist)+self.nMarkers > self.nartist:
             self.points[self.nartist] = self.axx.plot(nan, nan, '-')[0]
             self.nartist += 1
+
         # get selection
         mark = []
+        vecidx = 0
         for artist, elem in enumerate(keylist):
-            ord_val = self.getdata(elem[1])
-            abs_val = self.getdata(elem[0])
-            # update line
-            self.points[artist+self.nMarkers].set_data(abs_val, ord_val)
+            if elem[0][:3] == 'vec':  # special treat for vecs
+                x, y = self.get_vec_data(elem[0])
+                self.vectors[vecidx].set_data(x, y)
 
-            # position artist gets special care -> Marker
-            if elem[0][0] == 'x' and elem[1][0] == 'y':  # key = (x?, y?)
-                if elem[0][1] == elem[1][1]:    # (? = ?)
-                    artist = int(elem[0][1])  # idx = ?
-                    if artist == 8:  # xref - special care
-                        artist = 6
-                    mark.append(artist)
-                    ord_val = [ord_val[-1]]
-                    abs_val = [abs_val[-1]]
-                    # update line
-                    self.points[artist].set_data(abs_val, ord_val)
+            else:
+                ord_val = self.getdata(elem[1])
+                abs_val = self.getdata(elem[0])
+                # update line
+                self.points[artist+self.nMarkers].set_data(abs_val, ord_val)
+    
+                # position artist gets special care -> Marker
+                if elem[0][0] == 'x' and elem[1][0] == 'y':  # key = (x?, y?)
+                    if elem[0][1] == elem[1][1]:    # (? = ?)
+                        artist = int(elem[0][1])  # idx = ?
+                        if artist == 8:  # xref - special care
+                            artist = 6
+                        mark.append(artist)
+                        ord_val = [ord_val[-1]]
+                        abs_val = [abs_val[-1]]
+                        # update line
+                        self.points[artist].set_data(abs_val, ord_val)
 
         nomark = [x for x in range(self.nMarkers) if x not in mark]
         # set all other plots to None
-        for artist in range(len(keylist)+self.nMarkers, self.nartist) + nomark:
+        for artist in (list(range(len(keylist)+self.nMarkers, self.nartist))
+                       + nomark):
             self.points[artist].set_data(nan, nan)
 
-        # scaling stuff
+        # recalc data limits
         self.axx.relim()
         self.axx.autoscale_view(tight=None, scalex=True, scaley=True)
         # draw the thing
@@ -126,6 +146,7 @@ class PlotArea(Gtk.Bin):
         self.axisequal = False
         #
         self.BufSizeSpinnBtn = None
+        self.AxRatioBtn = None
 
         # MPL:
         # create figure
@@ -147,6 +168,13 @@ class PlotArea(Gtk.Bin):
             self.points[artist] = self.axx.plot(nan, nan, 'ko')[0]
         for artist in range(self.nMarkers, self.nartist):
             self.points[artist] = self.axx.plot(nan, nan, '-')[0]
+        
+        # init vectors
+        self.vectors = {}
+        self.nVectors = 1
+        for artist in range(self.nVectors):
+            self.vectors[artist] = self.axx.plot([nan, nan], [nan, nan],
+                        linewidth=5)[0]
 
         # GTK:
         vbox = Gtk.VBox(False, 3)
@@ -179,11 +207,11 @@ class PlotArea(Gtk.Bin):
         # ToggleButton for equal AxisButton
         image = Gtk.Image()
         image.set_from_file("Src/GUI/pictures/Equal.png")
-        toggle_btn = Gtk.ToggleButton()
-        toggle_btn.add(image)
-        toggle_btn.connect("clicked", self.change_axes_aspect)
-        toggle_btn.set_active(False)
-        hbox.pack_start(toggle_btn, expand=False, fill=False, padding=0)
+        self.AxRatioBtn = Gtk.ToggleButton()
+        self.AxRatioBtn.add(image)
+        self.AxRatioBtn.connect("clicked", self.change_axes_aspect)
+        self.AxRatioBtn.set_active(False)
+        hbox.pack_start(self.AxRatioBtn, expand=False, fill=False, padding=0)
         # spacer for good looking
         spacer = Gtk.Label()
         hbox.pack_start(spacer, expand=True, fill=True, padding=0)

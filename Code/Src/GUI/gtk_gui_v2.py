@@ -20,10 +20,10 @@ gi.require_version('Gtk', '3.0')
 
 
 class GeckoBotGUI(Gtk.Application):
-    def __init__(self, rec, tsampling=.2, *args, **kwargs):
+    def __init__(self, rec, task, tsampling=.2, *args, **kwargs):
         super().__init__(
             *args,
-            application_id="org.example.myapp",
+            application_id="org.GeckoBotGUI.app",
             flags=Gio.ApplicationFlags.FLAGS_NONE,
             **kwargs
         )
@@ -32,10 +32,9 @@ class GeckoBotGUI(Gtk.Application):
         self.main_win = None
         self.ctr = None
         self.rec = rec
+        self.task = task
         
         self.list_of_open_windows = []
-#        self.main_win = CtrWin()
-        
         self._interval = int(tsampling*1000)
 
     def do_activate(self, *args):
@@ -47,8 +46,9 @@ class GeckoBotGUI(Gtk.Application):
                              self.main_win.analyse_win.plot_win.update,
                              self.main_win.analyse_win.select_win.keylist)
         if not self.ctr:  # control window
-            self.ctr = CtrWin(title="GeckoBot Control Window",
-                               application=self)
+            self.ctr = CtrWin(self.task, 
+                              title="GeckoBot Control Window",
+                              application=self)
             self.list_of_open_windows.append(self.ctr)
 
     
@@ -69,71 +69,42 @@ class GeckoBotGUI(Gtk.Application):
         print('main quit..')
 #        self.main_win.destroy()
 #        Gtk.main_quit()
-        self.main_win.do_delete_event(force=True)
+        if self.main_win:
+            self.main_win.do_delete_event(force=True)
         if self.ctr:
             self.ctr.destroy() 
         self.quit()
         self.is_running = False
-        
-        
-        
-
-        
-
-
-
-class CtrTask(object):
-    def __init__(self):
-        self.pan_val = 500
-        self.tilt_val = 500
-        
-        self.range = [100, 900]
-        self.increment = 10
-    
-    def pan(self, increment=None):
-        if not increment:
-            increment = self.increment
-        if (self.pan_val + increment < self.range[1] 
-                and self.pan_val - increment > self.range[0]):
-            self.pan_val += increment
-
-    def tilt(self, increment=None):
-        if not increment:
-            increment = self.increment
-        if (self.tilt_val + increment < self.range[1] 
-                and self.tilt_val - increment > self.range[0]):
-            self.tilt_val += increment
-
 
 
 class CtrWin(Gtk.ApplicationWindow):
     def _on_key_down_main_win(self, widget, event):
         key = event.keyval
-#        print(key)
-        if key == ord("q"):
-            self.toplevel.on_quit()
-        if key == 65361:
+
+        if key == 97:  # 65361  # (a):
             self._btn_clicked('manual', 'LEFT')
-        if key == 65363:
+        if key == 100:  # 65363: (d)
             self._btn_clicked('manual', 'RIGHT')
-        if key == 65362:
+        if key == 119:  #65362:  # (w)
             self._btn_clicked('manual', 'UP')
-        if key == 65364:
+        if key == 115:  # 65364: (s)
             self._btn_clicked('manual', 'DOWN')
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, task, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
         self.connect("key-press-event", self._on_key_down_main_win)
-        self.set_default_size(100, 100)
+        self.set_default_size(250, 110)
 
         # init GUIData
-        self.task = CtrTask()
+        self.task = task
         self.is_running = False
 
         # #### Fill Window ####
-        main_box = Gtk.VBox(False, 2)
+        main_box = Gtk.HBox(False, 2)
         self.add(main_box)
+        arrow_box = Gtk.VBox(False, 2)
+        main_box.pack_start(arrow_box, False, False, 1)
         btn_hbox1 = Gtk.HBox(False, 2)
         btn_hbox2 = Gtk.HBox(False, 2)
         btn_hbox3 = Gtk.HBox(False, 2)
@@ -162,18 +133,50 @@ class CtrWin(Gtk.ApplicationWindow):
         btn_hbox2.pack_start(left_btn, True, False, 1)
         btn_hbox2.pack_start(right_btn, True, False, 1)
         btn_hbox3.pack_start(down_btn, True, False, 1)
-        main_box.pack_start(btn_hbox1, True, False, 1)
-        main_box.pack_start(btn_hbox2, True, False, 1)
-        main_box.pack_start(btn_hbox3, True, False, 1)
+        arrow_box.pack_start(btn_hbox1, True, False, 1)
+        arrow_box.pack_start(btn_hbox2, True, False, 1)
+        arrow_box.pack_start(btn_hbox3, True, False, 1)
         
+        # q1:
+        q_box = Gtk.VBox(False, 2)
+        main_box.pack_start(q_box, True, False, 1)
+        adjustment = Gtk.Adjustment(value=0, lower=-90, upper=90,
+                                    step_incr=5, page_incr=-5)
+        label = Gtk.Label("forward velocity")
+        q_box.pack_start(label, expand=False, fill=False, padding=0)
+        self.q1spinner = \
+            Gtk.SpinButton(adjustment=adjustment, climb_rate=5, digits=0)
+        adjustment.connect("value_changed", self._spinner_changed,
+                           ('q1', self.q1spinner))
+        # pack SpinButton zu hbox
+        q_box.pack_start(self.q1spinner, expand=False, fill=False,
+                        padding=1)
+        
+        adjustment = Gtk.Adjustment(value=0, lower=-.5, upper=.5,
+                                    step_incr=.05, page_incr=-.05)
+        label = Gtk.Label("rotational velocity")
+        q_box.pack_start(label, expand=False, fill=False, padding=0)
+        self.q2spinner = \
+            Gtk.SpinButton(adjustment=adjustment, climb_rate=.05, digits=2)
+        adjustment.connect("value_changed", self._spinner_changed,
+                           ('q2', self.q2spinner))
+        # pack SpinButton zu hbox
+        q_box.pack_start(self.q2spinner, expand=False, fill=False,
+                        padding=1)
+
 
         self.show_all()
+
+    def _spinner_changed(self, widget, arg):
+        name, spin = arg
+        val = spin.get_value()
+        self.task.task['q'][int(name[-1])-1] = val
 
     def _btn_clicked(self, widget=None, name=None):
         """
         Set the pwm adjustments to zeros and call self.set_pwm()
         """
-        incr = 100
+        incr = 10
         print('cam moved')
         if name == 'LEFT':
             self.task.pan(incr)

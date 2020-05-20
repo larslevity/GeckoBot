@@ -16,6 +16,8 @@ from Src.GUI import datamanagement as mgmt
 from Src.Management.thread_communication import llc_rec
 from Src.Management.thread_communication import llc_ref
 from Src.Management.thread_communication import imgproc_rec
+from Src.Management.thread_communication import hlc_ref
+
 
 
 n_pc = len(llc_ref.pressure)           # proportional channels
@@ -108,7 +110,11 @@ class GUIPrinter(threading.Thread):
                     sample = mgmt.rehash_record(*prepare_data(),
                                                 IMU=self.IMU_connected,
                                                 IMG=self.IMG_connected)
-                    _ = self.plotsock.send_sample(sample)
+                    resp = self.plotsock.send_sample(sample)
+                    if resp[0] == 'task':
+                        hlc_ref.q = resp[1]['q']
+                        hlc_ref.cam = resp[1]['cam']
+                    
                 except SocketError as err:
                     if err.errno != errno.ECONNRESET:
                         raise

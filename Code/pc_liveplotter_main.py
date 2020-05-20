@@ -22,6 +22,30 @@ from Src.Management import timeout
 from Src.Management import exception
 
 
+class UserTask(object):
+    def __init__(self):
+        self.range = [100, 900]
+
+        self.task = {'q': [0, 0],
+                     'cam': [500, 500]}
+    
+    def pan(self, increment):
+        pan_val = self.task['cam'][0]
+        if (pan_val + increment <= self.range[1] 
+                and pan_val + increment >= self.range[0]):
+            self.task['cam'][0] += increment
+
+    def tilt(self, increment):
+        tilt_val = self.task['cam'][1]
+        if (tilt_val + increment <= self.range[1] 
+                and tilt_val + increment >= self.range[0]):
+            self.task['cam'][1] += increment
+
+    def get_task(self):
+        return self.task
+
+
+
 # GTK
 class GuiThread(threading.Thread):
     def __init__(self, tsampling=.2):
@@ -37,7 +61,8 @@ class GuiThread(threading.Thread):
         """
         threading.Thread.__init__(self)
         self.rec = datamanagement.GUIRecorder()
-        self.app = gtk_gui_v2.GeckoBotGUI(self.rec)
+        self.task = UserTask()
+        self.app = gtk_gui_v2.GeckoBotGUI(self.rec, self.task)
 
     def run(self):
         """ run the GUI """
@@ -82,11 +107,11 @@ def main(wait=30):
         connection = conn.makefile('rb')
         return server_socket, conn, connection
 
-    def recv_sample(connection):
+    def recv_sample(connection, resp=['ACK']):
         task_raw = connection.recv(4096)
         task = pickler.unpickle_data(task_raw)
         if task[0] == 'sample':
-            send_back(connection, 'ACK')
+            send_back(connection, resp)
             return task[1]
         elif task[0] == 'Exit':
             return 'Exit'
@@ -114,14 +139,14 @@ def main(wait=30):
             fill_rnd_values()
 
     gui.start()
-    time.sleep(.03)
+    time.sleep(.1)
 
     gui.app.refresh_selection(mode='vec')
 
     try:
         while gui.is_running():
             if is_client:
-                sample = recv_sample(conn)
+                sample = recv_sample(conn, resp=['task', gui.task.get_task()])
                 if sample and sample != 'Exit':
                     gui.rec.append(sample)
                 elif sample == 'Exit':
@@ -147,4 +172,4 @@ def main(wait=30):
 
 if __name__ == '__main__':
 
-    main(wait=1)
+    main(wait=30)

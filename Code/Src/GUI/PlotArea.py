@@ -62,6 +62,7 @@ class PlotArea(Gtk.Bin):
             if elem[0][:3] == 'vec':  # special treat for vecs
                 x, y = self.get_vec_data(elem[0])
                 self.vectors[vecidx].set_data(x, y)
+                vecidx += 1
 
             else:
                 ord_val = self.getdata(elem[1])
@@ -86,6 +87,8 @@ class PlotArea(Gtk.Bin):
         for artist in (list(range(len(keylist)+self.nMarkers, self.nartist))
                        + nomark):
             self.points[artist].set_data(nan, nan)
+        for artist in range(vecidx, self.nVectors):
+            self.vectors[artist].set_data(nan, nan)
 
         # recalc data limits
         self.axx.relim()

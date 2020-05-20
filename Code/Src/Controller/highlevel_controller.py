@@ -11,13 +11,13 @@ import numpy as np
 import threading
 
 from Src.Management.thread_communication import llc_ref
+from Src.Management.thread_communication import hlc_ref
 from Src.Management.thread_communication import imgproc_rec
 from Src.Management.thread_communication import ui_state
 from Src.Management import load_pattern as load_ptrn
 from Src.Management.thread_communication import sys_config
 from Src.Management import state_machine
 
-from Src.Controller import searchtree
 from Src.Controller import calibration as clb
 from Src.Controller import gait_law_planner
 from Src.Controller import KitBasedMotionGenerator as KBMG
@@ -144,7 +144,10 @@ def mode2():
     mgmt.initial_cycle = True
 
     while ui_state.mode == 'MODE2':
-        pattern_ref()
+        if ui_state.fun[1]:
+            remote_control()
+        else:
+            pattern_ref()
         time.sleep(TSAMPLING)
 
     return ui_state.mode
@@ -376,6 +379,14 @@ def optimal_pathplanner():
             gl_mgmt.round += 1
         else:
             print('No detection ...')
+
+
+def remote_control():
+    fun = ui_state.fun
+    q = hlc_ref.q
+    cam = hlc_ref.cam
+    print('q:', q, '\t\tcam:', cam)
+
 
 
 def exit_cleaner():

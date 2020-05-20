@@ -23,6 +23,17 @@ class Borg:
         self.__dict__ = self._shared_state
 
 
+class HLCReference(Borg):
+    def __init__(self):
+        Borg.__init__(self)
+
+        self.q = [0, 0]
+        self.cam = [0, 0]
+
+hlc_ref = HLCReference()
+
+
+
 class LLCReference(Borg):
     def __init__(self):
         Borg.__init__(self)

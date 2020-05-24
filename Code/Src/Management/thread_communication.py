@@ -29,6 +29,8 @@ class HLCReference(Borg):
 
         self.q = [0, 0]
         self.cam = [0, 0]
+        self.t = [1.2, .1, .1]
+        self.run = True
 
 hlc_ref = HLCReference()
 

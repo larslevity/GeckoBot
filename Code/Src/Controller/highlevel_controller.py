@@ -22,6 +22,7 @@ from Src.Controller import calibration as clb
 from Src.Controller import gait_law_planner
 from Src.Controller import KitBasedMotionGenerator as KBMG
 from Src.Controller import rotate_on_spot as rotspot
+from Src.Controller import ui_utils
 
 
 n_pc = len(llc_ref.pressure)
@@ -73,7 +74,6 @@ class PatternMGMT(object):
                     list_of_keys, self.pattern_name)
         return self.pattern_name
 
-
 mgmt = PatternMGMT()
 
 
@@ -98,6 +98,20 @@ class GaitLawMGMT(object):
 
 
 gl_mgmt = GaitLawMGMT()
+
+
+class Remote_ControlMGMT(object):
+    def __init__(self):
+        self.last_process_time = time.time()
+        self.process_time = 0
+        self.round = 0
+        self.osci = ui_utils.Oscillator()
+
+
+rc_mgmt = Remote_ControlMGMT()
+
+
+
 
 
 def mode1():
@@ -142,6 +156,9 @@ def mode2():
         mgmt.pattern = mgmt.ptrndic[mgmt.version][mgmt.pattern_name]
 
     mgmt.initial_cycle = True
+    # Set state of robot for remote control
+#    if mgmt.version != 'clb':
+#        rc_mgmt.osci.set_state(*get_current_state(mgmt.version))
 
     while ui_state.mode == 'MODE2':
         if ui_state.fun[1]:
@@ -313,6 +330,12 @@ def generate_pose_ref(pattern, idx):
     return dv_task, pv_task, local_min_process_time
 
 
+def get_current_state(version):
+    pressure_ref, feet_act = convert_rec(llc_ref.pressure, llc_ref.dvalve)
+    alp_act = clb.get_alpha(pressure_ref, version)
+    return (alp_act, feet_act)
+
+
 def optimal_pathplanner():
     fun = ui_state.fun
 
@@ -343,9 +366,7 @@ def optimal_pathplanner():
             print('dist:\t', round(dist, 2))
             print('deps:\t', round(deps, 2))
 
-            pressure_ref, feet_act = convert_rec(
-                    llc_ref.pressure, llc_ref.dvalve)
-            alp_act = clb.get_alpha(pressure_ref, mgmt.version)
+            alp_act, feet_act = get_current_state(mgmt.version)
 
             # calc ref
             [alpha, feet], q = gait_law_planner.optimal_planner(
@@ -382,11 +403,26 @@ def optimal_pathplanner():
 
 
 def remote_control():
-    fun = ui_state.fun
-    q = hlc_ref.q
-    cam = hlc_ref.cam
-    print('q:', q, '\t\tcam:', cam)
-
+    if (hlc_ref.run and rc_mgmt.last_process_time + rc_mgmt.process_time <
+            time.time()):
+        q1, q2 = hlc_ref.q
+        t = hlc_ref.t
+        print('round ', rc_mgmt.round, ' -- q:', [q1, q2])
+        pattern = rc_mgmt.osci.get_ref(q1, q2, t)
+        for idx, pose in enumerate(pattern):
+            alpha, feet, ptime = pose
+            print('\t alpharef:', alpha)
+            # convert ref
+            pvtsk, dvtsk = convert_ref(
+                    clb.get_pressure(alpha, mgmt.version), feet)
+            # set ref
+            llc_ref.dvalve = dvtsk
+            llc_ref.pressure = pvtsk
+            if idx != len(pattern)-1:  # last pose -> no sleep
+                time.sleep(ptime)
+        rc_mgmt.process_time = ptime
+        rc_mgmt.last_process_time = time.time()
+        rc_mgmt.round += 1
 
 
 def exit_cleaner():

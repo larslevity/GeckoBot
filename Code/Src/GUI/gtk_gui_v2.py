@@ -5,7 +5,6 @@ Main Window
 
 import gi
 from gi.repository import Gtk
-# pylint: disable=no-name-in-module
 from gi.repository import GLib, Gio
 
 try:
@@ -137,9 +136,10 @@ class CtrWin(Gtk.ApplicationWindow):
         arrow_box.pack_start(btn_hbox2, True, False, 1)
         arrow_box.pack_start(btn_hbox3, True, False, 1)
         
-        # q1:
+        # Q
         q_box = Gtk.VBox(False, 2)
         main_box.pack_start(q_box, True, False, 1)
+        # q1:
         adjustment = Gtk.Adjustment(value=0, lower=-90, upper=90,
                                     step_incr=5, page_incr=-5)
         label = Gtk.Label("forward velocity")
@@ -147,11 +147,11 @@ class CtrWin(Gtk.ApplicationWindow):
         self.q1spinner = \
             Gtk.SpinButton(adjustment=adjustment, climb_rate=5, digits=0)
         adjustment.connect("value_changed", self._spinner_changed,
-                           ('q1', self.q1spinner))
+                           ('q0', self.q1spinner))
         # pack SpinButton zu hbox
         q_box.pack_start(self.q1spinner, expand=False, fill=False,
                         padding=1)
-        
+        # q2
         adjustment = Gtk.Adjustment(value=0, lower=-.5, upper=.5,
                                     step_incr=.05, page_incr=-.05)
         label = Gtk.Label("rotational velocity")
@@ -159,10 +159,50 @@ class CtrWin(Gtk.ApplicationWindow):
         self.q2spinner = \
             Gtk.SpinButton(adjustment=adjustment, climb_rate=.05, digits=2)
         adjustment.connect("value_changed", self._spinner_changed,
-                           ('q2', self.q2spinner))
+                           ('q1', self.q2spinner))
         # pack SpinButton zu hbox
         q_box.pack_start(self.q2spinner, expand=False, fill=False,
                         padding=1)
+        
+        # Time Box
+        t_box = Gtk.VBox(False, 2)
+        main_box.pack_start(t_box, True, False, 1)
+        # t_move:
+        adjustment = Gtk.Adjustment(value=1.2, lower=.1, upper=5,
+                                    step_incr=.1, page_incr=-.1)
+        label = Gtk.Label("t move")
+        t_box.pack_start(label, expand=False, fill=False, padding=0)
+        self.t_move_spinner = \
+            Gtk.SpinButton(adjustment=adjustment, climb_rate=.1, digits=1)
+        adjustment.connect("value_changed", self._spinner_changed,
+                           ('t0', self.t_move_spinner))
+        # pack SpinButton zu hbox
+        t_box.pack_start(self.t_move_spinner, expand=False, fill=False, padding=1)
+        
+        # t_fix:
+        adjustment = Gtk.Adjustment(value=.1, lower=.1, upper=5,
+                                    step_incr=.1, page_incr=-.1)
+        label = Gtk.Label("t fix")
+        t_box.pack_start(label, expand=False, fill=False, padding=0)
+        self.t_fix_spinner = \
+            Gtk.SpinButton(adjustment=adjustment, climb_rate=.1, digits=1)
+        adjustment.connect("value_changed", self._spinner_changed,
+                           ('t1', self.t_fix_spinner))
+        # pack SpinButton zu hbox
+        t_box.pack_start(self.t_fix_spinner, expand=False, fill=False, padding=1)
+
+        # t_defix:
+        adjustment = Gtk.Adjustment(value=.1, lower=.1, upper=5,
+                                    step_incr=.1, page_incr=-.1)
+        label = Gtk.Label("t defix")
+        t_box.pack_start(label, expand=False, fill=False, padding=0)
+        self.t_defix_spinner = \
+            Gtk.SpinButton(adjustment=adjustment, climb_rate=.1, digits=1)
+        adjustment.connect("value_changed", self._spinner_changed,
+                           ('t2', self.t_defix_spinner))
+        # pack SpinButton zu hbox
+        t_box.pack_start(self.t_defix_spinner, expand=False, fill=False, padding=1)
+
 
 
         self.show_all()
@@ -170,7 +210,8 @@ class CtrWin(Gtk.ApplicationWindow):
     def _spinner_changed(self, widget, arg):
         name, spin = arg
         val = spin.get_value()
-        self.task.task['q'][int(name[-1])-1] = val
+        self.task.task[name[0]][int(name[-1])] = val
+        
 
     def _btn_clicked(self, widget=None, name=None):
         """

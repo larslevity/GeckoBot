@@ -113,8 +113,9 @@ class GUIPrinter(threading.Thread):
                     resp = self.plotsock.send_sample(sample)
                     if resp[0] == 'task':
                         hlc_ref.q = resp[1]['q']
-                        hlc_ref.cam = resp[1]['cam']
-                    
+                        hlc_ref.t = resp[1]['t']
+                        hlc_ref.run = resp[1]['run']
+
                 except SocketError as err:
                     if err.errno != errno.ECONNRESET:
                         raise

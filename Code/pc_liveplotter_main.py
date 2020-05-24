@@ -21,23 +21,27 @@ from Src.Communication import pickler
 from Src.Management import timeout
 from Src.Management import exception
 
+from Src.Pixy import pixy_utils
+
 
 class UserTask(object):
     def __init__(self):
         self.range = [100, 900]
 
         self.task = {'q': [0, 0],
-                     'cam': [500, 500]}
-    
+                     'cam': [500, 500],
+                     't': [1.2, .1, .1],
+                     'run': True}
+
     def pan(self, increment):
         pan_val = self.task['cam'][0]
-        if (pan_val + increment <= self.range[1] 
+        if (pan_val + increment <= self.range[1]
                 and pan_val + increment >= self.range[0]):
             self.task['cam'][0] += increment
 
     def tilt(self, increment):
         tilt_val = self.task['cam'][1]
-        if (tilt_val + increment <= self.range[1] 
+        if (tilt_val + increment <= self.range[1]
                 and tilt_val + increment >= self.range[0]):
             self.task['cam'][1] += increment
 
@@ -45,20 +49,9 @@ class UserTask(object):
         return self.task
 
 
-
 # GTK
 class GuiThread(threading.Thread):
-    def __init__(self, tsampling=.2):
-        """
-        Thread for the GUI provides:
-        - visualization of
-            - measurements
-            - reference signals
-            - actuator input signals
-        *Initialize with:*
-        Args:
-            - data (datamanagement.GUIRecorder): Container of signal history
-        """
+    def __init__(self):
         threading.Thread.__init__(self)
         self.rec = datamanagement.GUIRecorder()
         self.task = UserTask()
@@ -123,6 +116,7 @@ def main(wait=30):
         connection.sendall(data_out_raw)
 
     gui = GuiThread()
+    pixy = pixy_utils.PixyThread(gui.task, gui.rec)
 
     print('wait for client .. ')
     is_client = False
@@ -131,7 +125,9 @@ def main(wait=30):
             server_socket, conn, connection = bind_to_client()
             sample = recv_sample(conn)
             if sample:
-                gui.rec.append(sample)
+                sample_ = datamanagement.merge_multiple_dicts(
+                            [sample, pixy.vec])
+                gui.rec.append(sample_)
             is_client = True
             print("client DETECTED!")
         except exception.TimeoutError:
@@ -139,6 +135,7 @@ def main(wait=30):
             fill_rnd_values()
 
     gui.start()
+    pixy.start()
     time.sleep(.1)
 
     gui.app.refresh_selection(mode='vec')
@@ -148,7 +145,9 @@ def main(wait=30):
             if is_client:
                 sample = recv_sample(conn, resp=['task', gui.task.get_task()])
                 if sample and sample != 'Exit':
-                    gui.rec.append(sample)
+                    sample_ = datamanagement.merge_multiple_dicts(
+                            [sample, pixy.vec])
+                    gui.rec.append(sample_)
                 elif sample == 'Exit':
                     gui.kill()
             else:
@@ -165,6 +164,7 @@ def main(wait=30):
             connection.close()
             server_socket.close()
         gui.kill()
+        pixy.kill()
 
     gui.join()
     print('all is done')

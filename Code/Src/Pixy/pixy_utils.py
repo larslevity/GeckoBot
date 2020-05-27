@@ -50,16 +50,16 @@ def get_vec():
     if v_count > 0:
         for index in range(0, v_count):
             vec = {'vec': [vectors[index].m_x0,
-                           -vectors[index].m_y0,
+                           206-vectors[index].m_y0,
                            vectors[index].m_x1,
-                           -vectors[index].m_y1]}
+                           206-vectors[index].m_y1]}
     else:
         vec = {'vec': [np.nan, np.nan, np.nan, np.nan]}
     return vec
 
 
 def xbar(vec):
-    return [vec[2]-vec[0], vec[3]-vec[1]]
+    return [vec[3]-vec[1], -(vec[2]-vec[0])]
 
 
 def deg2pan(alp):
@@ -72,26 +72,45 @@ def deg2pan(alp):
 
 
 class Synchronizer(threading.Thread):
-    def __init__(self, task, rec):
+    def __init__(self, parent, rec):
         threading.Thread.__init__(self)
-        self.task = task
+        self.parent = parent
         self.rec = rec
         self.is_running = True
+        self.steps = 30
 
     def kill(self):
         self.is_running = False
 
     def run(self):
         while self.is_running:
-            cyc_time = sum(self.task.task['t'])
-            alp = gaitlaw.alpha(*self.task.task['q'])
-            torso = (alp[2] if self.rec.recorded['pr2'] >
-                     self.rec.recorded['pr3'] else -alp[2])
-            self.task.task['run'] = True
+            cyc_time = sum(self.parent.task.task['t'])
+            q1, q2 = self.parent.task.task['q']
+            sign = (1 if self.rec.recorded['pr2']['val'][-1] <
+                     self.rec.recorded['pr3']['val'][-1] else -1)
+            torso = gaitlaw.alpha(q1*sign, q2)[2]
+            
+            self.parent.task.task['run'] = True
+            time.sleep(.1*cyc_time)
+            self.parent.task.task['run'] = False
+            for pan in np.linspace(self.parent.task.task['cam'][0], deg2pan(torso/2), 
+                                   self.steps):
+                self.parent.task.task['cam'][0] = int(pan)
+                time.sleep(.7*cyc_time/self.steps)
+            
             time.sleep(.2*cyc_time)
-            self.task.task['run'] = False
-            self.task.task['cam'][0] = deg2pan(torso)
-            time.sleep(.85*cyc_time)
+            
+            print('detect vec...')
+            if np.isnan(self.parent.vec['vec'][0]):
+                self.parent.task.task['q'] = [0, 0]
+                print('no detection!')
+            else:
+                xbar_ = xbar(self.parent.vec['vec'])
+                print('xbar: ', xbar_)
+                self.parent.task.task['q'] = gaitlaw.qast_nhorizon(xbar_)
+            print('q ref:', self.parent.task.task['q'])
+                
+
 
 
 class PixyThread(threading.Thread):
@@ -99,7 +118,6 @@ class PixyThread(threading.Thread):
         threading.Thread.__init__(self)
         self.is_running = True
         self.task = task
-        self.sync = Synchronizer(task, rec)
 
         pixy.init()
         pixy.change_prog("line")
@@ -108,6 +126,7 @@ class PixyThread(threading.Thread):
         pixy.set_lamp(0, 0)
         pixy.set_servos(500, 500)
         self.vec = get_vec()
+        self.sync = Synchronizer(self, rec)
 
     def run(self):
         self.sync.start()
@@ -115,7 +134,6 @@ class PixyThread(threading.Thread):
             pixy.set_servos(self.task.task['cam'][0],
                             self.task.task['cam'][1])
             self.vec = get_vec()
-            self.task.task['q'] = gaitlaw.qast_nhorizon(xbar(self.vec))
             time.sleep(.1)
 
     def kill(self):

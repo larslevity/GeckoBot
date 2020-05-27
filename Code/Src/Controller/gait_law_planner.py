@@ -89,7 +89,7 @@ def cut(x):
     return x if x > 0.001 else 0.001
 
 
-def alpha(x1, x2, f, c1=1):
+def alpha(x1, x2, c1=1):
     alpha = [cut(45 - x1/2. - abs(x1)*x2/2. + x1*x2*c1),
              cut(45 + x1/2. + abs(x1)*x2/2. + x1*x2*c1),
              x1 + x2*abs(x1),
@@ -119,6 +119,20 @@ def find_opt_x(xbar, n, q1bnds, version):
     return solution.x, objective(solution.x)[0]
 
 
+def qast_nhorizon(xbar, nmax=3, q1bnds=[40, 90], version='vS11'):
+    dist_act = np.linalg.norm(xbar)
+    n = 1
+    (q1opt, q2opt), predicted_dist = find_opt_x(xbar, n, q1bnds, version)
+    while predicted_dist > dist_act:
+        n += 1
+        (q1opt, q2opt), predicted_dist = find_opt_x(xbar, n, q1bnds, version)
+        print('planning horizon: ', n, 'cycles. predicted dist: ',
+              round(predicted_dist, 2))
+        if n > nmax - 1:
+            break
+    return (q1opt, q2opt)
+
+
 def optimal_planner(
         xbar, alp_act, feet_act, lastq1, nmax=2, dist_min=3, q1bnds=[40, 90],
         version='vS11'):
@@ -136,11 +150,12 @@ def optimal_planner(
     while predicted_dist > dist_act:
         n += 1
         (x1opt, x2opt), predicted_dist = find_opt_x(xbar, n, q1bnds, version)
-        print('planning horizon: ', n, 'cycles. predicted dist: ', round(predicted_dist, 2))
+        print('planning horizon: ', n, 'cycles. predicted dist: ',
+              round(predicted_dist, 2))
         if n > nmax - 1:
             break
 
     x1opt = -np.sign(lastq1)*x1opt  # switch sign
-    alpha_ref = alpha(x1opt, x2opt, feet_ref)
+    alpha_ref = alpha(x1opt, x2opt)
 
     return [alpha_ref, feet_ref], [x1opt, x2opt]

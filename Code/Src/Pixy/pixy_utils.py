@@ -18,7 +18,7 @@ path2git = path.dirname(path.dirname(path.dirname(path.abspath(
 sys.path.insert(0, path2git)  # insert Git folder into path
 
 from pixy2.build.python_demos import pixy
-from Src.Controller.gait_law_planner import alpha as gaitlaw
+from Src.Controller import gait_law_planner as gaitlaw
 
 
 class Vector (Structure):
@@ -84,7 +84,7 @@ class Synchronizer(threading.Thread):
     def run(self):
         while self.is_running:
             cyc_time = sum(self.task.task['t'])
-            alp = gaitlaw(*self.task.task['q'])
+            alp = gaitlaw.alpha(*self.task.task['q'])
             torso = (alp[2] if self.rec.recorded['pr2'] >
                      self.rec.recorded['pr3'] else -alp[2])
             self.task.task['run'] = True
@@ -115,7 +115,8 @@ class PixyThread(threading.Thread):
             pixy.set_servos(self.task.task['cam'][0],
                             self.task.task['cam'][1])
             self.vec = get_vec()
-            time.sleep(.01)
+            self.task.task['q'] = gaitlaw.qast_nhorizon(xbar(self.vec))
+            time.sleep(.1)
 
     def kill(self):
         self.sync.kill()

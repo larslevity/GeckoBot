@@ -136,9 +136,30 @@ class CtrWin(Gtk.ApplicationWindow):
         arrow_box.pack_start(btn_hbox2, True, False, 1)
         arrow_box.pack_start(btn_hbox3, True, False, 1)
         
+        # AutoCam
+        autcambox = Gtk.HBox(False, 2)
+        label = Gtk.Label("Auto Cam")
+        autocambtn = Gtk.Switch()
+        autocambtn.connect('notify::active', self.on_switch, 'autocam')
+        autocambtn.set_active(False)
+        autcambox.pack_start(label, 1, 0, 1)
+        autcambox.pack_start(autocambtn, 1, 0, 1)
+        arrow_box.pack_start(autcambox, True, False, 1)        
+        
         # Q
         q_box = Gtk.VBox(False, 2)
         main_box.pack_start(q_box, True, False, 1)
+
+        # Start/Stop
+        startbox = Gtk.HBox(False, 2)
+        label = Gtk.Label("Start / Stop")
+        startbtn = Gtk.Switch()
+        startbtn.connect('notify::active', self.on_switch, 'start')
+        startbtn.set_active(False)
+        startbox.pack_start(label, 1, 0, 1)
+        startbox.pack_start(startbtn, 1, 0, 1)
+        q_box.pack_start(startbox, True, False, 1)
+
         # q1:
         adjustment = Gtk.Adjustment(value=0, lower=-90, upper=90,
                                     step_incr=5, page_incr=-5)
@@ -206,6 +227,15 @@ class CtrWin(Gtk.ApplicationWindow):
 
 
         self.show_all()
+
+
+    def on_switch(self, switch, gparam, key=None):
+        if switch.get_active():
+            state = 1
+        else:
+            state = 0
+        self.task.task[key] = state
+        print(key, ' mode: ', state)
 
     def _spinner_changed(self, widget, arg):
         name, spin = arg

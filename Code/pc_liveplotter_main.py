@@ -31,7 +31,9 @@ class UserTask(object):
         self.task = {'q': [0, 0],
                      'cam': [500, 500],
                      't': [1.2, .1, .1],
-                     'run': True}
+                     'run': True,
+                     'start': False,
+                     'autocam': False}
 
     def pan(self, increment):
         pan_val = self.task['cam'][0]

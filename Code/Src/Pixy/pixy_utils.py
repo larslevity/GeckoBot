@@ -15,10 +15,33 @@ import sys
 from os import path
 path2git = path.dirname(path.dirname(path.dirname(path.abspath(
         (sys.modules['__main__'].__file__)))))
+
+if __name__ == '__main__':
+    path2git = path.dirname(path.dirname(path.dirname(path.dirname(
+            path.dirname(path.abspath(__file__))))))
+    path2src = path.dirname(path.dirname(
+            path.dirname(path.abspath(__file__))))
+    sys.path.insert(0, path2src)
+
 sys.path.insert(0, path2git)  # insert Git folder into path
 
 from pixy2.build.python_demos import pixy
 from Src.Controller import gait_law_planner as gaitlaw
+
+import pyudev
+
+
+def check_pixy_connect():    
+    context = pyudev.Context()
+    for device in context.list_devices(subsystem='usb'):
+        vendor_id = device.get('ID_VENDOR_ID')
+        if vendor_id == 'b1ac':
+            print('found pixy')
+            return True
+        #    print(vendor_id, '\n')
+    return False
+
+
 
 
 class Vector (Structure):
@@ -84,31 +107,37 @@ class Synchronizer(threading.Thread):
 
     def run(self):
         while self.is_running:
-            cyc_time = sum(self.parent.task.task['t'])
-            q1, q2 = self.parent.task.task['q']
-            sign = (1 if self.rec.recorded['pr2']['val'][-1] <
-                     self.rec.recorded['pr3']['val'][-1] else -1)
-            torso = gaitlaw.alpha(q1*sign, q2)[2]
-            
-            self.parent.task.task['run'] = True
-            time.sleep(.1*cyc_time)
-            self.parent.task.task['run'] = False
-            for pan in np.linspace(self.parent.task.task['cam'][0], deg2pan(torso/2), 
-                                   self.steps):
-                self.parent.task.task['cam'][0] = int(pan)
-                time.sleep(.7*cyc_time/self.steps)
-            
-            time.sleep(.2*cyc_time)
-            
-            print('detect vec...')
-            if np.isnan(self.parent.vec['vec'][0]):
-                self.parent.task.task['q'] = [0, 0]
-                print('no detection!')
+            if self.parent.task.task['start']:
+                # cam ctr
+                cyc_time = sum(self.parent.task.task['t'])
+                q1, q2 = self.parent.task.task['q']
+                sign = (1 if self.rec.recorded['pr2']['val'][-1] <
+                         self.rec.recorded['pr3']['val'][-1] else -1)
+                torso = gaitlaw.alpha(q1*sign, q2)[2]
+                
+                self.parent.task.task['run'] = True
+                time.sleep(.1*cyc_time)
+                self.parent.task.task['run'] = False
+                if self.parent.task.task['autocam']:
+                    for pan in np.linspace(self.parent.task.task['cam'][0],
+                                           deg2pan(torso/2), self.steps):
+                        self.parent.task.task['cam'][0] = int(pan)
+                        time.sleep(.7*cyc_time/self.steps)
+                else:
+                    time.sleep(.7*cyc_time)
+                time.sleep(.2*cyc_time)
             else:
-                xbar_ = xbar(self.parent.vec['vec'])
-                print('xbar: ', xbar_)
-                self.parent.task.task['q'] = gaitlaw.qast_nhorizon(xbar_)
-            print('q ref:', self.parent.task.task['q'])
+                time.sleep(.1)
+
+#            print('detect vec...')
+#            if np.isnan(self.parent.vec['vec'][0]):
+#                self.parent.task.task['q'] = [0, 0]
+#                print('no detection!')
+#            else:
+#                xbar_ = xbar(self.parent.vec['vec'])
+#                print('xbar: ', xbar_)
+#                self.parent.task.task['q'] = gaitlaw.qast_nhorizon(xbar_)
+#            print('q ref:', self.parent.task.task['q'])
                 
 
 
@@ -118,26 +147,37 @@ class PixyThread(threading.Thread):
         threading.Thread.__init__(self)
         self.is_running = True
         self.task = task
-
-        pixy.init()
-        pixy.change_prog("line")
-        pixy.set_lamp(1, 1)
-        time.sleep(.1)
-        pixy.set_lamp(0, 0)
-        pixy.set_servos(500, 500)
-        self.vec = get_vec()
-        self.sync = Synchronizer(self, rec)
+        self.is_connected = check_pixy_connect()
+        if self.is_connected:
+            pixy.init()
+            pixy.change_prog("line")
+            pixy.set_lamp(1, 1)
+            time.sleep(.1)
+            pixy.set_lamp(0, 0)
+            pixy.set_servos(500, 500)
+            self.vec = get_vec()
+            self.sync = Synchronizer(self, rec)
+            self.is_connected = True
+        else:
+            print('no connection to pixy...')
+            self.vec = {'vec': [np.nan, np.nan, np.nan, np.nan]}
 
     def run(self):
-        self.sync.start()
-        while self.is_running:
-            pixy.set_servos(self.task.task['cam'][0],
-                            self.task.task['cam'][1])
-            self.vec = get_vec()
-            time.sleep(.1)
+        if self.is_connected:
+            self.sync.start()
+            while self.is_running:
+                pixy.set_servos(self.task.task['cam'][0],
+                                self.task.task['cam'][1])
+                self.vec = get_vec()
+                time.sleep(.1)
 
     def kill(self):
-        self.sync.kill()
-        self.sync.join()
+        if self.is_connected:
+            self.sync.kill()
+            self.sync.join()
+            pixy.set_lamp(0, 0)
         self.is_running = False
-        pixy.set_lamp(0, 0)
+
+
+if __name__ == '__main__':
+    pthread = PixyThread(None, None)

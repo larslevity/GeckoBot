@@ -31,7 +31,8 @@ from Src.Controller import gait_law_planner as gaitlaw
 import pyudev
 
 
-def check_pixy_connect():    
+def check_pixy_connect():
+    return True
     context = pyudev.Context()
     for device in context.list_devices(subsystem='usb'):
         vendor_id = device.get('ID_VENDOR_ID')
@@ -125,7 +126,7 @@ class Synchronizer(threading.Thread):
                         time.sleep(.7*cyc_time/self.steps)
                 else:
                     time.sleep(.7*cyc_time)
-                time.sleep(.2*cyc_time)
+                time.sleep(.3*cyc_time)
             else:
                 time.sleep(.1)
 
@@ -148,6 +149,7 @@ class PixyThread(threading.Thread):
         self.is_running = True
         self.task = task
         self.is_connected = check_pixy_connect()
+        self.sync = Synchronizer(self, rec)
         if self.is_connected:
             pixy.init()
             pixy.change_prog("line")
@@ -156,26 +158,26 @@ class PixyThread(threading.Thread):
             pixy.set_lamp(0, 0)
             pixy.set_servos(500, 500)
             self.vec = get_vec()
-            self.sync = Synchronizer(self, rec)
             self.is_connected = True
         else:
             print('no connection to pixy...')
             self.vec = {'vec': [np.nan, np.nan, np.nan, np.nan]}
 
     def run(self):
-        if self.is_connected:
-            self.sync.start()
-            while self.is_running:
+        
+        self.sync.start()
+        while self.is_running:
+            if self.is_connected:
                 pixy.set_servos(self.task.task['cam'][0],
                                 self.task.task['cam'][1])
                 self.vec = get_vec()
-                time.sleep(.1)
+            time.sleep(.1)
 
     def kill(self):
         if self.is_connected:
-            self.sync.kill()
-            self.sync.join()
             pixy.set_lamp(0, 0)
+        self.sync.kill()
+        self.sync.join()
         self.is_running = False
 
 

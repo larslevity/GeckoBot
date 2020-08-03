@@ -170,24 +170,24 @@ if __name__ == '__main__':
     from Src.Controller.gait_law_planner import alpha as gaitlaw
 
 
-    version = 'v40'
+    version = 'vS12'
     times = [5, .66, .25]
 
-#    angles = {
-#        'straight_1':  [[90, 0, -90, 90, 0], [0, 90, 90, 0, 90]],
-#        'straight_2':  [[86, 4, -110, 83, 4], [4, 86, 110, 4, 83]],
-#        'straight_3':  [[0, 18, -85, 10, 22], [18, 0, 85, 22, 10]],
-#        'curve_1':  [[97, 28, -98, 116, 17], [79, 0, -84, 67, 0]],
-#        'curve_2':  [[104, 48, -114, 124, 27], [72, 0, -70, 55, 0]],
-#        'curve_3':  [[164, 124, -152, 221, 62], [0, 0, -24, 0, 0]],
-#            }
-#
-#    for key in angles:
-#        angle = angles[key]
-#        ptrn = get_ptrn_from_angles(angle, version, times)
-#        plot_pattern(ptrn)
+    angles = {
+        'straight_1':  [[90, 0, -90, 90, 0], [0, 90, 90, 0, 90]],
+        'straight_2':  [[86, 4, -110, 83, 4], [4, 86, 110, 4, 83]],
+        'straight_3':  [[0, 18, -85, 10, 22], [18, 0, 85, 22, 10]],
+        'curve_1':  [[97, 28, -98, 116, 17], [79, 0, -84, 67, 0]],
+        'curve_2':  [[104, 48, -114, 124, 27], [72, 0, -70, 55, 0]],
+        'curve_3':  [[164, 124, -152, 221, 62], [0, 0, -24, 0, 0]],
+            }
 
-#        save_list_as_csv(ptrn, key + '.csv')
+    for key in angles:
+        angle = angles[key]
+        ptrn = get_ptrn_from_angles(angle, version, times)
+        plot_pattern(ptrn)
+
+        save_list_as_csv(ptrn, version + '/' + key + '.csv')
 
 # %%
     version = 'vS11'
@@ -219,7 +219,7 @@ if __name__ == '__main__':
     plot_pattern(ptrn, legend=0, linestyle='x')
 #    ptrn = resample(ptrn, Ts=.1)
     plot_pattern(ptrn)
-    save_list_as_csv(ptrn, version+'/speed_q1_' + str(q1) + 'q2_' + str(q2).replace('.', '') + '.csv')
+#    save_list_as_csv(ptrn, version+'/speed_q1_' + str(q1) + 'q2_' + str(q2).replace('.', '') + '.csv')
     
 
 

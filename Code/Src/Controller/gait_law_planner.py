@@ -89,7 +89,7 @@ def cut(x):
     return x if x > 0.001 else 0.001
 
 
-def alpha(x1, x2, f, c1=1):
+def alpha(x1, x2, f, c1=.75):
     alpha = [cut(45 - x1/2. - abs(x1)*x2/2. + x1*x2*c1),
              cut(45 + x1/2. + abs(x1)*x2/2. + x1*x2*c1),
              x1 + x2*abs(x1),
